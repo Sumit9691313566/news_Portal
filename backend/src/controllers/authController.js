@@ -14,6 +14,8 @@ export const adminLogin = async (req, res) => {
     }
 
     // debug logs
+    console.log("📥 Incoming login request headers:", req.headers);
+    console.log("📥 Incoming login request body:", req.body);
     console.log("📧 Login Email:", email);
     console.log("📧 Admin Email:", process.env.ADMIN_EMAIL);
     console.log("🔐 Hash Loaded:", !!process.env.ADMIN_PASSWORD_HASH);
@@ -47,6 +49,10 @@ export const adminLogin = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ LOGIN ERROR:", err);
+    // Return detailed error in non-production for debugging
+    if (process.env.NODE_ENV !== "production") {
+      return res.status(500).json({ message: "Server error", error: err?.message, stack: err?.stack });
+    }
     return res.status(500).json({ message: "Server error" });
   }
 };

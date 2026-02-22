@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchWithTimeout } from "../services/api";
+import { fetchWithTimeout, API_BASE_URL } from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -38,7 +38,9 @@ export default function Login() {
 
       // ❌ LOGIN FAILED
       if (!res.ok) {
-        alert(data.message || "Login failed");
+        const msg = data?.message || JSON.stringify(data) || res.statusText;
+        alert(`Login failed: ${res.status} - ${msg}`);
+        console.error("Login failed details:", { status: res.status, body: data });
         setLoading(false);
         return;
       }
@@ -55,11 +57,31 @@ export default function Login() {
       navigate("/admin-dashboard");
     } catch (error) {
       console.error("LOGIN ERROR:", error);
-      alert("Server error, try again");
+        alert(`Server error, try again: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
+
+    // Check backend health on mount to show quick debug info
+    const [backendHealthy, setBackendHealthy] = useState(null);
+    useEffect(() => {
+      const check = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/health`);
+          if (res.ok) {
+            setBackendHealthy(true);
+          } else {
+            setBackendHealthy(false);
+          }
+          console.log("Health check", res.status);
+        } catch (err) {
+          setBackendHealthy(false);
+          console.error("Health check error", err);
+        }
+      };
+      check();
+    }, []);
 
   return (
     <div
