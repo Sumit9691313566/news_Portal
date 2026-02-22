@@ -5,8 +5,14 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package files and install dependencies first (leverages layer caching)
-COPY package.json package-lock.json ./
-RUN npm ci --only=production
+# Use a glob so build won't fail if package-lock.json is missing.
+COPY package*.json ./
+# If a lockfile exists, prefer `npm ci` for reproducible installs; otherwise fall back to `npm install`.
+RUN if [ -f package-lock.json ]; then \
+      npm ci --only=production; \
+    else \
+      npm install --only=production; \
+    fi
 
 # Copy remaining application code from build context (uses backend/.dockerignore to exclude node_modules)
 COPY . .
