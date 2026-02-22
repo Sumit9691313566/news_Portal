@@ -1,0 +1,1058 @@
+﻿import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import logoMark from "../logo.png";
+import logoWord from "../logo 1.png";
+import "../styles/category.css";
+import { buildApiUrl, fetchWithTimeout } from "../services/api";
+
+/* ===== STATIC FALLBACK ===== */
+const NEWS_DATA = [
+  {
+    id: "static-1",
+    title: "AI tools se badal rahi hai software industry",
+    mediaUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995",
+    content:
+      "Naye AI tools developers ki productivity ko kaafi had tak improve kar rahe hain.",
+    category: "Tech",
+    mediaType: "image",
+    createdAt: new Date().toISOString(),
+    author: "Admin",
+    breaking: true,
+    featured: true,
+  },
+  {
+    id: "static-2",
+    title: "Budget 2026: MSME sector ko relief milne ke chances",
+    mediaUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
+    content:
+      "Experts ke hisab se MSME ke liye tax incentives aur credit support ki baat ho rahi hai.",
+    category: "Business",
+    mediaType: "image",
+    createdAt: new Date().toISOString(),
+    author: "Admin",
+    breaking: false,
+    featured: false,
+  },
+  {
+    id: "static-3",
+    title: "Cricket: series opener me thrilling finish",
+    mediaUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+    content:
+      "Last over me match palta, crowd ne dekh liya season ka sabse bada thriller.",
+    category: "Sports",
+    mediaType: "image",
+    createdAt: new Date().toISOString(),
+    author: "Admin",
+    breaking: false,
+    featured: false,
+  },
+  {
+    id: "static-4",
+    title: "City traffic plan me major changes ka proposal",
+    mediaUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
+    content:
+      "Peak hours me alternate routes aur smart signals ke plan par kaam ho raha hai.",
+    category: "Politics",
+    mediaType: "image",
+    createdAt: new Date().toISOString(),
+    author: "Admin",
+    breaking: false,
+    featured: false,
+  },
+  {
+    id: "static-5",
+    title: "Entertainment: new web series trailer out",
+    mediaUrl: "https://images.unsplash.com/photo-1517602302552-471fe67acf66",
+    content:
+      "Trailer ko fans ka strong response mil raha hai, release date jaldi announce hogi.",
+    category: "Entertainment",
+    mediaType: "image",
+    createdAt: new Date().toISOString(),
+    author: "Admin",
+    breaking: false,
+    featured: false,
+  },
+];
+
+export default function Category() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [allNews, setAllNews] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [selectedNews, setSelectedNews] = useState(null);
+  const [view, setView] = useState("home");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchSubmitted, setSearchSubmitted] = useState(false);
+  const [trendWindow, setTrendWindow] = useState("all");
+
+  /* extra states */
+  const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [epapers, setEpapers] = useState([]);
+
+  /* ================= LOAD NEWS ================= */
+  const loadNews = async () => {
+    try {
+      const res = await fetchWithTimeout("news");
+      const data = await res.json();
+
+      const normalized = Array.isArray(data)
+        ? data.map((n) => {
+            const blocks = Array.isArray(n.blocks) ? n.blocks : [];
+            const firstMedia = blocks.find(
+              (b) => (b.type === "image" || b.type === "video") && b.url
+            );
+
+            const textContent =
+              blocks.length > 0
+                ? blocks
+                    .filter((b) => b.type === "text" && b.text)
+                    .map((b) => b.text.trim())
+                    .filter(Boolean)
+                    .join("\n\n")
+                : n.content;
+
+            const mediaType = firstMedia
+              ? firstMedia.type
+              : n.mediaUrl && n.mediaUrl.trim() !== ""
+              ? n.mediaType
+              : "text";
+
+            const mediaUrl = firstMedia
+              ? firstMedia.url
+              : n.mediaUrl && n.mediaUrl.trim() !== ""
+              ? n.mediaUrl
+              : null;
+
+            return {
+              _id: n._id,
+              title: n.title,
+              content: textContent,
+              category: n.category || "All",
+              mediaType,
+              mediaUrl,
+              blocks,
+              createdAt: n.createdAt,
+              author: n.author || "Admin",
+              breaking: n.breaking || false,
+              featured: n.featured || false,
+              views: n.views || 0,
+            };
+          })
+        : [];
+
+      setAllNews(normalized.length > 0 ? normalized : NEWS_DATA);
+    } catch (err) {
+      console.error("Failed to load news", err);
+      setAllNews(NEWS_DATA);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNews();
+    loadEpapers();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextView = params.get("view") || "home";
+    const nextCategory = params.get("cat") || "All";
+    if (nextView === "video") {
+      navigate("/videos", { replace: true });
+      return;
+    }
+    setView(nextView);
+    setActiveCategory(nextCategory);
+  }, [location.search]);
+
+  const syncUrlState = (nextView, nextCategory) => {
+    if (nextView === "video") {
+      navigate("/videos");
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    if (nextView && nextView !== "home") {
+      params.set("view", nextView);
+    } else {
+      params.delete("view");
+    }
+    if (nextCategory && nextCategory !== "All") {
+      params.set("cat", nextCategory);
+    } else {
+      params.delete("cat");
+    }
+    navigate({ pathname: "/", search: params.toString() }, { replace: true });
+  };
+
+  const loadEpapers = async () => {
+    try {
+      const res = await fetchWithTimeout("epaper");
+      const data = await res.json();
+      setEpapers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load epapers", err);
+      setEpapers([]);
+    }
+  };
+
+
+  /* ================= FILTER ================= */
+  const categoryAlias = {
+    राष्ट्रीय: "National",
+    बिज़नेस: "Business",
+    राजनीति: "Politics",
+    खेल: "Sports",
+    टेक: "Tech",
+    मनोरंजन: "Entertainment",
+    दुनिया: "World",
+    आर्टिकल: "Article",
+  };
+
+  const normalizedActiveCategory =
+    categoryAlias[activeCategory] || activeCategory;
+
+  const filteredNews =
+    normalizedActiveCategory === "All"
+      ? allNews
+      : allNews.filter(
+          (n) =>
+            n.category &&
+            n.category.toLowerCase() === normalizedActiveCategory.toLowerCase()
+        );
+
+  const videoNews = allNews.filter((n) => n.mediaType === "video");
+  const searchResults = allNews.filter(
+    (n) =>
+      n.category?.toLowerCase() === searchTerm.trim().toLowerCase()
+  );
+
+
+  const trendingNews = allNews.filter((n) => n.breaking || n.featured);
+  const mostReadNews = [...allNews].sort(
+    (a, b) => (b.content?.length || 0) - (a.content?.length || 0)
+  );
+  const mostViewedNews = [...allNews].sort(
+    (a, b) => (b.views || 0) - (a.views || 0)
+  );
+  const hasViews = mostViewedNews.some((n) => (n.views || 0) > 0);
+  const mostViewed24h = mostViewedNews.filter((n) => {
+    const age = Date.now() - new Date(n.createdAt).getTime();
+    return age <= 24 * 60 * 60 * 1000;
+  });
+  const mostViewed7d = mostViewedNews.filter((n) => {
+    const age = Date.now() - new Date(n.createdAt).getTime();
+    return age <= 7 * 24 * 60 * 60 * 1000;
+  });
+
+  const trendingList =
+    trendWindow === "24h"
+      ? mostViewed24h
+      : trendWindow === "7d"
+      ? mostViewed7d
+      : mostViewedNews;
+
+  const randomRelatedNews = selectedNews
+    ? [...allNews]
+        .filter((n) => n._id !== selectedNews._id)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 6)
+    : [];
+
+  const openNews = (news) => {
+    setSelectedNews(news);
+    if (!news?._id) return;
+    setAllNews((prev) =>
+      prev.map((n) =>
+        n._id === news._id ? { ...n, views: (n.views || 0) + 1 } : n
+      )
+    );
+    fetch(buildApiUrl(`news/${news._id}/view`), {
+      method: "POST",
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    const requestedId = location.state?.openNewsId;
+    if (!requestedId || allNews.length === 0) return;
+
+    const matched = allNews.find(
+      (n) => n._id === requestedId || n.id === requestedId
+    );
+    if (!matched) return;
+
+    setView("home");
+    setSelectedNews(matched);
+  }, [allNews, location.state]);
+
+  const categoryClass = (category) => {
+    const key = (category || "").toLowerCase();
+    if (key === "national") return "cat-national";
+    if (key === "politics") return "cat-politics";
+    if (key === "sports") return "cat-sports";
+    if (key === "tech") return "cat-tech";
+    if (key === "business") return "cat-business";
+    if (key === "entertainment") return "cat-entertainment";
+    if (key === "world") return "cat-world";
+    if (key === "article") return "cat-article";
+    return "cat-default";
+  };
+  const breakingNews = allNews.filter((n) => n.breaking);
+  const featuredNews = allNews.find((n) => n.featured);
+  const todayLabel = new Date().toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const formatTimeAgo = (date) => {
+    if (!date) return "अभी";
+    const now = Date.now();
+    const diffMs = now - new Date(date).getTime();
+    if (Number.isNaN(diffMs) || diffMs < 0) return "अभी";
+    const mins = Math.floor(diffMs / (1000 * 60));
+    if (mins < 60) return `${mins || 1} मिनट पहले`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} घंटे पहले`;
+    const days = Math.floor(hours / 24);
+    return `${days} दिन पहले`;
+  };
+  const navCategories = [
+    "राष्ट्रीय",
+    "बिज़नेस",
+    "राजनीति",
+    "खेल",
+    "टेक",
+    "मनोरंजन",
+    "दुनिया",
+    "आर्टिकल",
+  ];
+
+  /* ===== ORIGINAL suggestedNews (UNCHANGED) ===== */
+  const suggestedNews = allNews
+    .filter((n) => (selectedNews ? n._id !== selectedNews._id : true))
+    .slice(0, 6);
+
+  /* =====================================================
+     OPTION A : RELATED NEWS BY CATEGORY (ADD ONLY)
+     ===================================================== */
+
+  const isReadingNews = Boolean(selectedNews);
+
+  // Home page -> random suggestions
+  const randomSuggestions = [...suggestedNews].sort(
+    () => 0.5 - Math.random()
+  );
+
+  // Reading page -> same category suggestions
+  const categoryBasedSuggestions = selectedNews
+    ? allNews.filter(
+        (n) =>
+          n.category === selectedNews.category &&
+          n._id !== selectedNews._id
+      )
+    : [];
+
+  // Final right rail data
+  const rightRailSuggestions = isReadingNews
+    ? categoryBasedSuggestions.slice(0, 6)
+    : randomSuggestions.slice(0, 6);
+  const hasLeadMediaInBlocks = Boolean(
+    selectedNews?.blocks?.some(
+      (b) => (b.type === "image" || b.type === "video") && b.url
+    )
+  );
+
+  return (
+    <div className="layout-wrapper">
+      <header className="masthead">
+        <div className="top-strip">
+          <div className="top-left">
+            <span className="pill live">LIVE</span>
+            <span className="date">{todayLabel}</span>
+          </div>
+          <div className="top-right">
+            <span className="edition">Morning Edition</span>
+            <button type="button" className="subscribe-btn">
+              Subscribe
+            </button>
+          </div>
+        </div>
+
+        <div className="brand-row">
+          <div className="brand">
+            <span className="brand-mark">
+              <img src={logoMark} alt="Garun Samachar logo" />
+            </span>
+            <img
+              className="brand-wordmark"
+              src={logoWord}
+              alt="Garun Samachar"
+            />
+          </div>
+
+          <div className="nav-row nav-row-inline">
+            {navCategories.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`nav-item ${
+                  activeCategory === item ? "nav-item-active" : ""
+                }`}
+              onClick={() => {
+                setSelectedNews(null);
+                setView("home");
+                setActiveCategory(item);
+                syncUrlState("home", item);
+              }}
+            >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+
+      </header>
+      {/* BREAKING BAR */}
+      {breakingNews.length > 0 && (
+        <div className="breaking-bar">
+          <span>BREAKING</span>
+          <div className="breaking-ticker">
+            <div className="breaking-track">
+              {breakingNews.map((n) => (
+                <button
+                  key={n._id || n.id}
+                  type="button"
+                  className="breaking-item"
+                  onClick={() => openNews(n)}
+                >
+                  {n.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="layout">
+        {/* ===== SIDEBAR ===== */}
+        <aside className="sidebar">
+
+        <ul className="menu">
+          <li
+            onClick={() => {
+              setSelectedNews(null);
+              setView("home");
+              setActiveCategory("All");
+              syncUrlState("home", "All");
+            }}
+          >
+            🏠 होम
+          </li>
+          <li
+            onClick={() => {
+              setSelectedNews(null);
+              setView("video");
+              syncUrlState("video", activeCategory);
+            }}
+          >
+            ▶️ वीडियो
+          </li>
+          <li
+            onClick={() => {
+              setSelectedNews(null);
+              setView("search");
+              syncUrlState("search", activeCategory);
+            }}
+          >
+            🔍 सर्च
+          </li>
+          <li
+            onClick={() => {
+              setSelectedNews(null);
+              setView("epaper");
+              syncUrlState("epaper", activeCategory);
+            }}
+          >
+            🗞️ ई-पेपर
+          </li>
+        </ul>
+
+        <div
+          className="sidebar-box trending-box"
+          onClick={() => {
+            setSelectedNews(null);
+            setView("trending");
+            syncUrlState("trending", activeCategory);
+          }}
+        >
+          <button type="button" className="trending-btn">
+            🔥 ट्रेंडिंग
+          </button>
+        </div>
+        </aside>
+
+        {/* ===== MAIN CONTENT ===== */}
+        <main className="content">
+        <div className="mobile-header">
+          <div className="mobile-logo"></div>
+          <div className="mobile-actions">
+            <button
+              type="button"
+              title="Search"
+              onClick={() => {
+                setSelectedNews(null);
+                setView("search");
+                syncUrlState("search", activeCategory);
+              }}
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              title="Videos"
+              onClick={() => {
+                setSelectedNews(null);
+                setView("video");
+                syncUrlState("video", activeCategory);
+              }}
+            >
+              Videos
+            </button>
+          </div>
+        </div>
+
+        <div className="content-grid">
+          <div className="main-column">
+            {view === "home" && !selectedNews && (
+              <>
+                {featuredNews && (
+                  <div
+                    className="featured"
+                    onClick={() => openNews(featuredNews)}
+                  >
+                    {featuredNews.mediaUrl && (
+                      <img src={featuredNews.mediaUrl} alt="featured" />
+                    )}
+                    {featuredNews.featured && (
+                      <span className="badge featured featured-tag">
+                        FEATURED
+                      </span>
+                    )}
+                    <div className="featured-info">
+                      <span>{featuredNews.category}</span>
+                      <h1 className={categoryClass(featuredNews.category)}>
+                        {featuredNews.title}
+                      </h1>
+                    </div>
+                  </div>
+                )}
+
+                <div className="news-list">
+                  {!loading && filteredNews.length === 0 && (
+                    <p className="empty-state">
+                      इस कैटेगरी में अभी कोई खबर नहीं है।
+                    </p>
+                  )}
+                  {loading
+                    ? [...Array(3)].map((_, i) => (
+                        <div key={i} className="news-card skeleton"></div>
+                      ))
+                    : filteredNews
+                        .slice(0, visibleCount)
+                        .map((news) => (
+                          <div
+                            key={news._id || news.id}
+                            className="news-card"
+                            onClick={() => openNews(news)}
+                          >
+                            {news.mediaType !== "text" &&
+                              news.mediaUrl && (
+                                <>
+                                  {news.mediaType === "image" && (
+                                    <img
+                                      src={news.mediaUrl}
+                                      alt={news.title}
+                                      className="news-thumb"
+                                    />
+                                  )}
+                                  {news.mediaType === "video" && (
+                                    <video
+                                      src={news.mediaUrl}
+                                      className="news-thumb"
+                                      muted
+                                    />
+                                  )}
+                                </>
+                              )}
+
+                            <div className="news-info">
+                              <div className="news-badges">
+                                {news.breaking && (
+                                  <span className="badge breaking">
+                                    BREAKING
+                                  </span>
+                                )}
+                                {news.featured && (
+                                  <span className="badge featured">
+                                    FEATURED
+                                  </span>
+                                )}
+                              </div>
+
+                              <h2 className={categoryClass(news.category)}>
+                                {news.title}
+                              </h2>
+                              <p>
+                                {news.content?.slice(0, 120)}...
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                </div>
+
+                {visibleCount < filteredNews.length && !loading && (
+                  <button
+                    className="load-more"
+                    onClick={() =>
+                      setVisibleCount((v) => v + 5)
+                    }
+                  >
+                    और लोड करें
+                  </button>
+                )}
+              </>
+            )}
+
+            {view === "video" && (
+              <>
+                {videoNews.length === 0 && <p>No videos uploaded yet.</p>}
+                <div className="media-grid">
+                  {videoNews.map((news) => (
+                    <div
+                      key={news._id || news.id}
+                      className="media-card"
+                      onClick={() =>
+                        navigate(`/videos/${news._id || news.id}`, {
+                          state: {
+                            url: news.mediaUrl,
+                            title: news.title,
+                            summary: news.content || "",
+                            category: news.category || "Article",
+                            createdAt: news.createdAt,
+                            newsId: news._id || news.id,
+                          },
+                        })
+                      }
+                    >
+                      {news.mediaUrl && (
+                        <div className="media-thumb media-thumb-video">
+                          <video
+                            src={news.mediaUrl}
+                            muted
+                            preload="metadata"
+                          />
+                          <div className="video-logo-watermark">
+                            <img
+                              className="logo-mark"
+                              src={logoMark}
+                              alt="गरुण"
+                            />
+                          </div>
+                          <div className="play-badge">▶</div>
+                          <div className="video-story-overlay">
+                            <h3
+                              className={`video-story-title ${categoryClass(
+                                news.category
+                              )}`}
+                            >
+                              {news.title}
+                            </h3>
+                            <p className="video-story-summary">
+                              {news.content || "वीडियो समाचार"}
+                            </p>
+                            <small className="video-story-meta">
+                              {formatTimeAgo(news.createdAt)}
+                            </small>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {view === "search" && !selectedNews && (
+              <>
+                <h2>Search News</h2>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search by category..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setSearchSubmitted(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setSearchSubmitted(true);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setSearchSubmitted(true)}
+                >
+                  Search
+                </button>
+
+                <div className="news-list">
+                  {!searchSubmitted && <div />}
+                  {searchSubmitted && searchResults.length === 0 && (
+                    <p>No matching news found.</p>
+                  )}
+                  {searchSubmitted &&
+                    searchResults.map((news) => (
+                      <div
+                        key={news._id || news.id}
+                        className="news-card"
+                        onClick={() => openNews(news)}
+                      >
+                        {news.mediaType !== "text" && news.mediaUrl && (
+                          <>
+                            {news.mediaType === "image" && (
+                              <img
+                                src={news.mediaUrl}
+                                alt={news.title}
+                                className="news-thumb"
+                              />
+                            )}
+                            {news.mediaType === "video" && (
+                              <video
+                                src={news.mediaUrl}
+                                className="news-thumb"
+                                muted
+                              />
+                            )}
+                          </>
+                        )}
+                        <div className="news-info">
+                          <h2 className={categoryClass(news.category)}>
+                            {news.title}
+                          </h2>
+                          <p>{news.content?.slice(0, 120)}...</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+
+            {view === "epaper" && (
+              <>
+                {epapers.length === 0 && <p>No e-paper uploaded yet.</p>}
+                <div className="media-grid">
+                  {epapers.map((e) => (
+                    <div
+                      key={e._id}
+                      className="media-card"
+                      onClick={() =>
+                        navigate(`/epaper/${e._id}`, {
+                          state: { epaper: e },
+                        })
+                      }
+                    >
+                      <div className="media-thumb">
+                        {e.fileType === "image" ? (
+                          <img src={e.fileUrl} alt={e.title} />
+                        ) : (
+                          <div className="pdf-thumb">PDF</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {view === "trending" && !selectedNews && (
+              <>
+                <div className="trend-head">
+                  <h2>Trending News</h2>
+                  <div className="trend-tabs">
+                    <button
+                      type="button"
+                      className={`trend-tab ${trendWindow === "all" ? "active" : ""}`}
+                      onClick={() => setTrendWindow("all")}
+                    >
+                      All Time
+                    </button>
+                    <button
+                      type="button"
+                      className={`trend-tab ${trendWindow === "24h" ? "active" : ""}`}
+                      onClick={() => setTrendWindow("24h")}
+                    >
+                      24h
+                    </button>
+                    <button
+                      type="button"
+                      className={`trend-tab ${trendWindow === "7d" ? "active" : ""}`}
+                      onClick={() => setTrendWindow("7d")}
+                    >
+                      7 days
+                    </button>
+                  </div>
+                </div>
+                <div className="news-list">
+                  {hasViews &&
+                    trendingList.slice(0, 6).map((news) => (
+                      <div
+                        key={news._id || news.id}
+                        className="news-card"
+                        onClick={() => openNews(news)}
+                      >
+                        {news.mediaType !== "text" && news.mediaUrl && (
+                          <>
+                            {news.mediaType === "image" && (
+                              <img
+                                src={news.mediaUrl}
+                                alt={news.title}
+                                className="news-thumb"
+                              />
+                            )}
+                            {news.mediaType === "video" && (
+                              <video
+                                src={news.mediaUrl}
+                                className="news-thumb"
+                                muted
+                              />
+                            )}
+                          </>
+                        )}
+                        <div className="news-info">
+                          <h2 className={categoryClass(news.category)}>
+                            {news.title}
+                          </h2>
+                          <p>{news.content?.slice(0, 120)}...</p>
+                          <small className="views-count">
+                            {news.views || 0} views
+                          </small>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                <h2 style={{ marginTop: "20px" }}>Most Read</h2>
+                <div className="news-list">
+                  {mostReadNews.slice(0, 6).map((news) => (
+                    <div
+                      key={news._id || news.id}
+                      className="news-card"
+                      onClick={() => openNews(news)}
+                    >
+                      {news.mediaType !== "text" && news.mediaUrl && (
+                        <>
+                          {news.mediaType === "image" && (
+                            <img
+                              src={news.mediaUrl}
+                              alt={news.title}
+                              className="news-thumb"
+                            />
+                          )}
+                          {news.mediaType === "video" && (
+                            <video
+                              src={news.mediaUrl}
+                              className="news-thumb"
+                              muted
+                            />
+                          )}
+                        </>
+                      )}
+                      <div className="news-info">
+                        <h2 className={categoryClass(news.category)}>
+                          {news.title}
+                        </h2>
+                        <p>{news.content?.slice(0, 120)}...</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {view !== "video" && view !== "epaper" && selectedNews && (
+              <div className="news-full">
+                <button
+                  className="back-btn"
+                  onClick={() => setSelectedNews(null)}
+                >
+                  {"← वापस"}
+                </button>
+
+                <h1 className={categoryClass(selectedNews.category)}>
+                  {selectedNews.title}
+                </h1>
+                <small>
+                  {new Date(
+                    selectedNews.createdAt
+                  ).toLocaleString()}
+                </small>
+
+                {!hasLeadMediaInBlocks &&
+                  selectedNews.mediaUrl &&
+                  selectedNews.mediaType === "image" && (
+                    <img
+                      src={selectedNews.mediaUrl}
+                      alt={selectedNews.title}
+                      className="news-lead-image"
+                    />
+                  )}
+
+                {!hasLeadMediaInBlocks &&
+                  selectedNews.mediaUrl &&
+                  selectedNews.mediaType === "video" && (
+                    <div className="news-lead-video-wrap">
+                      <video
+                        src={selectedNews.mediaUrl}
+                        controls
+                        className="news-lead-video"
+                      />
+                    </div>
+                  )}
+
+                {selectedNews.blocks &&
+                selectedNews.blocks.length > 0 ? (
+                  <div className="full-content">
+                    {selectedNews.blocks.map((b, i) => (
+                      <div key={i} className="content-block">
+                        {b.type === "text" && <p>{b.text}</p>}
+                        {b.type === "image" && b.url && (
+                          <img
+                            src={b.url}
+                            alt=""
+                            className="full-image"
+                          />
+                        )}
+                        {b.type === "video" && b.url && (
+                          <div className="full-video-wrap">
+                            <video
+                              src={b.url}
+                              controls
+                              className="full-video"
+                            />
+                            <div className="video-logo-watermark">
+                              <img
+                                className="logo-mark"
+                                src={logoMark}
+                                alt="गरुण"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="full-content">
+                    {selectedNews.content}
+                  </p>
+                )}
+
+                <div className="more-news">
+                  <h3>खबरें और भी हैं...</h3>
+                  <div className="more-news-grid">
+                    {randomRelatedNews.map((news) => (
+                      <div
+                        key={news._id || news.id}
+                        className="more-news-card"
+                        onClick={() => openNews(news)}
+                      >
+                        {news.mediaType !== "text" && news.mediaUrl && (
+                          <>
+                            {news.mediaType === "image" && (
+                              <img
+                                src={news.mediaUrl}
+                                alt={news.title}
+                              />
+                            )}
+                            {news.mediaType === "video" && (
+                              <video
+                                src={news.mediaUrl}
+                                muted
+                              />
+                            )}
+                          </>
+                        )}
+                        <div className="more-news-info">
+                          <h4 className={categoryClass(news.category)}>
+                            {news.title}
+                          </h4>
+                          <p>{news.content?.slice(0, 90)}...</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ===== RIGHT RAIL ===== */}
+          {view !== "video" &&
+            view !== "epaper" &&
+            view !== "search" && (
+            <aside className="right-rail">
+              <div className="suggest-card">
+                <h3>
+                  {isReadingNews
+                    ? "संबंधित खबरें"
+                    : "अन्य खबरें"}
+                </h3>
+
+                {rightRailSuggestions.map((n) => (
+                  <div
+                    key={n._id || n.id}
+                    className="suggest-item"
+                    onClick={() => openNews(n)}
+                  >
+                    {n.mediaUrl ? (
+                      <img
+                        src={n.mediaUrl}
+                        alt={n.title}
+                        className="suggest-thumb"
+                      />
+                    ) : (
+                      <div className="suggest-thumb suggest-thumb-placeholder" />
+                    )}
+
+                    <div>
+                      <div className="news-badges">
+                        {n.breaking && (
+                          <span className="badge breaking">
+                            BREAKING
+                          </span>
+                        )}
+                        {n.featured && (
+                          <span className="badge featured">
+                            FEATURED
+                          </span>
+                        )}
+                      </div>
+
+                      <p className={categoryClass(n.category)}>{n.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          )}
+        </div>
+      </main>
+      </div>
+
+    </div>
+  );
+}

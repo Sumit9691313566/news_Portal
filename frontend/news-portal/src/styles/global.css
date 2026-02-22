@@ -1,0 +1,43 @@
+/* ===== GLOBAL RESET (SAFE) ===== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+.btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn.primary {
+  background: #0073e6;
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: #005bb5;
+}
+
+.btn.danger {
+  background: #e53935;
+  color: #fff;
+}
+
+.btn.danger:hover {
+  background: #c62828;
+}
+
+.btn.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.muted {
+  color: #777;
+}
