@@ -18,16 +18,28 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const app = express();
 
 // CORS Configuration for multiple environments
+const normalize = (u = "") => String(u).replace(/\/+$|\s+/g, "").replace(/:\/\/$/, "");
+const frontendUrl = normalize(process.env.FRONTEND_URL || "");
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:5000",
-  process.env.FRONTEND_URL || "",
+  "https://newsportal-production-164d.up.railway.app",
+  "https://news-portal-chi-self.vercel.app",
+  frontendUrl,
 ].filter(Boolean);
 
+// Use a function for origin so we can log and provide clearer behavior
 app.use(
   cors({
-    origin: NODE_ENV === "production" ? allowedOrigins : true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow server-to-server or tools without origin
+      if (NODE_ENV !== "production") return callback(null, true);
+      const cleanedOrigin = normalize(origin);
+      if (allowedOrigins.includes(cleanedOrigin)) return callback(null, true);
+      console.warn("Blocked CORS origin:", origin, "(clean:", cleanedOrigin, ") allowed:", allowedOrigins);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
