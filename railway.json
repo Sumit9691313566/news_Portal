@@ -1,4 +1,8 @@
 {
-  "buildCommand": "cd backend && npm ci --only=production",
-  "startCommand": "cd backend && node src/bootstrap.js"
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "backend/Dockerfile",
+    "context": "."
+  },
+  "startCommand": "node backend/src/bootstrap.js"
 }
