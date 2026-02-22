@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd backend && npm ci --only=production",
+  "startCommand": "cd backend && node src/bootstrap.js"
+}
