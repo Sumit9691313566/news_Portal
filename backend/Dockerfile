@@ -4,9 +4,10 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy full application code from build context (backend/.dockerignore excludes node_modules)
-# This ensures `package.json` is available before running npm.
-COPY . .
+# Copy only backend files from the repository root build context into the image.
+# Using explicit source paths ensures the build works when the Docker build context is the repo root.
+COPY backend/package*.json ./
+COPY backend/ ./
 
 # Install dependencies: prefer `npm ci` when lockfile exists for reproducible installs,
 # otherwise fall back to `npm install`. Use --omit=dev to skip dev dependencies.
