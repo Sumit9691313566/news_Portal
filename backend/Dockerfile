@@ -4,14 +4,12 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies first (leverages layer caching)
 COPY package.json package-lock.json ./
-
-# Install dependencies
 RUN npm ci --only=production
 
-# Copy application code
-COPY src ./src
+# Copy remaining application code from build context (uses backend/.dockerignore to exclude node_modules)
+COPY . .
 
 # Expose port
 EXPOSE 5000
