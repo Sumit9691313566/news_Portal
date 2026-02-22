@@ -4,18 +4,17 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies first (leverages layer caching)
-# Use a glob so build won't fail if package-lock.json is missing.
-COPY package*.json ./
-# If a lockfile exists, prefer `npm ci` for reproducible installs; otherwise fall back to `npm install`.
-RUN if [ -f package-lock.json ]; then \
-      npm ci --only=production; \
-    else \
-      npm install --only=production; \
-    fi
-
-# Copy remaining application code from build context (uses backend/.dockerignore to exclude node_modules)
+# Copy full application code from build context (backend/.dockerignore excludes node_modules)
+# This ensures `package.json` is available before running npm.
 COPY . .
+
+# Install dependencies: prefer `npm ci` when lockfile exists for reproducible installs,
+# otherwise fall back to `npm install`. Use --omit=dev to skip dev dependencies.
+RUN if [ -f package-lock.json ]; then \
+      npm ci --omit=dev; \
+    else \
+      npm install --omit=dev; \
+    fi
 
 # Expose port
 EXPOSE 5000
