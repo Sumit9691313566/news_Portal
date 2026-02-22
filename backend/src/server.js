@@ -36,7 +36,13 @@ app.use(
       if (!origin) return callback(null, true); // allow server-to-server or tools without origin
       if (NODE_ENV !== "production") return callback(null, true);
       const cleanedOrigin = normalize(origin);
+      // allow explicit configured origins
       if (allowedOrigins.includes(cleanedOrigin)) return callback(null, true);
+      // allow vercel preview/domains and railway preview domains
+      if (cleanedOrigin.includes("vercel.app") || cleanedOrigin.includes("railway.app")) {
+        console.log("Allowed dynamic origin (vercel/railway):", cleanedOrigin);
+        return callback(null, true);
+      }
       console.warn("Blocked CORS origin:", origin, "(clean:", cleanedOrigin, ") allowed:", allowedOrigins);
       return callback(new Error("Not allowed by CORS"));
     },
@@ -50,6 +56,17 @@ app.use(express.urlencoded({ extended: true }));
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint to verify runtime configuration (safe to remove in production)
+app.get("/debug", (req, res) => {
+  const mongooseState = mongoose.connection ? mongoose.connection.readyState : "unknown";
+  res.json({
+    nodeEnv: NODE_ENV,
+    frontendUrl: frontendUrl,
+    allowedOrigins,
+    mongoState: mongooseState,
+  });
 });
 
 app.use("/api/news", newsRoutes);
