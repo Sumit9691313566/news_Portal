@@ -7,6 +7,14 @@ export default function EPaper() {
   const navigate = useNavigate();
   const [epapers, setEpapers] = useState([]);
 
+  const goBackSafe = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -34,6 +42,19 @@ export default function EPaper() {
       </aside>
 
       <main className="content media-page">
+        <div className="page-toolbar page-toolbar-epaper">
+          <button type="button" className="page-toolbar-btn" onClick={goBackSafe}>
+            &larr; Back
+          </button>
+          <button
+            type="button"
+            className="page-toolbar-btn"
+            onClick={() => navigate("/")}
+          >
+            Home
+          </button>
+        </div>
+
         <h2>E-Paper</h2>
 
         {epapers.length === 0 && <p>No e-paper uploaded yet.</p>}

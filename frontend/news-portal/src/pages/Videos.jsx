@@ -35,6 +35,14 @@ export default function Videos() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const goBackSafe = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  };
+
   const fallbackVideos = [
     {
       id: "fallback-1",
@@ -155,6 +163,19 @@ export default function Videos() {
       </aside>
 
       <main className="content media-page">
+        <div className="page-toolbar page-toolbar-videos">
+          <button type="button" className="page-toolbar-btn" onClick={goBackSafe}>
+            &larr; Back
+          </button>
+          <button
+            type="button"
+            className="page-toolbar-btn"
+            onClick={() => navigate("/")}
+          >
+            Home
+          </button>
+        </div>
+
         {!loading && videos.length === 0 && <p>No videos uploaded yet.</p>}
 
         <div className="media-grid">

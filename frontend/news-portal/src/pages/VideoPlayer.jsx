@@ -29,6 +29,14 @@ export default function VideoPlayer() {
   };
   const categoryLabel = categoryLabelMap[category] || "आर्टिकल";
 
+  const goBackSafe = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/videos");
+  };
+
   const copyVideoLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -67,7 +75,7 @@ export default function VideoPlayer() {
   return (
     <div className="video-page">
       <div className="video-header">
-        <button className="video-back" onClick={() => navigate(-1)}>
+        <button className="video-back" onClick={goBackSafe}>
           &larr; Back
         </button>
         <h1>{title}</h1>

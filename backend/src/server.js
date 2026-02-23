@@ -17,6 +17,13 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 
 const app = express();
 
+// Increase request timeout for large file uploads
+app.use((req, res, next) => {
+  req.setTimeout(120000); // 2 minutes
+  res.setTimeout(120000); // 2 minutes
+  next();
+});
+
 // CORS Configuration for multiple environments
 const normalize = (u = "") => String(u).replace(/\/+$|\s+/g, "").replace(/:\/\/$/, "");
 const frontendUrl = normalize(process.env.FRONTEND_URL || "");
@@ -47,11 +54,24 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Security Headers for better CDN performance
+app.use((req, res, next) => {
+  res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  next();
+});
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -76,6 +96,19 @@ app.use("/api/epaper", epaperRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err);
+  
+  // Multer specific errors
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({ 
+      message: "File too large. Maximum size is 500MB." 
+    });
+  }
+  if (err.code === "LIMIT_FIELD_COUNT") {
+    return res.status(400).json({ 
+      message: "Too many fields in request." 
+    });
+  }
+  
   const payload = { message: err.message || "Internal server error" };
   if (process.env.NODE_ENV !== "production") payload.stack = err.stack;
   res.status(err.status || 500).json(payload);

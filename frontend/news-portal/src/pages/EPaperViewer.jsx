@@ -16,6 +16,14 @@ export default function EPaperViewer() {
   const [preparingPdf, setPreparingPdf] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
 
+  const goBackSafe = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/epaper");
+  };
+
   const pdfSrc = useMemo(() => {
     if (epaper?.fileType !== "pdf") return epaper?.fileUrl || "";
     if (!pdfBlobUrl) return "";
@@ -147,7 +155,7 @@ export default function EPaperViewer() {
   return (
     <div className="epaper-viewer">
       <div className="epaper-toolbar">
-        <button type="button" onClick={() => navigate("/epaper")}>
+        <button type="button" onClick={goBackSafe}>
           {"<-"} Back
         </button>
         <div className="epaper-title">{epaper?.title || "E-Paper"}</div>

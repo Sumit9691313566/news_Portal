@@ -90,6 +90,10 @@ export default function Category() {
   const [visibleCount, setVisibleCount] = useState(5);
   const [epapers, setEpapers] = useState([]);
 
+  const scrollToNewsStart = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   /* ================= LOAD NEWS ================= */
   const loadNews = async () => {
     try {
@@ -262,6 +266,7 @@ export default function Category() {
 
   const openNews = (news) => {
     setSelectedNews(news);
+    scrollToNewsStart();
     if (!news?._id) return;
     setAllNews((prev) =>
       prev.map((n) =>
@@ -284,6 +289,7 @@ export default function Category() {
 
     setView("home");
     setSelectedNews(matched);
+    scrollToNewsStart();
   }, [allNews, location.state]);
 
   const categoryClass = (category) => {
@@ -328,6 +334,25 @@ export default function Category() {
     "दुनिया",
     "आर्टिकल",
   ];
+
+  const mobileActions = [
+    { key: "home", label: "🏠 होम", view: "home" },
+    { key: "video", label: "▶️ वीडियो", view: "video" },
+    { key: "search", label: "🔍 सर्च", view: "search" },
+    { key: "epaper", label: "🗞️ ई-पेपर", view: "epaper" },
+    { key: "trending", label: "🔥 ट्रेंडिंग", view: "trending" },
+  ];
+
+  const handleViewChange = (nextView) => {
+    setSelectedNews(null);
+    setView(nextView);
+    if (nextView === "home") {
+      setActiveCategory("All");
+      syncUrlState("home", "All");
+      return;
+    }
+    syncUrlState(nextView, activeCategory);
+  };
 
   /* ===== ORIGINAL suggestedNews (UNCHANGED) ===== */
   const suggestedNews = allNews
@@ -441,39 +466,22 @@ export default function Category() {
 
         <ul className="menu">
           <li
-            onClick={() => {
-              setSelectedNews(null);
-              setView("home");
-              setActiveCategory("All");
-              syncUrlState("home", "All");
-            }}
+            onClick={() => handleViewChange("home")}
           >
             🏠 होम
           </li>
           <li
-            onClick={() => {
-              setSelectedNews(null);
-              setView("video");
-              syncUrlState("video", activeCategory);
-            }}
+            onClick={() => handleViewChange("video")}
           >
             ▶️ वीडियो
           </li>
           <li
-            onClick={() => {
-              setSelectedNews(null);
-              setView("search");
-              syncUrlState("search", activeCategory);
-            }}
+            onClick={() => handleViewChange("search")}
           >
             🔍 सर्च
           </li>
           <li
-            onClick={() => {
-              setSelectedNews(null);
-              setView("epaper");
-              syncUrlState("epaper", activeCategory);
-            }}
+            onClick={() => handleViewChange("epaper")}
           >
             🗞️ ई-पेपर
           </li>
@@ -481,11 +489,7 @@ export default function Category() {
 
         <div
           className="sidebar-box trending-box"
-          onClick={() => {
-            setSelectedNews(null);
-            setView("trending");
-            syncUrlState("trending", activeCategory);
-          }}
+          onClick={() => handleViewChange("trending")}
         >
           <button type="button" className="trending-btn">
             🔥 ट्रेंडिंग
@@ -496,30 +500,19 @@ export default function Category() {
         {/* ===== MAIN CONTENT ===== */}
         <main className="content">
         <div className="mobile-header">
-          <div className="mobile-logo"></div>
-          <div className="mobile-actions">
-            <button
-              type="button"
-              title="Search"
-              onClick={() => {
-                setSelectedNews(null);
-                setView("search");
-                syncUrlState("search", activeCategory);
-              }}
-            >
-              Search
-            </button>
-            <button
-              type="button"
-              title="Videos"
-              onClick={() => {
-                setSelectedNews(null);
-                setView("video");
-                syncUrlState("video", activeCategory);
-              }}
-            >
-              Videos
-            </button>
+          <div className="mobile-nav-row">
+            {mobileActions.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={`mobile-nav-btn ${
+                  view === item.view ? "mobile-nav-btn-active" : ""
+                }`}
+                onClick={() => handleViewChange(item.view)}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         </div>
 

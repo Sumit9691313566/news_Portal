@@ -10,6 +10,7 @@
   margin: 0 auto 16px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   position: sticky;
   top: 0;
@@ -19,6 +20,8 @@
 }
 
 .video-header h1 {
+  flex: 1 1 260px;
+  min-width: 0;
   font-size: 20px;
   font-weight: 800;
   margin: 0;
@@ -238,6 +241,20 @@
 @media (max-width: 768px) {
   .video-page {
     padding: 14px;
+  }
+
+  .video-header {
+    gap: 8px;
+  }
+
+  .video-header h1 {
+    flex: 1 1 100%;
+    font-size: 18px;
+  }
+
+  .video-back {
+    padding: 7px 10px;
+    font-size: 12px;
   }
 
   .video-stage {

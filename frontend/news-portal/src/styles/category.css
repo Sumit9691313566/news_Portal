@@ -423,26 +423,88 @@ body {
 /* ===== MOBILE HEADER ===== */
 .mobile-header {
   display: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  background: var(--paper);
+  margin-bottom: 14px;
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 8px 18px rgba(20, 20, 20, 0.08);
 }
 
-.mobile-logo {
-  font-size: 20px;
-  font-weight: 900;
-  color: var(--accent);
-  font-family: var(--font-head);
-}
-
-.mobile-actions {
+.mobile-nav-row {
   display: flex;
   gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mobile-nav-row::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-nav-btn {
+  flex: 0 0 auto;
+  border: 1px solid #efd8c0;
+  background: #fff7ef;
+  color: #3b2b22;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mobile-nav-btn-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.mobile-nav-btn:hover {
+  border-color: #cfb89d;
+}
+
+.load-more {
+  margin-top: 14px;
+  border: 1px solid #e4d6c6;
+  background: #fff;
+  color: #5b1a24;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.load-more:hover {
+  background: #fff7ef;
+}
+
+.page-toolbar {
+  display: none;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(20, 20, 20, 0.08);
+}
+
+.page-toolbar-btn {
+  border: 1px solid #e5d8c8;
+  background: #fff7ef;
+  color: #3b2b22;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.page-toolbar-btn:hover {
+  background: #ffeeda;
 }
 
 .mobile-actions button {
@@ -1625,6 +1687,10 @@ body {
     top: 0;
   }
 
+  .layout-wrapper {
+    padding-top: 0;
+  }
+
   .brand-row {
     flex-direction: column;
     align-items: flex-start;
@@ -1644,7 +1710,7 @@ body {
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
-    padding: 12px 14px 28px;
+    padding: 8px 10px 22px;
   }
 
   .masthead {
@@ -1652,34 +1718,45 @@ body {
   }
 
   .top-strip {
-    padding: 8px 14px;
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 7px 12px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .brand-row {
-    padding: 14px;
+    padding: 10px 12px 8px;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .nav-row {
     padding: 0;
-    gap: 10px;
+    gap: 6px;
   }
 
   .breaking-bar {
     top: 0;
+    padding: 8px 10px;
   }
 
   .mobile-header {
     display: flex;
   }
 
+  .page-toolbar {
+    display: flex;
+  }
+
+  .content {
+    padding: 0;
+  }
 
   .content-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .right-rail {
@@ -1711,15 +1788,18 @@ body {
 
   .news-card {
     flex-direction: column;
+    padding: 10px;
+    border-radius: 12px;
   }
 
   .news-thumb {
     width: 100%;
-    height: 200px;
+    height: 210px;
   }
 
   .featured {
     grid-template-columns: 1fr;
+    border-radius: 16px;
   }
 
   .featured img {
@@ -1849,5 +1929,61 @@ body {
   .suggest-thumb {
     width: 56px;
     height: 44px;
+  }
+}
+
+/* ===== MOBILE STABILITY OVERRIDES ===== */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.layout-wrapper {
+  overflow-x: clip;
+}
+
+.brand-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.brand {
+  flex: 0 0 auto;
+}
+
+.nav-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.nav-row-inline {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-row-inline::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-item {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .brand-row {
+    align-items: stretch;
+  }
+
+  .nav-row-inline {
+    width: 100%;
+    padding-left: 0;
   }
 }
