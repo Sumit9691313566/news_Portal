@@ -221,15 +221,27 @@ export default function AdminDashboard() {
 
     formData.append("blocks", JSON.stringify(blocksPayload));
 
-    await fetchWithTimeout(editId ? `news/${editId}` : "news", {
-      method: editId ? "PUT" : "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    try {
+      // Increase timeout for video/large file uploads (60 seconds)
+      const timeout = blocks.some((b) => b.type === "video") ? 60000 : 30000;
+      const res = await fetchWithTimeout(editId ? `news/${editId}` : "news", {
+        method: editId ? "PUT" : "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }, timeout);
 
-    resetForm();
-    loadNews();
-    alert(editId ? "News updated successfully ✅" : "News published successfully ✅");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Upload failed: ${res.status} ${res.statusText}`);
+      }
+
+      resetForm();
+      loadNews();
+      alert(editId ? "News updated successfully ✅" : "News published successfully ✅");
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert(`❌ Upload failed: ${error.message}`);
+    }
   };
 
   /* ================= EDIT ================= */

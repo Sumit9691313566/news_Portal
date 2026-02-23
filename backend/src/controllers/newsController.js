@@ -137,7 +137,9 @@ export const createNews = async (req, res) => {
     res.status(201).json(news);
   } catch (error) {
     console.error("CREATE NEWS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    const message = error.message || "Failed to create news";
+    const statusCode = error.status || 500;
+    res.status(statusCode).json({ message });
   }
 };
 
@@ -236,7 +238,9 @@ export const updateNews = async (req, res) => {
     res.json(news);
   } catch (error) {
     console.error("UPDATE NEWS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    const message = error.message || "Failed to update news";
+    const statusCode = error.status || 500;
+    res.status(statusCode).json({ message });
   }
 };
 

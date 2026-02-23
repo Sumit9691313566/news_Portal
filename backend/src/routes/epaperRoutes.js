@@ -10,7 +10,14 @@ import {
 const router = express.Router();
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB
+    fields: 20,
+    files: 20,
+  },
+});
 
 router.get("/", getAllEpaper);
 router.get("/:id", getEpaperById);

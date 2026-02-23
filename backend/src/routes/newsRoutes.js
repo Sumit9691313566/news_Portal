@@ -14,9 +14,16 @@ import adminAuth from "../middleware/adminAuth.js";
 
 const router = express.Router();
 
-/* Multer Memory Storage */
+/* Multer Memory Storage with size limits */
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB for videos
+    fields: 20,
+    files: 20,
+  },
+});
 
 /* ROUTES */
 router.get("/", getAllNews);              // ✅ already working
