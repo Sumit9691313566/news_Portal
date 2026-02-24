@@ -82,6 +82,10 @@ Quick start guide for backend development
 - Enabled Terser minification
 - Added version string to output
 
+#### 2. `frontend/news-portal/src/styles/category.css` ✅
+**Changes:**
+- Removed touch-device desktop-mode safeguards so desktop layout remains on mobile in desktop mode
+
 #### 2. `frontend/news-portal/.env` ✅
 **Changes:**
 - Updated VITE_API_BASE_URL to Railway backend template URL
