@@ -1,6 +1,5 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logoMark from "../logo.png";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
 

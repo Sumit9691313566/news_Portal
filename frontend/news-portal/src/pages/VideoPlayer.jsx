@@ -1,5 +1,4 @@
 ﻿import { useLocation, useNavigate } from "react-router-dom";
-import logoMark from "../logo.png";
 import "../styles/videoPlayer.css";
 
 export default function VideoPlayer() {
@@ -90,7 +89,6 @@ export default function VideoPlayer() {
 
             <div className="video-top-overlay">
               <div className="video-brand">
-                <img className="logo-mark" src={logoMark} alt="गरुण" />
                 <span className="logo-word-text">गरुण समाचार</span>
               </div>
               <button

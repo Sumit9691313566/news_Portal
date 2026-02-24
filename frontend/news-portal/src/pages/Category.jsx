@@ -1,7 +1,5 @@
 ﻿import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import logoMark from "../logo.png";
-import logoWord from "../logo 1.png";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 
@@ -407,14 +405,7 @@ export default function Category() {
 
         <div className="brand-row">
           <div className="brand">
-            <span className="brand-mark">
-              <img src={logoMark} alt="Garun Samachar logo" />
-            </span>
-            <img
-              className="brand-wordmark"
-              src={logoWord}
-              alt="Garun Samachar"
-            />
+            <span className="brand-name">गरुड़ समाचार</span>
           </div>
 
           <div className="nav-row nav-row-inline">
@@ -646,13 +637,6 @@ export default function Category() {
                             muted
                             preload="metadata"
                           />
-                          <div className="video-logo-watermark">
-                            <img
-                              className="logo-mark"
-                              src={logoMark}
-                              alt="गरुण"
-                            />
-                          </div>
                           <div className="play-badge">▶</div>
                           <div className="video-story-overlay">
                             <h3
@@ -936,13 +920,6 @@ export default function Category() {
                               controls
                               className="full-video"
                             />
-                            <div className="video-logo-watermark">
-                              <img
-                                className="logo-mark"
-                                src={logoMark}
-                                alt="गरुण"
-                              />
-                            </div>
                           </div>
                         )}
                       </div>
