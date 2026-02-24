@@ -1215,6 +1215,31 @@ body {
   text-align: left;
 }
 
+.rich-output p,
+.rich-output div {
+  margin: 0 0 14px;
+}
+
+.rich-output ul,
+.rich-output ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+
+.rich-output h1,
+.rich-output h2,
+.rich-output h3 {
+  margin: 6px 0 12px;
+  line-height: 1.35;
+}
+
+.rich-output blockquote {
+  margin: 6px 0 14px;
+  padding-left: 12px;
+  border-left: 3px solid #d5c4a8;
+  color: #4b5563;
+}
+
 .content-block {
   margin-bottom: 10px;
 }

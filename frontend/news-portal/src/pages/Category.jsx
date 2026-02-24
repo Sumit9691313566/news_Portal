@@ -2,6 +2,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
+import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 
 /* ===== STATIC FALLBACK ===== */
 const NEWS_DATA = [
@@ -109,7 +110,7 @@ export default function Category() {
               blocks.length > 0
                 ? blocks
                     .filter((b) => b.type === "text" && b.text)
-                    .map((b) => b.text.trim())
+                    .map((b) => stripHtml(b.text))
                     .filter(Boolean)
                     .join("\n\n")
                 : n.content;
@@ -190,12 +191,18 @@ export default function Category() {
 
   const loadEpapers = async () => {
     try {
-      const res = await fetchWithTimeout("epaper");
+      const res = await fetchWithTimeout("epaper", {}, 20000);
       const data = await res.json();
       setEpapers(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to load epapers", err);
-      setEpapers([]);
+      try {
+        const retryRes = await fetchWithTimeout("epaper", {}, 30000);
+        const retryData = await retryRes.json();
+        setEpapers(Array.isArray(retryData) ? retryData : []);
+      } catch (retryErr) {
+        console.error("Failed to load epapers", retryErr || err);
+        setEpapers([]);
+      }
     }
   };
 
@@ -905,7 +912,14 @@ export default function Category() {
                   <div className="full-content">
                     {selectedNews.blocks.map((b, i) => (
                       <div key={i} className="content-block">
-                        {b.type === "text" && <p>{b.text}</p>}
+                        {b.type === "text" && (
+                          <div
+                            className="rich-output"
+                            dangerouslySetInnerHTML={{
+                              __html: sanitizeRichTextHtml(b.text),
+                            }}
+                          />
+                        )}
                         {b.type === "image" && b.url && (
                           <img
                             src={b.url}
@@ -926,9 +940,12 @@ export default function Category() {
                     ))}
                   </div>
                 ) : (
-                  <p className="full-content">
-                    {selectedNews.content}
-                  </p>
+                  <div
+                    className="full-content rich-output"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeRichTextHtml(selectedNews.content),
+                    }}
+                  />
                 )}
 
                 <div className="more-news">

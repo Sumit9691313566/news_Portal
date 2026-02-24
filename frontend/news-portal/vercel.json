@@ -3,7 +3,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "env": {
-    "VITE_API_BASE_URL": "https://newsportal-production-164d.up.railway.app/api"
+    "VITE_API_BASE_URL": "https://newsportal-production-164d.up.railway.app/api",
+    "VITE_API_TIMEOUT_MS": "12000"
   }
   ,
   "routes": [

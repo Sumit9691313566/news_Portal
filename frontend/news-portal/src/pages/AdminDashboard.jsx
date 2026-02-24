@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 import { fetchWithTimeout } from "../services/api";
+import RichTextEditor from "../components/RichTextEditor";
+import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 
 const CATEGORY_LIST = [
   { value: "National", label: "राष्ट्रीय" },
@@ -20,7 +22,7 @@ const isToday = (date) =>
 const deriveContentFromBlocks = (blocks) =>
   blocks
     .filter((b) => b.type === "text" && b.text)
-    .map((b) => b.text.trim())
+    .map((b) => stripHtml(b.text))
     .filter(Boolean)
     .join("\n\n");
 
@@ -210,7 +212,7 @@ export default function AdminDashboard() {
 
     const blocksPayload = blocks.map((b, index) => {
       if (b.type === "text") {
-        return { type: "text", text: b.text || "" };
+        return { type: "text", text: sanitizeRichTextHtml(b.text || "") };
       }
       const fileKey = `block_file_${index}`;
       if (b.file) {
@@ -300,7 +302,9 @@ export default function AdminDashboard() {
 
   const updateBlockText = (id, value) => {
     setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, text: value } : b))
+      prev.map((b) =>
+        b.id === id ? { ...b, text: sanitizeRichTextHtml(value) } : b
+      )
     );
   };
 
@@ -382,7 +386,7 @@ export default function AdminDashboard() {
   const wordCount = useMemo(() => {
     const text = blocks
       .filter((b) => b.type === "text")
-      .map((b) => b.text || "")
+      .map((b) => stripHtml(b.text || ""))
       .join(" ");
     return text.trim() ? text.trim().split(/\s+/).length : 0;
   }, [blocks]);
@@ -433,7 +437,7 @@ export default function AdminDashboard() {
   };
 
   const loadEpaper = async () => {
-    const res = await fetchWithTimeout("epaper");
+    const res = await fetchWithTimeout("epaper", {}, 20000);
     const data = await res.json();
     setEpaperList(Array.isArray(data) ? data : []);
   };
@@ -639,11 +643,10 @@ export default function AdminDashboard() {
                   </div>
 
                   {block.type === "text" && (
-                    <textarea
-                      rows="5"
-                      placeholder="Write text..."
+                    <RichTextEditor
+                      placeholder="Write and format text..."
                       value={block.text}
-                      onChange={(e) => updateBlockText(block.id, e.target.value)}
+                      onChange={(nextHtml) => updateBlockText(block.id, nextHtml)}
                     />
                   )}
 
@@ -772,7 +775,14 @@ export default function AdminDashboard() {
                   )}
                   {previewBlocks.map((b, i) => (
                     <div key={i} className="preview-block">
-                      {b.type === "text" && <p>{b.text || "..."}</p>}
+                      {b.type === "text" && (
+                        <div
+                          className="rich-output"
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeRichTextHtml(b.text || "<p>...</p>"),
+                          }}
+                        />
+                      )}
                       {b.type === "image" && (b.fileUrl || b.url) && (
                         <img src={b.fileUrl || b.url} alt="" />
                       )}

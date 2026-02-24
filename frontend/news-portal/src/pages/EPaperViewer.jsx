@@ -34,7 +34,7 @@ export default function EPaperViewer() {
     if (epaper || !id) return;
     const load = async () => {
       try {
-        const res = await fetchWithTimeout(`epaper/${id}`);
+        const res = await fetchWithTimeout(`epaper/${id}`, {}, 20000);
         if (!res.ok) {
           throw new Error("E-paper not found");
         }

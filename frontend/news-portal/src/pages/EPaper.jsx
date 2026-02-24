@@ -18,12 +18,18 @@ export default function EPaper() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetchWithTimeout("epaper");
+        const res = await fetchWithTimeout("epaper", {}, 20000);
         const data = await res.json();
         const list = Array.isArray(data) ? data : [];
         setEpapers(list);
       } catch {
-        setEpapers([]);
+        try {
+          const retryRes = await fetchWithTimeout("epaper", {}, 30000);
+          const retryData = await retryRes.json();
+          setEpapers(Array.isArray(retryData) ? retryData : []);
+        } catch {
+          setEpapers([]);
+        }
       }
     };
     load();

@@ -426,6 +426,94 @@ body {
   border: 1px solid #ddd;
 }
 
+.rich-editor {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: #fff7f1;
+  border-bottom: 1px solid #ece3d9;
+}
+
+.rich-toolbar button,
+.rich-toolbar select {
+  border: 1px solid #ded6cc;
+  background: #fff;
+  color: #222;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rich-toolbar select {
+  font-weight: 600;
+}
+
+.color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #ded6cc;
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.color-picker input {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rich-input {
+  min-height: 150px;
+  padding: 12px;
+  outline: none;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+.rich-input:empty::before {
+  content: attr(data-placeholder);
+  color: #8a8a8a;
+}
+
+.rich-output {
+  line-height: 1.8;
+  font-size: 17px;
+}
+
+.rich-output p,
+.rich-output div {
+  margin: 0 0 10px;
+}
+
+.rich-output ul,
+.rich-output ol {
+  padding-left: 22px;
+  margin: 0 0 10px;
+}
+
+.rich-output h1,
+.rich-output h2,
+.rich-output h3 {
+  margin: 6px 0 10px;
+}
+
 .block-media input {
   margin-bottom: 10px;
 }

@@ -22,10 +22,19 @@ const parseBlocks = (rawBlocks) => {
   }
 };
 
+const stripHtml = (html = "") =>
+  (html || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|h1|h2|h3|h4|h5|h6|blockquote)>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const contentFromBlocks = (blocks) =>
   blocks
     .filter((b) => b.type === "text" && b.text)
-    .map((b) => b.text.trim())
+    .map((b) => stripHtml(b.text))
     .filter(Boolean)
     .join("\n\n");
 

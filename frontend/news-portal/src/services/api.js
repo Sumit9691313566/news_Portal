@@ -1,6 +1,6 @@
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const API_BASE_URL = String(RAW_API_BASE_URL).replace(/\/+$/, "");
-const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 4500;
+const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 12000;
 
 export const buildApiUrl = (path = "") => {
   const cleanPath = String(path).replace(/^\/+/, "");
