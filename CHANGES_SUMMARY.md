@@ -82,6 +82,17 @@ Quick start guide for backend development
 - Enabled Terser minification
 - Added version string to output
 
+#### 2. `frontend/news-portal/src/pages/Category.jsx` ✅
+**Changes:**
+- Removed "Most Read" section completely and all related calculations
+- Implemented trending logic based solely on view counts with a minimum threshold (>=3 views)
+- Trending tab/button is now hidden until there are popular articles
+- Guarded navigation to trending when no items qualify
+- Fixed bug where clicking time-window filters could hide the sidebar/mobile button (button now persists as long as any item meets threshold)
+- Trending view always rendered with a fallback message if the current window has no items
+- Cleaned up related mobile and sidebar UI references
+- Simplified trending list filtering and state handling
+
 #### 2. `frontend/news-portal/src/styles/category.css` ✅
 **Changes:**
 - Removed touch-device desktop-mode safeguards so desktop layout remains on mobile in desktop mode

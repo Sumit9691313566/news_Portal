@@ -238,10 +238,7 @@ export default function Category() {
   );
 
 
-  const trendingNews = allNews.filter((n) => n.breaking || n.featured);
-  const mostReadNews = [...allNews].sort(
-    (a, b) => (b.content?.length || 0) - (a.content?.length || 0)
-  );
+  // remove the old "most read" concept entirely; trending is driven by views
   const mostViewedNews = [...allNews].sort(
     (a, b) => (b.views || 0) - (a.views || 0)
   );
@@ -255,12 +252,18 @@ export default function Category() {
     return age <= 7 * 24 * 60 * 60 * 1000;
   });
 
+  // only include items with a minimum number of views so the tab appears when a story is truly popular
+  const VIEW_THRESHOLD = 3;
   const trendingList =
     trendWindow === "24h"
       ? mostViewed24h
       : trendWindow === "7d"
       ? mostViewed7d
       : mostViewedNews;
+  const filteredTrendingList = trendingList.filter((n) => (n.views || 0) >= VIEW_THRESHOLD);
+  const trendingExist = filteredTrendingList.length > 0;
+  // button should remain visible if any time window has content
+  const trendingAvailable = mostViewedNews.some((n) => (n.views || 0) >= VIEW_THRESHOLD);
 
   const randomRelatedNews = selectedNews
     ? [...allNews]
@@ -340,15 +343,21 @@ export default function Category() {
     "आर्टिकल",
   ];
 
-  const mobileActions = [
+  const mobileActionsBase = [
     { key: "home", label: "🏠 होम", view: "home" },
     { key: "video", label: "▶️ वीडियो", view: "video" },
     { key: "search", label: "🔍 सर्च", view: "search" },
     { key: "epaper", label: "🗞️ ई-पेपर", view: "epaper" },
-    { key: "trending", label: "🔥 ट्रेंडिंग", view: "trending" },
   ];
+  const mobileActions = trendingAvailable
+    ? [...mobileActionsBase, { key: "trending", label: "🔥 ट्रेंडिंग", view: "trending" }]
+    : mobileActionsBase;
 
   const handleViewChange = (nextView) => {
+    // don't allow navigating to trending if there's nothing worthy yet
+    if (nextView === "trending" && !trendingAvailable) {
+      return;
+    }
     setSelectedNews(null);
     setView(nextView);
     if (nextView === "home") {
@@ -485,14 +494,16 @@ export default function Category() {
           </li>
         </ul>
 
-        <div
-          className="sidebar-box trending-box"
-          onClick={() => handleViewChange("trending")}
-        >
-          <button type="button" className="trending-btn">
-            🔥 ट्रेंडिंग
-          </button>
-        </div>
+        {trendingAvailable && (
+          <div
+            className="sidebar-box trending-box"
+            onClick={() => handleViewChange("trending")}
+          >
+            <button type="button" className="trending-btn">
+              🔥 ट्रेंडिंग
+            </button>
+          </div>
+        )}
         </aside>
 
         {/* ===== MAIN CONTENT ===== */}
@@ -791,8 +802,8 @@ export default function Category() {
                   </div>
                 </div>
                 <div className="news-list">
-                  {hasViews &&
-                    trendingList.slice(0, 6).map((news) => (
+                  {filteredTrendingList.length > 0 ? (
+                    filteredTrendingList.slice(0, 6).map((news) => (
                       <div
                         key={news._id || news.id}
                         className="news-card"
@@ -826,43 +837,12 @@ export default function Category() {
                           </small>
                         </div>
                       </div>
-                    ))}
-                </div>
-
-                <h2 style={{ marginTop: "20px" }}>Most Read</h2>
-                <div className="news-list">
-                  {mostReadNews.slice(0, 6).map((news) => (
-                    <div
-                      key={news._id || news.id}
-                      className="news-card"
-                      onClick={() => openNews(news)}
-                    >
-                      {news.mediaType !== "text" && news.mediaUrl && (
-                        <>
-                          {news.mediaType === "image" && (
-                            <img
-                              src={news.mediaUrl}
-                              alt={news.title}
-                              className="news-thumb"
-                            />
-                          )}
-                          {news.mediaType === "video" && (
-                            <video
-                              src={news.mediaUrl}
-                              className="news-thumb"
-                              muted
-                            />
-                          )}
-                        </>
-                      )}
-                      <div className="news-info">
-                        <h2 className={categoryClass(news.category)}>
-                          {news.title}
-                        </h2>
-                        <p>{news.content?.slice(0, 120)}...</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p style={{ padding: "20px", textAlign: "center" }}>
+                      कोई ट्रेंडिंग समाचार उपलब्ध नहीं है।
+                    </p>
+                  )}
                 </div>
               </>
             )}
