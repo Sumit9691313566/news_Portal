@@ -1,44 +1,114 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import Admin from "../models/Admin.js";
+import { seedSubAdmins } from "../utils/seedSubAdmins.js";
+
+const readEnvAdmins = () => {
+  const admins = [];
+
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH) {
+    admins.push({
+      adminId: String(process.env.ADMIN_ID || "admin").toLowerCase(),
+      name: "main admin",
+      email: String(process.env.ADMIN_EMAIL).toLowerCase(),
+      passwordHash: process.env.ADMIN_PASSWORD_HASH,
+      role: "admin",
+    });
+  }
+
+  if (process.env.SUB_ADMIN_1_EMAIL && process.env.SUB_ADMIN_1_PASSWORD_HASH) {
+    admins.push({
+      adminId: String(process.env.SUB_ADMIN_1_ID || "subadmin1").toLowerCase(),
+      name: process.env.SUB_ADMIN_1_NAME || "sub admin 1",
+      email: String(process.env.SUB_ADMIN_1_EMAIL).toLowerCase(),
+      passwordHash: process.env.SUB_ADMIN_1_PASSWORD_HASH,
+      role: "sub-admin",
+    });
+  }
+
+  if (process.env.SUB_ADMIN_2_EMAIL && process.env.SUB_ADMIN_2_PASSWORD_HASH) {
+    admins.push({
+      adminId: String(process.env.SUB_ADMIN_2_ID || "subadmin2").toLowerCase(),
+      name: process.env.SUB_ADMIN_2_NAME || "sub admin 2",
+      email: String(process.env.SUB_ADMIN_2_EMAIL).toLowerCase(),
+      passwordHash: process.env.SUB_ADMIN_2_PASSWORD_HASH,
+      role: "sub-admin",
+    });
+  }
+
+  return admins;
+};
 
 /**
- * ADMIN LOGIN CONTROLLER
+ * ADMIN LOGIN CONTROLLER (supports adminId or email in email field)
  */
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const loginId = String(email || "").trim().toLowerCase();
 
-    // basic validation
-    if (!email || !password) {
+    if (!loginId || !password) {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    // debug logs
-    console.log("📥 Incoming login request headers:", req.headers);
-    console.log("📥 Incoming login request body:", req.body);
-    console.log("📧 Login Email:", email);
-    console.log("📧 Admin Email:", process.env.ADMIN_EMAIL);
-    console.log("🔐 Hash Loaded:", !!process.env.ADMIN_PASSWORD_HASH);
-    console.log("🔐 JWT Loaded:", !!process.env.JWT_SECRET);
+    const envAdmin = readEnvAdmins().find(
+      (a) => a.email === loginId || a.adminId === loginId
+    );
+    if (envAdmin) {
+      const isEnvMatch = await bcrypt.compare(password, envAdmin.passwordHash);
+      if (!isEnvMatch) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
 
-    // email check
-    if (email !== process.env.ADMIN_EMAIL) {
+      const token = jwt.sign(
+        {
+          role: envAdmin.role,
+          adminId: envAdmin.adminId,
+          name: envAdmin.name,
+          email: envAdmin.email,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+      );
+
+      return res.status(200).json({
+        message: "Login successful",
+        token,
+        admin: {
+          id: envAdmin.adminId,
+          name: envAdmin.name,
+          email: envAdmin.email,
+          role: envAdmin.role,
+        },
+      });
+    }
+
+    try {
+      await seedSubAdmins();
+    } catch (seedErr) {
+      console.warn("Seed skipped:", seedErr?.message || seedErr);
+    }
+
+    const admin = await Admin.findOne({
+      $or: [{ email: loginId }, { adminId: loginId }],
+    });
+
+    if (!admin) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // password check
-    const isMatch = bcrypt.compareSync(
-      password,
-      process.env.ADMIN_PASSWORD_HASH
-    );
-
+    const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // create token
     const token = jwt.sign(
-      { role: "admin", email },
+      {
+        role: admin.role || "sub-admin",
+        adminId: admin.adminId,
+        name: admin.name,
+        email: admin.email,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -46,13 +116,15 @@ export const adminLogin = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
+      admin: {
+        id: admin.adminId,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role || "sub-admin",
+      },
     });
   } catch (err) {
-    console.error("❌ LOGIN ERROR:", err);
-    // Return detailed error in non-production for debugging
-    if (process.env.NODE_ENV !== "production") {
-      return res.status(500).json({ message: "Server error", error: err?.message, stack: err?.stack });
-    }
+    console.error("LOGIN ERROR:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

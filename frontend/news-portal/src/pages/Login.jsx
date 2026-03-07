@@ -107,8 +107,8 @@ export default function Login() {
         </h2>
 
         <input
-          type="email"
-          placeholder="Admin Email"
+          type="text"
+          placeholder="Admin ID or Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={inputStyle}
