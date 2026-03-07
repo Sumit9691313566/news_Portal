@@ -507,7 +507,7 @@ export default function AdminDashboard() {
             className="btn danger"
             onClick={() => {
               localStorage.removeItem("adminToken");
-              navigate("/");
+              navigate("/login", { replace: true });
             }}
           >
             Logout

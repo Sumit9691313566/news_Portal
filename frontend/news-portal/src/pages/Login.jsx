@@ -105,6 +105,22 @@ export default function Login() {
         <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
           Admin Login
         </h2>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "12px",
+            background: "#f1f1f1",
+            color: "#222",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Back to Home
+        </button>
 
         <input
           type="text"
