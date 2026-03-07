@@ -3,16 +3,41 @@ import jwt from "jsonwebtoken";
 import Admin from "../models/Admin.js";
 import { seedSubAdmins } from "../utils/seedSubAdmins.js";
 
+const MAIN_ADMIN = {
+  adminId: "mainadmin",
+  name: "main admin",
+  email: "mainadmin@gmail.com",
+  passwordHash: "$2a$12$jb49rtZZLQzIrCiS00ShTOBGZGvkDs6oiVf7jW6OHUxbm9rlpRHVi",
+  role: "main-admin",
+};
+
+const normalizeRole = (role, adminId, email) => {
+  const cleaned = String(role || "").trim().toLowerCase();
+  const normalizedAdminId = String(adminId || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const isCanonicalMainAdmin =
+    normalizedAdminId === MAIN_ADMIN.adminId ||
+    normalizedEmail === MAIN_ADMIN.email;
+
+  if (isCanonicalMainAdmin) {
+    return "main-admin";
+  }
+  if (cleaned === "admin" || cleaned === "main-admin") {
+    return "sub-admin";
+  }
+  return cleaned || "sub-admin";
+};
+
 const readEnvAdmins = () => {
-  const admins = [];
+  const admins = [MAIN_ADMIN];
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH) {
     admins.push({
       adminId: String(process.env.ADMIN_ID || "admin").toLowerCase(),
-      name: "main admin",
+      name: process.env.ADMIN_NAME || "admin",
       email: String(process.env.ADMIN_EMAIL).toLowerCase(),
       passwordHash: process.env.ADMIN_PASSWORD_HASH,
-      role: "admin",
+      role: process.env.ADMIN_ROLE || "sub-admin",
     });
   }
 
@@ -60,9 +85,14 @@ export const adminLogin = async (req, res) => {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      const normalizedRole = normalizeRole(
+        envAdmin.role,
+        envAdmin.adminId,
+        envAdmin.email
+      );
       const token = jwt.sign(
         {
-          role: envAdmin.role,
+          role: normalizedRole,
           adminId: envAdmin.adminId,
           name: envAdmin.name,
           email: envAdmin.email,
@@ -78,7 +108,7 @@ export const adminLogin = async (req, res) => {
           id: envAdmin.adminId,
           name: envAdmin.name,
           email: envAdmin.email,
-          role: envAdmin.role,
+          role: normalizedRole,
         },
       });
     }
@@ -102,9 +132,10 @@ export const adminLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    const normalizedRole = normalizeRole(admin.role, admin.adminId, admin.email);
     const token = jwt.sign(
       {
-        role: admin.role || "sub-admin",
+        role: normalizedRole,
         adminId: admin.adminId,
         name: admin.name,
         email: admin.email,
@@ -120,7 +151,7 @@ export const adminLogin = async (req, res) => {
         id: admin.adminId,
         name: admin.name,
         email: admin.email,
-        role: admin.role || "sub-admin",
+        role: normalizedRole,
       },
     });
   } catch (err) {

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchWithTimeout, API_BASE_URL } from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const loginMode = searchParams.get("role") === "main-admin" ? "main-admin" : "admin";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [backendHealthy, setBackendHealthy] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,16 +22,12 @@ export default function Login() {
 
     try {
       setLoading(true);
-
       const res = await fetchWithTimeout("auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      // 🔹 SAFE JSON PARSE
       let data = {};
       try {
         data = await res.json();
@@ -36,52 +35,54 @@ export default function Login() {
         data = {};
       }
 
-      // ❌ LOGIN FAILED
       if (!res.ok) {
-        const msg = data?.message || JSON.stringify(data) || res.statusText;
-        alert(`Login failed: ${res.status} - ${msg}`);
-        console.error("Login failed details:", { status: res.status, body: data });
-        setLoading(false);
+        const msg = data?.message || res.statusText || "Login failed";
+        alert(`Login failed: ${msg}`);
         return;
       }
 
-      // ✅ LOGIN SUCCESS
-      if (!data.token) {
+      if (!data?.token) {
         alert("Token not received from server");
-        setLoading(false);
         return;
       }
 
       localStorage.setItem("adminToken", data.token);
-      alert("Login successful ✅");
-      navigate("/admin-dashboard");
+      localStorage.setItem("adminRole", data?.admin?.role || "sub-admin");
+      localStorage.setItem("adminName", data?.admin?.name || "Admin");
+      localStorage.setItem("adminEmail", data?.admin?.email || "");
+
+      if (loginMode === "main-admin" && data?.admin?.role !== "main-admin") {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminRole");
+        localStorage.removeItem("adminName");
+        localStorage.removeItem("adminEmail");
+        alert("Ye main admin account nahi hai");
+        return;
+      }
+
+      if (data?.admin?.role === "main-admin") {
+        navigate("/main-admin", { replace: true });
+      } else {
+        navigate("/admin-dashboard", { replace: true });
+      }
     } catch (error) {
-      console.error("LOGIN ERROR:", error);
-        alert(`Server error, try again: ${error.message}`);
+      alert(`Server error: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-    // Check backend health on mount to show quick debug info
-    const [backendHealthy, setBackendHealthy] = useState(null);
-    useEffect(() => {
-      const check = async () => {
-        try {
-          const res = await fetch(`${API_BASE_URL}/health`);
-          if (res.ok) {
-            setBackendHealthy(true);
-          } else {
-            setBackendHealthy(false);
-          }
-          console.log("Health check", res.status);
-        } catch (err) {
-          setBackendHealthy(false);
-          console.error("Health check error", err);
-        }
-      };
-      check();
-    }, []);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/health`);
+        setBackendHealthy(res.ok);
+      } catch {
+        setBackendHealthy(false);
+      }
+    };
+    check();
+  }, []);
 
   return (
     <div
@@ -95,7 +96,7 @@ export default function Login() {
       <form
         onSubmit={handleLogin}
         style={{
-          width: "320px",
+          width: "340px",
           padding: "25px",
           borderRadius: "8px",
           boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
@@ -103,8 +104,9 @@ export default function Login() {
         }}
       >
         <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-          Admin Login
+          {loginMode === "main-admin" ? "Main Admin Login" : "Admin Login"}
         </h2>
+
         <button
           type="button"
           onClick={() => navigate("/")}
@@ -153,6 +155,10 @@ export default function Login() {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+
+        <p style={{ marginTop: "10px", color: backendHealthy ? "green" : "#b00020" }}>
+          Backend: {backendHealthy === null ? "checking..." : backendHealthy ? "connected" : "offline"}
+        </p>
       </form>
     </div>
   );

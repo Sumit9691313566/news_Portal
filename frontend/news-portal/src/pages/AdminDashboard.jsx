@@ -58,6 +58,7 @@ const mediaTypeFromUrl = (url) => {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
+  const adminName = localStorage.getItem("adminName") || "Admin";
 
   const [newsList, setNewsList] = useState([]);
   const [deletedNewsList, setDeletedNewsList] = useState([]);
@@ -72,7 +73,7 @@ export default function AdminDashboard() {
   // form
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Tech");
-  const [status, setStatus] = useState("published");
+  const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
   const [breaking, setBreaking] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -139,7 +140,10 @@ export default function AdminDashboard() {
       const saved = JSON.parse(raw);
       if (saved?.title) setTitle(saved.title);
       if (saved?.category) setCategory(saved.category);
-      if (saved?.status) setStatus(saved.status);
+      if (saved?.status) {
+        const draftStatus = String(saved.status).toLowerCase();
+        setStatus("draft");
+      }
       if (typeof saved?.featured === "boolean") setFeatured(saved.featured);
       if (typeof saved?.breaking === "boolean") setBreaking(saved.breaking);
       if (Array.isArray(saved?.blocks) && saved.blocks.length > 0) {
@@ -206,7 +210,8 @@ export default function AdminDashboard() {
     formData.append("title", title);
     formData.append("content", derivedContent);
     formData.append("category", category);
-    formData.append("status", status);
+    const safeStatus = "draft";
+    formData.append("status", safeStatus);
     formData.append("featured", featured);
     formData.append("breaking", breaking);
 
@@ -239,7 +244,11 @@ export default function AdminDashboard() {
 
       resetForm();
       loadNews();
-      alert(editId ? "News updated successfully ✅" : "News published successfully ✅");
+      alert(
+        editId
+          ? "News updated successfully"
+          : "News saved in draft for main admin review"
+      );
     } catch (error) {
       console.error("Upload error:", error);
       alert(`❌ Upload failed: ${error.message}`);
@@ -251,7 +260,7 @@ export default function AdminDashboard() {
     setEditId(n._id);
     setTitle(n.title);
     setCategory(n.category);
-    setStatus(n.status || "published");
+    setStatus("draft");
     setFeatured(!!n.featured);
     setBreaking(!!n.breaking);
     setBlocks(
@@ -284,7 +293,7 @@ export default function AdminDashboard() {
   const resetForm = () => {
     setTitle("");
     setCategory("Tech");
-    setStatus("published");
+    setStatus("draft");
     setFeatured(false);
     setBreaking(false);
     setEditId(null);
@@ -472,41 +481,34 @@ export default function AdminDashboard() {
   };
 
   /* ================= QUICK TOGGLE ================= */
-  const togglePublish = async (n) => {
-    await fetchWithTimeout(`news/${n._id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        status: n.status === "published" ? "draft" : "published",
-      }),
-    });
-    loadNews();
-  };
-
   return (
     <div className="admin-wrapper">
       {/* HEADER */}
       <div className="admin-header">
         <div>
           <h1>Admin Dashboard</h1>
-          <p>Welcome Admin</p>
+          <p>Welcome {adminName}</p>
         </div>
         <div className="admin-actions">
           <button
             className="btn"
             onClick={() => {
-              addArticleRef.current?.scrollIntoView({ behavior: "smooth" });
+              localStorage.removeItem("adminToken");
+              localStorage.removeItem("adminRole");
+              localStorage.removeItem("adminName");
+              localStorage.removeItem("adminEmail");
+              navigate("/login?role=main-admin", { replace: true });
             }}
           >
-            Add Article
+            Main Admin Login
           </button>
           <button
             className="btn danger"
             onClick={() => {
               localStorage.removeItem("adminToken");
+              localStorage.removeItem("adminRole");
+              localStorage.removeItem("adminName");
+              localStorage.removeItem("adminEmail");
               navigate("/login", { replace: true });
             }}
           >
@@ -546,7 +548,7 @@ export default function AdminDashboard() {
 
       {/* ===== STATUS TABS ===== */}
       <div className="status-tabs">
-        {["all", "published", "draft"].map((s) => (
+        {["all", "draft", "published", "pending"].map((s) => (
           <button
             key={s}
             className={statusTab === s ? "active" : ""}
@@ -726,8 +728,7 @@ export default function AdminDashboard() {
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <option value="published">Publish</option>
-              <option value="draft">Save as Draft</option>
+              <option value="draft">Send To Main Admin Review</option>
             </select>
 
             <label className="checkbox field-label">
@@ -749,7 +750,9 @@ export default function AdminDashboard() {
             </label>
 
             <button className="btn primary full-btn" onClick={saveNews}>
-              {editId ? "Update News" : "Publish News"}
+              {editId
+                ? "Update News"
+                : "Send To Main Admin"}
             </button>
 
             {editId && (
@@ -812,6 +815,9 @@ export default function AdminDashboard() {
                 </small>
 
                 <div className="badges">
+                  {n.status === "pending" && (
+                    <span className="badge featured">Pending</span>
+                  )}
                   {n.status === "draft" && (
                     <span className="badge draft">Draft</span>
                   )}
@@ -827,13 +833,6 @@ export default function AdminDashboard() {
               <div className="actions">
                 <button className="btn small" onClick={() => editNews(n)}>
                   Edit
-                </button>
-
-                <button
-                  className="btn small"
-                  onClick={() => togglePublish(n)}
-                >
-                  {n.status === "published" ? "Unpublish" : "Publish"}
                 </button>
 
                 <button

@@ -9,7 +9,11 @@ const newsSchema = new mongoose.Schema(
     mediaUrl: { type: String, default: null },
     mediaPublicId: { type: String, default: "" },
     mediaResourceType: { type: String, enum: ["image", "video"], default: "image" },
-    status: { type: String, enum: ["published", "draft"], default: "published" },
+    status: {
+      type: String,
+      enum: ["published", "draft", "pending"],
+      default: "draft",
+    },
     featured: { type: Boolean, default: false },
     breaking: { type: Boolean, default: false },
     author: { type: String, default: "Admin" },

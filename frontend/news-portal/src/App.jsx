@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Category from "./pages/Category";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import MainAdminDashboard from "./pages/MainAdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 // 👇 NEW PAGES
@@ -33,8 +34,16 @@ function App() {
         <Route
           path="/admin-dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="sub-admin">
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/main-admin"
+          element={
+            <ProtectedRoute requiredRole="main-admin">
+              <MainAdminDashboard />
             </ProtectedRoute>
           }
         />

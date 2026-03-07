@@ -5,6 +5,29 @@ import streamifier from "streamifier";
 
 const toBoolean = (value) =>
   value === true || value === "true" || value === "1" || value === 1;
+const isMainAdmin = (req) => {
+  const role = String(req?.admin?.role || "").toLowerCase();
+  const adminId = String(req?.admin?.adminId || "").toLowerCase();
+  const email = String(req?.admin?.email || "").toLowerCase();
+  if (role !== "main-admin") return false;
+  return adminId === "mainadmin" || email === "mainadmin@gmail.com";
+};
+const normalizeIncomingStatus = (status) => {
+  const nextStatus = String(status || "").trim().toLowerCase();
+  if (nextStatus === "draft") return "draft";
+  if (nextStatus === "published") return "published";
+  if (nextStatus === "pending") return "pending";
+  return "draft";
+};
+const resolveCreateStatus = (req, status) => {
+  if (isMainAdmin(req)) return normalizeIncomingStatus(status);
+  return "draft";
+};
+const resolveUpdateStatus = (req, currentStatus, status) => {
+  if (status === undefined) return currentStatus;
+  if (isMainAdmin(req)) return normalizeIncomingStatus(status);
+  return "draft";
+};
 
 const parseBlocks = (rawBlocks) => {
   if (!rawBlocks) return [];
@@ -136,10 +159,10 @@ export const createNews = async (req, res) => {
       mediaUrl,
       mediaPublicId,
       mediaResourceType,
-      status: status || "published",
+      status: resolveCreateStatus(req, status),
       featured: toBoolean(featured),
       breaking: toBoolean(breaking),
-      author: author || "Admin",
+      author: author || req?.admin?.name || "Admin",
       blocks,
     });
 
@@ -209,7 +232,9 @@ export const updateNews = async (req, res) => {
     if (title !== undefined) news.title = title;
     if (content !== undefined) news.content = content;
     if (category !== undefined) news.category = category;
-    if (status !== undefined) news.status = status;
+    if (status !== undefined) {
+      news.status = resolveUpdateStatus(req, news.status, status);
+    }
     if (featured !== undefined) news.featured = toBoolean(featured);
     if (breaking !== undefined) news.breaking = toBoolean(breaking);
     if (author !== undefined) news.author = author;
@@ -346,7 +371,13 @@ export const deleteDeletedNewsBulk = async (req, res) => {
 /* ================= GET ALL NEWS ================= */
 export const getAllNews = async (req, res) => {
   try {
-    const news = await News.find().sort({ createdAt: -1 });
+    let query = {};
+    if (!req?.admin) {
+      query = { status: "published" };
+    } else if (!isMainAdmin(req)) {
+      query = { $or: [{ status: "published" }, { status: "draft" }, { status: "pending" }] };
+    }
+    const news = await News.find(query).sort({ createdAt: -1 });
     res.json(news);
   } catch (error) {
     console.error("GET NEWS ERROR:", error);
