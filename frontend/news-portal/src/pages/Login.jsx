@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { fetchWithTimeout, API_BASE_URL } from "../services/api";
+import { fetchWithTimeout } from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [backendHealthy, setBackendHealthy] = useState(null);
+  
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -72,17 +72,6 @@ export default function Login() {
     }
   };
 
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/health`);
-        setBackendHealthy(res.ok);
-      } catch {
-        setBackendHealthy(false);
-      }
-    };
-    check();
-  }, []);
 
   return (
     <div
@@ -156,9 +145,7 @@ export default function Login() {
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        <p style={{ marginTop: "10px", color: backendHealthy ? "green" : "#b00020" }}>
-          Backend: {backendHealthy === null ? "checking..." : backendHealthy ? "connected" : "offline"}
-        </p>
+        {/* Backend status removed from UI per request */}
       </form>
     </div>
   );
