@@ -4,79 +4,11 @@ import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 
-/* ===== STATIC FALLBACK ===== */
-const NEWS_DATA = [
-  {
-    id: "static-1",
-    title: "AI tools se badal rahi hai software industry",
-    mediaUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995",
-    content:
-      "Naye AI tools developers ki productivity ko kaafi had tak improve kar rahe hain.",
-    category: "Tech",
-    mediaType: "image",
-    createdAt: new Date().toISOString(),
-    author: "Admin",
-    breaking: true,
-    featured: true,
-  },
-  {
-    id: "static-2",
-    title: "Budget 2026: MSME sector ko relief milne ke chances",
-    mediaUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
-    content:
-      "Experts ke hisab se MSME ke liye tax incentives aur credit support ki baat ho rahi hai.",
-    category: "Business",
-    mediaType: "image",
-    createdAt: new Date().toISOString(),
-    author: "Admin",
-    breaking: false,
-    featured: false,
-  },
-  {
-    id: "static-3",
-    title: "Cricket: series opener me thrilling finish",
-    mediaUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-    content:
-      "Last over me match palta, crowd ne dekh liya season ka sabse bada thriller.",
-    category: "Sports",
-    mediaType: "image",
-    createdAt: new Date().toISOString(),
-    author: "Admin",
-    breaking: false,
-    featured: false,
-  },
-  {
-    id: "static-4",
-    title: "City traffic plan me major changes ka proposal",
-    mediaUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
-    content:
-      "Peak hours me alternate routes aur smart signals ke plan par kaam ho raha hai.",
-    category: "Politics",
-    mediaType: "image",
-    createdAt: new Date().toISOString(),
-    author: "Admin",
-    breaking: false,
-    featured: false,
-  },
-  {
-    id: "static-5",
-    title: "Entertainment: new web series trailer out",
-    mediaUrl: "https://images.unsplash.com/photo-1517602302552-471fe67acf66",
-    content:
-      "Trailer ko fans ka strong response mil raha hai, release date jaldi announce hogi.",
-    category: "Entertainment",
-    mediaType: "image",
-    createdAt: new Date().toISOString(),
-    author: "Admin",
-    breaking: false,
-    featured: false,
-  },
-];
-
 export default function Category() {
   const navigate = useNavigate();
   const location = useLocation();
   const [allNews, setAllNews] = useState([]);
+  const [newsError, setNewsError] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedNews, setSelectedNews] = useState(null);
   const [view, setView] = useState("home");
@@ -97,6 +29,9 @@ export default function Category() {
   const loadNews = async () => {
     try {
       const res = await fetchWithTimeout("news");
+      if (!res.ok) {
+        throw new Error(`News API failed with status ${res.status}`);
+      }
       const data = await res.json();
 
       const normalized = Array.isArray(data)
@@ -144,10 +79,12 @@ export default function Category() {
           })
         : [];
 
-      setAllNews(normalized.length > 0 ? normalized : NEWS_DATA);
+      setNewsError("");
+      setAllNews(normalized);
     } catch (err) {
       console.error("Failed to load news", err);
-      setAllNews(NEWS_DATA);
+      setNewsError("Backend se news load nahi ho pa rahi. Backend restart hone ke baad kuch seconds wait karke refresh karo.");
+      setAllNews([]);
     } finally {
       setLoading(false);
     }
@@ -552,7 +489,10 @@ export default function Category() {
                 )}
 
                 <div className="news-list">
-                  {!loading && filteredNews.length === 0 && (
+                  {!loading && newsError && (
+                    <p className="empty-state">{newsError}</p>
+                  )}
+                  {!loading && !newsError && filteredNews.length === 0 && (
                     <p className="empty-state">
                       इस कैटेगरी में अभी कोई खबर नहीं है।
                     </p>

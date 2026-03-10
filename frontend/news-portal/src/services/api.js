@@ -1,10 +1,34 @@
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const API_BASE_URL = String(RAW_API_BASE_URL).replace(/\/+$/, "");
+const RAW_API_FALLBACK_URL =
+  import.meta.env.VITE_API_FALLBACK_URL ||
+  "https://newsportal-production-164d.up.railway.app/api";
+const API_FALLBACK_URL = String(RAW_API_FALLBACK_URL).replace(/\/+$/, "");
 const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 12000;
 
-export const buildApiUrl = (path = "") => {
+export const buildApiUrl = (path = "", baseUrl = API_BASE_URL) => {
   const cleanPath = String(path).replace(/^\/+/, "");
-  return cleanPath ? `${API_BASE_URL}/${cleanPath}` : API_BASE_URL;
+  return cleanPath ? `${baseUrl}/${cleanPath}` : baseUrl;
+};
+
+const shouldTryFallback = (error, response) => {
+  if (response && response.status < 500) return false;
+  if (!API_FALLBACK_URL || API_FALLBACK_URL === API_BASE_URL) return false;
+  if (!error) return Boolean(response);
+  return error.name === "AbortError" || error instanceof TypeError;
+};
+
+const doFetch = async (baseUrl, path, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(buildApiUrl(path, baseUrl), {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 export const fetchWithTimeout = async (
@@ -12,15 +36,17 @@ export const fetchWithTimeout = async (
   options = {},
   timeoutMs = DEFAULT_TIMEOUT_MS
 ) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(buildApiUrl(path), {
-      ...options,
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
+    const primaryResponse = await doFetch(API_BASE_URL, path, options, timeoutMs);
+    if (shouldTryFallback(null, primaryResponse)) {
+      return await doFetch(API_FALLBACK_URL, path, options, timeoutMs);
+    }
+    return primaryResponse;
+  } catch (error) {
+    if (shouldTryFallback(error)) {
+      return await doFetch(API_FALLBACK_URL, path, options, timeoutMs);
+    }
+    throw error;
   }
 };
 
@@ -79,4 +105,4 @@ export const deleteNews = async (id) => {
   });
 };
 
-export { API_BASE_URL };
+export { API_BASE_URL, API_FALLBACK_URL };

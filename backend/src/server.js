@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -7,24 +8,23 @@ import authRoutes from "./routes/authRoutes.js";
 import epaperRoutes from "./routes/epaperRoutes.js";
 import { startRetentionJob } from "./utils/retention.js";
 
-console.log("☁️ Cloudinary Env Check:", {
+console.log("Cloudinary Env Check:", {
   cloud: process.env.CLOUDINARY_CLOUD_NAME,
   key: process.env.CLOUDINARY_API_KEY ? "LOADED" : "MISSING",
 });
 
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
+const MONGO_URI = process.env.MONGO_URI;
 
 const app = express();
 
-// Increase request timeout for large file uploads
 app.use((req, res, next) => {
-  req.setTimeout(120000); // 2 minutes
-  res.setTimeout(120000); // 2 minutes
+  req.setTimeout(120000);
+  res.setTimeout(120000);
   next();
 });
 
-// CORS Configuration for multiple environments
 const normalize = (u = "") => String(u).replace(/\/+$|\s+/g, "").replace(/:\/\/$/, "");
 const frontendUrl = normalize(process.env.FRONTEND_URL || "");
 const allowedOrigins = [
@@ -36,20 +36,20 @@ const allowedOrigins = [
   frontendUrl,
 ].filter(Boolean);
 
-// Use a function for origin so we can log and provide clearer behavior
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow server-to-server or tools without origin
+      if (!origin) return callback(null, true);
       if (NODE_ENV !== "production") return callback(null, true);
+
       const cleanedOrigin = normalize(origin);
-      // allow explicit configured origins
       if (allowedOrigins.includes(cleanedOrigin)) return callback(null, true);
-      // allow vercel preview/domains and railway preview domains
+
       if (cleanedOrigin.includes("vercel.app") || cleanedOrigin.includes("railway.app")) {
         console.log("Allowed dynamic origin (vercel/railway):", cleanedOrigin);
         return callback(null, true);
       }
+
       console.warn("Blocked CORS origin:", origin, "(clean:", cleanedOrigin, ") allowed:", allowedOrigins);
       return callback(new Error("Not allowed by CORS"));
     },
@@ -62,7 +62,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Security Headers for better CDN performance
 app.use((req, res, next) => {
   res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
@@ -73,17 +72,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
-// Debug endpoint to verify runtime configuration (safe to remove in production)
 app.get("/debug", (req, res) => {
   const mongooseState = mongoose.connection ? mongoose.connection.readyState : "unknown";
   res.json({
     nodeEnv: NODE_ENV,
-    frontendUrl: frontendUrl,
+    frontendUrl,
     allowedOrigins,
     mongoState: mongooseState,
   });
@@ -93,41 +90,55 @@ app.use("/api/news", newsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/epaper", epaperRoutes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("❌ Error:", err);
-  
-  // Multer specific errors
+  console.error("Error:", err);
+
   if (err.code === "LIMIT_FILE_SIZE") {
-    return res.status(413).json({ 
-      message: "File too large. Maximum size is 500MB." 
+    return res.status(413).json({
+      message: "File too large. Maximum size is 500MB.",
     });
   }
+
   if (err.code === "LIMIT_FIELD_COUNT") {
-    return res.status(400).json({ 
-      message: "Too many fields in request." 
+    return res.status(400).json({
+      message: "Too many fields in request.",
     });
   }
-  
+
   const payload = { message: err.message || "Internal server error" };
   if (process.env.NODE_ENV !== "production") payload.stack = err.stack;
   res.status(err.status || 500).json(payload);
 });
 
-startRetentionJob();
+let server = null;
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ Mongo Error", err));
+const startServer = async () => {
+  if (!MONGO_URI) {
+    throw new Error("MONGO_URI is missing. Check backend/.env");
+  }
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on ${PORT} (${NODE_ENV})`);
+  await mongoose.connect(MONGO_URI);
+  console.log("MongoDB Connected");
+
+  startRetentionJob();
+
+  server = app.listen(PORT, () => {
+    console.log(`Server running on ${PORT} (${NODE_ENV})`);
+  });
+};
+
+startServer().catch((err) => {
+  console.error("Startup Error:", err);
+  process.exit(1);
 });
 
-// Graceful shutdown
 process.on("SIGTERM", () => {
   console.log("SIGTERM signal received: closing HTTP server");
+  if (!server) {
+    mongoose.connection.close();
+    return;
+  }
+
   server.close(() => {
     console.log("HTTP server closed");
     mongoose.connection.close();

@@ -10,6 +10,8 @@ npm install
 # Create .env file
 cp .env.example .env
 # Set VITE_API_BASE_URL=http://localhost:5000/api for local backend
+# Optional fallback if local backend is unavailable:
+# VITE_API_FALLBACK_URL=https://newsportal-production-164d.up.railway.app/api
 
 # Start development server
 npm run dev
@@ -30,6 +32,7 @@ See [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) for detailed instructions
 
 ## Environment Variables
 - `VITE_API_BASE_URL` - Backend API URL (required)
+- `VITE_API_FALLBACK_URL` - Fallback API URL when local backend is unavailable
 - `VITE_API_TIMEOUT_MS` - API timeout in milliseconds (default: 8000)
 
 ## Build
