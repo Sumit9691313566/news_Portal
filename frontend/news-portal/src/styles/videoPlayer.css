@@ -241,13 +241,20 @@
 @media (max-width: 768px) {
   .video-page {
     min-height: 100dvh;
-    padding: 8px 10px 10px;
+    position: relative;
+    padding: 8px 4px 10px;
   }
 
   .video-header {
-    margin: 0 auto 8px;
+    position: absolute;
+    top: 12px;
+    left: 18px;
+    right: 18px;
+    margin: 0;
     gap: 6px;
-    padding: 4px 0 6px;
+    padding: 0;
+    background: transparent;
+    z-index: 12;
   }
 
   .video-header h1 {
@@ -262,6 +269,7 @@
   .video-stage {
     flex-direction: column;
     gap: 8px;
+    padding-top: 0;
   }
 
   .video-share-rail {
