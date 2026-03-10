@@ -248,8 +248,7 @@
   }
 
   .video-header h1 {
-    flex: 1 1 100%;
-    font-size: 18px;
+    display: none;
   }
 
   .video-back {
