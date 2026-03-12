@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 import { fetchWithTimeout } from "../services/api";
 import RichTextEditor from "../components/RichTextEditor";
-import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
+import {
+  countWordsFromHtml,
+  sanitizeRichTextHtml,
+  stripHtml,
+} from "../utils/richText";
 
 const CATEGORY_LIST = [
   { value: "National", label: "राष्ट्रीय" },
@@ -54,6 +58,8 @@ const mediaTypeFromUrl = (url) => {
   }
   return null;
 };
+
+const readingMinutes = (words = 0) => Math.max(1, Math.ceil(words / 220));
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -378,6 +384,22 @@ export default function AdminDashboard() {
     );
   };
 
+  const duplicateBlock = (id) => {
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b.id === id);
+      if (idx < 0) return prev;
+      const source = prev[idx];
+      const copy = {
+        ...source,
+        id: Date.now() + Math.random(),
+        file: null,
+      };
+      const next = [...prev];
+      next.splice(idx + 1, 0, copy);
+      return next;
+    });
+  };
+
   const moveBlock = (id, dir) => {
     setBlocks((prev) => {
       const idx = prev.findIndex((b) => b.id === id);
@@ -393,12 +415,28 @@ export default function AdminDashboard() {
   };
 
   const wordCount = useMemo(() => {
-    const text = blocks
+    return blocks
       .filter((b) => b.type === "text")
-      .map((b) => stripHtml(b.text || ""))
-      .join(" ");
-    return text.trim() ? text.trim().split(/\s+/).length : 0;
+      .reduce((sum, b) => sum + countWordsFromHtml(b.text || ""), 0);
   }, [blocks]);
+
+  const titleLength = title.trim().length;
+  const mediaCount = useMemo(
+    () => blocks.filter((b) => b.type === "image" || b.type === "video").length,
+    [blocks]
+  );
+  const textBlockCount = useMemo(
+    () => blocks.filter((b) => b.type === "text").length,
+    [blocks]
+  );
+  const qualityScore = useMemo(() => {
+    let score = 0;
+    if (titleLength >= 20) score += 30;
+    if (wordCount >= 120) score += 35;
+    if (mediaCount >= 1) score += 20;
+    if (textBlockCount >= 2) score += 15;
+    return Math.min(100, score);
+  }, [titleLength, wordCount, mediaCount, textBlockCount]);
 
   const previewBlocks = useMemo(
     () =>
@@ -597,6 +635,15 @@ export default function AdminDashboard() {
         </p>
         <div className="editor-meta">
           <span>Words: {wordCount}</span>
+          <span>Read Time: {readingMinutes(wordCount)} min</span>
+          <span>Media: {mediaCount}</span>
+          <span
+            className={`quality-badge q-${
+              qualityScore >= 70 ? "good" : qualityScore >= 40 ? "mid" : "low"
+            }`}
+          >
+            Quality: {qualityScore}%
+          </span>
           {lastSaved && (
             <span>Autosaved: {lastSaved.toLocaleTimeString()}</span>
           )}
@@ -610,6 +657,14 @@ export default function AdminDashboard() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
+            <div className="title-help">
+              <span>{titleLength}/120 chars</span>
+              <span>
+                {titleLength < 20
+                  ? "Try a more descriptive headline"
+                  : "Headline looks strong"}
+              </span>
+            </div>
 
             <label className="field-label">Content Blocks</label>
             <div className="blocks-editor" onPaste={handlePaste}>
@@ -624,7 +679,7 @@ export default function AdminDashboard() {
                         onClick={() => moveBlock(block.id, -1)}
                         title="Move up"
                       >
-                        ↑
+                        Up
                       </button>
                       <button
                         type="button"
@@ -632,7 +687,15 @@ export default function AdminDashboard() {
                         onClick={() => moveBlock(block.id, 1)}
                         title="Move down"
                       >
-                        ↓
+                        Down
+                      </button>
+                      <button
+                        type="button"
+                        className="block-move"
+                        onClick={() => duplicateBlock(block.id)}
+                        title="Duplicate block"
+                      >
+                        Copy
                       </button>
                       <button
                         type="button"
@@ -768,9 +831,9 @@ export default function AdminDashboard() {
                   {title || "News Title Preview"}
                 </div>
                 <div className="preview-meta">
-                  {category} • {status}
-                  {featured ? " • Featured" : ""}
-                  {breaking ? " • Breaking" : ""}
+                  {category} | {status}
+                  {featured ? " | Featured" : ""}
+                  {breaking ? " | Breaking" : ""}
                 </div>
                 <div className="preview-content">
                   {previewBlocks.length === 0 && (

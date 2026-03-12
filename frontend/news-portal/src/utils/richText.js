@@ -28,6 +28,9 @@ const ALLOWED_TAGS = new Set([
   "h1",
   "h2",
   "h3",
+  "h4",
+  "h5",
+  "h6",
   "blockquote",
   "a",
   "div",
@@ -147,3 +150,9 @@ export const stripHtml = (html = "") =>
     .replace(/&gt;/gi, ">")
     .replace(/\s+/g, " ")
     .trim();
+
+export const countWordsFromHtml = (html = "") => {
+  const text = stripHtml(html);
+  if (!text) return 0;
+  return text.split(/\s+/).length;
+};

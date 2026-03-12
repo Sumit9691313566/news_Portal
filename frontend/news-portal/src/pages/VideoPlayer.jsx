@@ -88,9 +88,6 @@ export default function VideoPlayer() {
             <video src={url} controls playsInline />
 
             <div className="video-top-overlay">
-              <div className="video-brand">
-                <span className="logo-word-text">गरुण समाचार</span>
-              </div>
               <button
                 type="button"
                 className="video-read-btn"
