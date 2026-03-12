@@ -505,6 +505,11 @@ body {
   font-weight: 600;
 }
 
+.font-step-btn {
+  min-width: 42px;
+  text-align: center;
+}
+
 .rich-toolbar button.is-active {
   background: #b31224;
   border-color: #b31224;

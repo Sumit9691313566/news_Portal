@@ -4,9 +4,13 @@ import { countWordsFromHtml, sanitizeRichTextHtml } from "../utils/richText";
 const SIZE_COMMANDS = {
   small: "2",
   normal: "3",
+  medium: "4",
   large: "5",
   xlarge: "6",
+  xxlarge: "7",
 };
+
+const SIZE_ORDER = ["small", "normal", "medium", "large", "xlarge", "xxlarge"];
 
 const isSafeLink = (url = "") =>
   /^(https?:\/\/|mailto:|tel:)/i.test(String(url).trim());
@@ -22,6 +26,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     insertUnorderedList: false,
     insertOrderedList: false,
   });
+  const [fontSizeKey, setFontSizeKey] = useState("normal");
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -75,6 +80,16 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     });
 
     setActiveState(next);
+
+    try {
+      const rawFontSize = String(document.queryCommandValue("fontSize") || "").trim();
+      const matchedSize =
+        Object.entries(SIZE_COMMANDS).find(([, value]) => value === rawFontSize)?.[0] ||
+        "normal";
+      setFontSizeKey(matchedSize);
+    } catch {
+      setFontSizeKey("normal");
+    }
   };
 
   useEffect(() => {
@@ -96,9 +111,25 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
       document.execCommand("backColor", false, commandValue);
     }
 
+    const sanitized = sanitizeRichTextHtml(editorRef.current.innerHTML);
+    editorRef.current.innerHTML = sanitized;
     saveSelection();
     refreshToolbarState();
-    onChange(sanitizeRichTextHtml(editorRef.current.innerHTML));
+    onChange(sanitized);
+  };
+
+  const applyFontSize = (nextSizeKey) => {
+    setFontSizeKey(nextSizeKey);
+    applyCommand("fontSize", SIZE_COMMANDS[nextSizeKey]);
+  };
+
+  const stepFontSize = (direction) => {
+    const currentIndex = Math.max(0, SIZE_ORDER.indexOf(fontSizeKey));
+    const nextIndex = Math.min(
+      SIZE_ORDER.length - 1,
+      Math.max(0, currentIndex + direction)
+    );
+    applyFontSize(SIZE_ORDER[nextIndex]);
   };
 
   const insertLink = () => {
@@ -190,16 +221,34 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
             ))}
           </select>
 
+          <button
+            type="button"
+            className="font-step-btn"
+            onClick={() => stepFontSize(-1)}
+            title="Decrease text size"
+          >
+            A-
+          </button>
           <select
-            defaultValue="normal"
-            onChange={(e) => applyCommand("fontSize", SIZE_COMMANDS[e.target.value])}
+            value={fontSizeKey}
+            onChange={(e) => applyFontSize(e.target.value)}
             title="Text size"
           >
-            <option value="small">Small</option>
-            <option value="normal">Normal</option>
-            <option value="large">Large</option>
-            <option value="xlarge">XL</option>
+            <option value="small">10 px</option>
+            <option value="normal">12 px</option>
+            <option value="medium">14 px</option>
+            <option value="large">18 px</option>
+            <option value="xlarge">24 px</option>
+            <option value="xxlarge">32 px</option>
           </select>
+          <button
+            type="button"
+            className="font-step-btn"
+            onClick={() => stepFontSize(1)}
+            title="Increase text size"
+          >
+            A+
+          </button>
         </div>
 
         <div className="toolbar-group">
