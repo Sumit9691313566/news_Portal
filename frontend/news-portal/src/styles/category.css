@@ -1451,6 +1451,14 @@ body {
   letter-spacing: 1px;
 }
 
+.epaper-preview-thumb .pdf-thumb,
+.epaper-edition-thumb .pdf-thumb {
+  background: linear-gradient(180deg, #f5f5f5 0%, #ececec 100%);
+  color: #c9c9c9;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+}
+
 .epaper-preview-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2083,6 +2091,11 @@ body {
     border-radius: 10px;
   }
 
+  .epaper-preview-thumb .pdf-thumb,
+  .epaper-edition-thumb .pdf-thumb {
+    font-size: 18px;
+  }
+
   .epaper-preview-body {
     margin-top: 12px;
   }
@@ -2210,6 +2223,11 @@ body {
   .epaper-preview-thumb {
     aspect-ratio: 4 / 3;
     border-radius: 8px;
+  }
+
+  .epaper-preview-thumb .pdf-thumb,
+  .epaper-edition-thumb .pdf-thumb {
+    font-size: 16px;
   }
 
   .epaper-preview-body {

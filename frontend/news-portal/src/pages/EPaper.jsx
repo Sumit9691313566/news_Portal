@@ -18,6 +18,9 @@ export default function EPaper() {
   const [epapers, setEpapers] = useState([]);
   const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
   const [shareMessage, setShareMessage] = useState("");
+  const [isCompactMobile, setIsCompactMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= 600 : false
+  );
 
   const goBackSafe = () => {
     if (window.history.length > 1) {
@@ -48,6 +51,17 @@ export default function EPaper() {
   }, []);
 
   useEffect(() => {
+    const handleResize = () => setIsCompactMobile(window.innerWidth <= 600);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isCompactMobile) {
+      setEpaperPreviewUrls({});
+      return undefined;
+    }
+
     const pdfEpapers = epapers.filter(
       (epaper) => epaper.fileType === "pdf" && epaper.fileUrl
     );
@@ -92,7 +106,7 @@ export default function EPaper() {
       active = false;
       createdUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [epapers]);
+  }, [epapers, isCompactMobile]);
 
   const shareEdition = async (epaperId, title) => {
     const shareUrl = `${window.location.origin}/epaper/${epaperId}`;
@@ -168,7 +182,7 @@ export default function EPaper() {
                 <div className="epaper-edition-thumb">
                   {epaper.fileType === "image" ? (
                     <img src={epaper.fileUrl} alt={epaper.title} />
-                  ) : epaperPreviewUrls[epaper._id] ? (
+                  ) : !isCompactMobile && epaperPreviewUrls[epaper._id] ? (
                     <iframe
                       src={epaperPreviewUrls[epaper._id]}
                       className="epaper-edition-frame"
