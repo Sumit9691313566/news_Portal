@@ -1,0 +1,14 @@
+{
+  "name": "news-portal-monorepo",
+  "private": true,
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "start": "npm --workspace backend start",
+    "build": "npm --workspace backend run build"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

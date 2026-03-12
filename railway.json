@@ -3,6 +3,5 @@
     "builder": "DOCKERFILE",
     "dockerfilePath": "backend/Dockerfile",
     "context": "."
-  },
-  "startCommand": "node backend/src/bootstrap.js"
+  }
 }
