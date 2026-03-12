@@ -78,6 +78,41 @@ export const getEpaperById = async (req, res) => {
   }
 };
 
+export const streamEpaperFile = async (req, res) => {
+  try {
+    const epaper = await Epaper.findById(req.params.id);
+    if (!epaper) {
+      return res.status(404).json({ message: "Epaper not found" });
+    }
+
+    const upstream = await fetch(epaper.fileUrl);
+    if (!upstream.ok) {
+      return res.status(502).json({ message: "Unable to fetch e-paper file" });
+    }
+
+    const arrayBuffer = await upstream.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const ext = epaper.fileType === "pdf" ? "pdf" : "jpg";
+    const safeTitle = String(epaper.title || "epaper")
+      .trim()
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .toLowerCase();
+    const fileName = `${safeTitle || "epaper"}.${ext}`;
+
+    res.setHeader(
+      "Content-Type",
+      epaper.fileType === "pdf" ? "application/pdf" : upstream.headers.get("content-type") || "image/jpeg"
+    );
+    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.send(buffer);
+  } catch (error) {
+    console.error("EPAPER STREAM ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const deleteEpaper = async (req, res) => {
   try {
     const epaper = await Epaper.findById(req.params.id);

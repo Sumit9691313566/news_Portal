@@ -1,8 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
 
+const clampZoom = (value) => Math.min(3, Math.max(0.8, +value.toFixed(2)));
+
+const getTouchDistance = (touches) => {
+  if (touches.length < 2) return 0;
+  const [first, second] = touches;
+  const dx = first.clientX - second.clientX;
+  const dy = first.clientY - second.clientY;
+  return Math.hypot(dx, dy);
+};
 
 export default function EPaperViewer() {
   const navigate = useNavigate();
@@ -15,6 +24,7 @@ export default function EPaperViewer() {
   const [pdfBlobUrl, setPdfBlobUrl] = useState("");
   const [preparingPdf, setPreparingPdf] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const pinchStateRef = useRef({ distance: 0, zoom: 1 });
 
   const goBackSafe = () => {
     if (window.history.length > 1) {
@@ -25,7 +35,8 @@ export default function EPaperViewer() {
   };
 
   const pdfSrc = useMemo(() => {
-    if (epaper?.fileType !== "pdf") return epaper?.fileUrl || "";
+    if (!epaper) return "";
+    if (epaper.fileType !== "pdf") return epaper.fileUrl || "";
     if (!pdfBlobUrl) return "";
     return `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
   }, [epaper, pdfBlobUrl]);
@@ -50,35 +61,40 @@ export default function EPaperViewer() {
   }, [id, epaper]);
 
   useEffect(() => {
-    if (!epaper?.fileUrl || epaper.fileType !== "pdf") return undefined;
+    if (!epaper?.fileUrl || epaper.fileType !== "pdf") {
+      setPdfBlobUrl("");
+      setPreparingPdf(false);
+      return undefined;
+    }
 
-    let isMounted = true;
-    let createdBlobUrl = "";
+    let active = true;
+    let nextBlobUrl = "";
 
     const loadPdfBlob = async () => {
       try {
         setPreparingPdf(true);
         setError("");
 
-        const res = await fetch(epaper.fileUrl);
-        if (!res.ok) {
-          throw new Error("Unable to open PDF");
+        const response = await fetch(epaper.fileUrl, { mode: "cors" });
+        if (!response.ok) {
+          throw new Error("PDF file open nahi ho pa raha");
         }
 
-        const blob = await res.blob();
-        createdBlobUrl = URL.createObjectURL(
-          new Blob([blob], { type: "application/pdf" })
+        const sourceBlob = await response.blob();
+        nextBlobUrl = URL.createObjectURL(
+          new Blob([sourceBlob], { type: "application/pdf" })
         );
 
-        if (isMounted) {
-          setPdfBlobUrl(createdBlobUrl);
+        if (active) {
+          setPdfBlobUrl(nextBlobUrl);
         }
       } catch (err) {
-        if (isMounted) {
-          setError(err.message || "Failed to load PDF");
+        if (active) {
+          setPdfBlobUrl("");
+          setError(err.message || "PDF load nahi ho pa raha");
         }
       } finally {
-        if (isMounted) {
+        if (active) {
           setPreparingPdf(false);
         }
       }
@@ -87,9 +103,9 @@ export default function EPaperViewer() {
     loadPdfBlob();
 
     return () => {
-      isMounted = false;
-      if (createdBlobUrl) {
-        URL.revokeObjectURL(createdBlobUrl);
+      active = false;
+      if (nextBlobUrl) {
+        URL.revokeObjectURL(nextBlobUrl);
       }
     };
   }, [epaper]);
@@ -112,10 +128,11 @@ export default function EPaperViewer() {
         .toLowerCase();
       const fileName = `${safeTitle || "epaper"}.${fileExt}`;
 
+      const downloadUrl = epaper.fileUrl;
       const blob =
         epaper.fileType === "pdf" && pdfBlobUrl
           ? await (await fetch(pdfBlobUrl)).blob()
-          : await (await fetch(epaper.fileUrl)).blob();
+          : await (await fetch(downloadUrl)).blob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -152,6 +169,56 @@ export default function EPaperViewer() {
     }
   };
 
+  const openPdfDirect = () => {
+    const openUrl = pdfBlobUrl || epaper?.fileUrl;
+    if (!openUrl) return;
+    const popup = window.open(openUrl, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      window.location.href = openUrl;
+    }
+  };
+
+  const handleTouchStart = (event) => {
+    if (event.touches.length !== 2) return;
+    pinchStateRef.current = {
+      distance: getTouchDistance(event.touches),
+      zoom,
+    };
+  };
+
+  const handleTouchMove = (event) => {
+    if (event.touches.length !== 2) return;
+    const nextDistance = getTouchDistance(event.touches);
+    const startDistance = pinchStateRef.current.distance;
+    if (!startDistance) return;
+
+    event.preventDefault();
+    const scaleFactor = nextDistance / startDistance;
+    setZoom(clampZoom(pinchStateRef.current.zoom * scaleFactor));
+  };
+
+  const handleTouchEnd = (event) => {
+    if (event.touches.length >= 2) {
+      pinchStateRef.current = {
+        distance: getTouchDistance(event.touches),
+        zoom,
+      };
+      return;
+    }
+
+    pinchStateRef.current = {
+      distance: 0,
+      zoom,
+    };
+  };
+
+  const handleWheel = (event) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? 0.12 : -0.12;
+    setZoom((current) => clampZoom(current + delta));
+  };
+
   return (
     <div className="epaper-viewer">
       <div className="epaper-toolbar">
@@ -166,17 +233,20 @@ export default function EPaperViewer() {
           <button type="button" onClick={downloadEpaper}>
             Download
           </button>
+          <button type="button" onClick={openPdfDirect}>
+            Open
+          </button>
         </div>
         <div className="epaper-zoom-controls">
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)))}
+            onClick={() => setZoom((z) => clampZoom(z - 0.1))}
           >
             -
           </button>
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.min(2.5, +(z + 0.1).toFixed(2)))}
+            onClick={() => setZoom((z) => clampZoom(z + 0.1))}
           >
             +
           </button>
@@ -196,8 +266,17 @@ export default function EPaperViewer() {
       )}
 
       {!loading && !error && epaper && !preparingPdf && (
-        <div className="epaper-frame">
-          <div className="epaper-zoom" style={{ transform: `scale(${zoom})` }}>
+        <div
+          className="epaper-frame"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
+        >
+          <div
+            className={`epaper-zoom${zoom > 1 ? " epaper-zoom-active" : ""}`}
+            style={{ transform: `scale(${zoom})` }}
+          >
             {epaper.fileType === "pdf" ? (
               <iframe title={epaper.title} src={pdfSrc} />
             ) : (

@@ -4,6 +4,16 @@ import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 
+const formatIssueDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
 export default function Category() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,6 +30,7 @@ export default function Category() {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(5);
   const [epapers, setEpapers] = useState([]);
+  const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
 
   const scrollToNewsStart = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -142,6 +153,53 @@ export default function Category() {
       }
     }
   };
+
+  useEffect(() => {
+    const pdfEpapers = epapers.filter(
+      (epaper) => epaper.fileType === "pdf" && epaper.fileUrl
+    );
+
+    if (pdfEpapers.length === 0) {
+      setEpaperPreviewUrls({});
+      return undefined;
+    }
+
+    let active = true;
+    const createdUrls = [];
+
+    const loadPreviewUrls = async () => {
+      const entries = await Promise.all(
+        pdfEpapers.map(async (epaper) => {
+          try {
+            const response = await fetch(epaper.fileUrl, { mode: "cors" });
+            if (!response.ok) {
+              return [epaper._id, ""];
+            }
+
+            const sourceBlob = await response.blob();
+            const blobUrl = URL.createObjectURL(
+              new Blob([sourceBlob], { type: "application/pdf" })
+            );
+            createdUrls.push(blobUrl);
+            return [epaper._id, `${blobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`];
+          } catch {
+            return [epaper._id, ""];
+          }
+        })
+      );
+
+      if (active) {
+        setEpaperPreviewUrls(Object.fromEntries(entries));
+      }
+    };
+
+    loadPreviewUrls();
+
+    return () => {
+      active = false;
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [epapers]);
 
 
   /* ================= FILTER ================= */
@@ -689,25 +747,40 @@ export default function Category() {
             {view === "epaper" && (
               <>
                 {epapers.length === 0 && <p>No e-paper uploaded yet.</p>}
-                <div className="media-grid">
+                <div className="epaper-preview-grid">
                   {epapers.map((e) => (
-                    <div
-                      key={e._id}
-                      className="media-card"
-                      onClick={() =>
-                        navigate(`/epaper/${e._id}`, {
-                          state: { epaper: e },
-                        })
-                      }
-                    >
-                      <div className="media-thumb">
+                    <article key={e._id} className="epaper-preview-card">
+                      <div className="epaper-preview-thumb">
                         {e.fileType === "image" ? (
                           <img src={e.fileUrl} alt={e.title} />
+                        ) : epaperPreviewUrls[e._id] ? (
+                          <iframe
+                            src={epaperPreviewUrls[e._id]}
+                            className="epaper-preview-frame"
+                            title={e.title}
+                          />
                         ) : (
                           <div className="pdf-thumb">PDF</div>
                         )}
                       </div>
-                    </div>
+                      <div className="epaper-preview-body">
+                        <h3>{e.title}</h3>
+                        <div className="epaper-preview-meta">
+                          <span>{formatIssueDate(e.createdAt) || "Latest edition"}</span>
+                          <button
+                            type="button"
+                            className="epaper-preview-link"
+                            onClick={() =>
+                              navigate(`/epaper/${e._id}`, {
+                                state: { epaper: e },
+                              })
+                            }
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </div>
+                    </article>
                   ))}
                 </div>
               </>

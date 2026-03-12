@@ -3,9 +3,21 @@ import { useNavigate } from "react-router-dom";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
 
+const formatIssueDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
 export default function EPaper() {
   const navigate = useNavigate();
   const [epapers, setEpapers] = useState([]);
+  const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
+  const [shareMessage, setShareMessage] = useState("");
 
   const goBackSafe = () => {
     if (window.history.length > 1) {
@@ -20,8 +32,7 @@ export default function EPaper() {
       try {
         const res = await fetchWithTimeout("epaper", {}, 20000);
         const data = await res.json();
-        const list = Array.isArray(data) ? data : [];
-        setEpapers(list);
+        setEpapers(Array.isArray(data) ? data : []);
       } catch {
         try {
           const retryRes = await fetchWithTimeout("epaper", {}, 30000);
@@ -32,65 +43,175 @@ export default function EPaper() {
         }
       }
     };
+
     load();
   }, []);
 
-  return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div className="sidebar-logo">News Portal</div>
-        <ul className="menu">
-          <li onClick={() => navigate("/")}>🏠 होम</li>
-          <li onClick={() => navigate("/videos")}>▶️ वीडियो</li>
-          <li onClick={() => navigate("/search")}>🔍 सर्च</li>
-          <li onClick={() => navigate("/epaper")}>🗞️ ई-पेपर</li>
-        </ul>
-      </aside>
+  useEffect(() => {
+    const pdfEpapers = epapers.filter(
+      (epaper) => epaper.fileType === "pdf" && epaper.fileUrl
+    );
 
-      <main className="content media-page">
-        <div className="page-toolbar page-toolbar-epaper">
-          <button type="button" className="page-toolbar-btn" onClick={goBackSafe}>
-            &larr; Back
-          </button>
+    if (pdfEpapers.length === 0) {
+      setEpaperPreviewUrls({});
+      return undefined;
+    }
+
+    let active = true;
+    const createdUrls = [];
+
+    const loadPreviewUrls = async () => {
+      const entries = await Promise.all(
+        pdfEpapers.map(async (epaper) => {
+          try {
+            const response = await fetch(epaper.fileUrl, { mode: "cors" });
+            if (!response.ok) {
+              return [epaper._id, ""];
+            }
+
+            const sourceBlob = await response.blob();
+            const blobUrl = URL.createObjectURL(
+              new Blob([sourceBlob], { type: "application/pdf" })
+            );
+            createdUrls.push(blobUrl);
+            return [epaper._id, `${blobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`];
+          } catch {
+            return [epaper._id, ""];
+          }
+        })
+      );
+
+      if (active) {
+        setEpaperPreviewUrls(Object.fromEntries(entries));
+      }
+    };
+
+    loadPreviewUrls();
+
+    return () => {
+      active = false;
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [epapers]);
+
+  const shareEdition = async (epaperId, title) => {
+    const shareUrl = `${window.location.origin}/epaper/${epaperId}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: title || "E-Paper",
+          text: title || "E-Paper",
+          url: shareUrl,
+        });
+        setShareMessage("Shared successfully");
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareMessage("Link copied");
+      }
+    } catch {
+      setShareMessage("Share cancelled");
+    }
+
+    window.setTimeout(() => setShareMessage(""), 2200);
+  };
+
+  return (
+    <div className="epaper-hub">
+      <header className="epaper-portal-header">
+        <div className="epaper-portal-shell">
           <button
             type="button"
-            className="page-toolbar-btn"
+            className="epaper-portal-logo"
             onClick={() => navigate("/")}
+            aria-label="Go to home page"
           >
-            Home
+            <span className="epaper-portal-mark">News Portal</span>
+            <span className="epaper-portal-submark">ई-पेपर</span>
           </button>
+
+          <div className="epaper-portal-actions">
+            <button
+              type="button"
+              className="epaper-portal-action"
+              onClick={goBackSafe}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              className="epaper-portal-avatar"
+              onClick={() => navigate("/")}
+              aria-label="Go to home page"
+            >
+              ○
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="epaper-hub-shell">
+        <div className="epaper-collection-head">
+          <h1>प्रमुख शहर</h1>
         </div>
 
-        <h2>E-Paper</h2>
+        {shareMessage && <div className="epaper-hub-message">{shareMessage}</div>}
 
-        {epapers.length === 0 && <p>No e-paper uploaded yet.</p>}
+        {epapers.length === 0 && (
+          <div className="epaper-hub-empty">No e-paper uploaded yet.</div>
+        )}
 
         {epapers.length > 0 && (
-          <div className="media-grid">
-            {epapers.map((e) => (
-              <div
-                key={e._id}
-                className="media-card"
-                onClick={() =>
-                  navigate(`/epaper/${e._id}`, {
-                    state: { epaper: e },
-                  })
-                }
-                style={{ cursor: "pointer" }}
-              >
-                <div className="media-thumb">
-                  {e.fileType === "image" ? (
-                    <img src={e.fileUrl} alt={e.title} />
+          <section className="epaper-hub-grid">
+            {epapers.map((epaper) => (
+              <article key={epaper._id} className="epaper-edition-card">
+                <div className="epaper-edition-thumb">
+                  {epaper.fileType === "image" ? (
+                    <img src={epaper.fileUrl} alt={epaper.title} />
+                  ) : epaperPreviewUrls[epaper._id] ? (
+                    <iframe
+                      src={epaperPreviewUrls[epaper._id]}
+                      className="epaper-edition-frame"
+                      title={epaper.title}
+                    />
                   ) : (
                     <div className="pdf-thumb">PDF</div>
                   )}
                 </div>
-                <h3>{e.title}</h3>
-              </div>
+
+                <div className="epaper-edition-body">
+                  <h2>{epaper.title}</h2>
+                  <div className="epaper-edition-meta">
+                    <span>
+                      {formatIssueDate(epaper.createdAt) || "Latest edition"}
+                    </span>
+                    <div className="epaper-edition-actions">
+                      <button
+                        type="button"
+                        className="epaper-open-btn"
+                        onClick={() =>
+                          navigate(`/epaper/${epaper._id}`, {
+                            state: { epaper },
+                          })
+                        }
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        className="epaper-share-btn"
+                        onClick={() => shareEdition(epaper._id, epaper.title)}
+                      >
+                        ↗
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
             ))}
-          </div>
+          </section>
         )}
-      </main>
+      </div>
     </div>
   );
 }

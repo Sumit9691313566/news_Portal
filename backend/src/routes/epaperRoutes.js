@@ -4,6 +4,7 @@ import {
   createEpaper,
   getAllEpaper,
   getEpaperById,
+  streamEpaperFile,
   deleteEpaper,
 } from "../controllers/epaperController.js";
 
@@ -20,6 +21,7 @@ const upload = multer({
 });
 
 router.get("/", getAllEpaper);
+router.get("/:id/file", streamEpaperFile);
 router.get("/:id", getEpaperById);
 router.post("/", upload.single("file"), createEpaper);
 router.delete("/:id", deleteEpaper);

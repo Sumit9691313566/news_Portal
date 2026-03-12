@@ -151,17 +151,7 @@ export default function Videos() {
 
   return (
     <div className="layout">
-      <aside className="sidebar">
-        <div className="sidebar-logo">News Portal</div>
-        <ul className="menu">
-          <li onClick={() => navigate("/")}>Home</li>
-          <li onClick={() => navigate("/videos")}>Videos</li>
-          <li onClick={() => navigate("/search")}>Search</li>
-          <li onClick={() => navigate("/epaper")}>E-Paper</li>
-        </ul>
-      </aside>
-
-      <main className="content media-page">
+      <main className="content media-page videos-page">
         <div className="page-toolbar page-toolbar-videos">
           <button type="button" className="page-toolbar-btn" onClick={goBackSafe}>
             &larr; Back
