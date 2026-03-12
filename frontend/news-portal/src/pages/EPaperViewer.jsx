@@ -13,6 +13,22 @@ const getTouchDistance = (touches) => {
   return Math.hypot(dx, dy);
 };
 
+const getCloudinaryPdfPreviewUrl = (epaper) => {
+  if (!epaper?.fileUrl || epaper.fileType !== "pdf") return "";
+
+  const cloudMatch = epaper.fileUrl.match(/res\.cloudinary\.com\/([^/]+)/i);
+  const cloudName = cloudMatch?.[1];
+  if (!cloudName) return "";
+
+  const rawPublicId = (epaper.publicId || "")
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/^\/+/, "");
+
+  if (!rawPublicId) return "";
+
+  return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,f_jpg,q_auto,w_1400/${rawPublicId}.jpg`;
+};
+
 export default function EPaperViewer() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -24,6 +40,9 @@ export default function EPaperViewer() {
   const [pdfBlobUrl, setPdfBlobUrl] = useState("");
   const [preparingPdf, setPreparingPdf] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
   const pinchStateRef = useRef({ distance: 0, zoom: 1 });
 
   const goBackSafe = () => {
@@ -40,6 +59,17 @@ export default function EPaperViewer() {
     if (!pdfBlobUrl) return "";
     return `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
   }, [epaper, pdfBlobUrl]);
+
+  const mobilePdfPreviewUrl = useMemo(
+    () => getCloudinaryPdfPreviewUrl(epaper),
+    [epaper]
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (epaper || !id) return;
@@ -277,7 +307,13 @@ export default function EPaperViewer() {
             className={`epaper-zoom${zoom > 1 ? " epaper-zoom-active" : ""}`}
             style={{ transform: `scale(${zoom})` }}
           >
-            {epaper.fileType === "pdf" ? (
+            {epaper.fileType === "pdf" && isMobileView && mobilePdfPreviewUrl ? (
+              <img
+                src={mobilePdfPreviewUrl}
+                alt={`${epaper.title} preview`}
+                className="epaper-mobile-preview"
+              />
+            ) : epaper.fileType === "pdf" ? (
               <iframe title={epaper.title} src={pdfSrc} />
             ) : (
               <img src={epaper.fileUrl} alt={epaper.title} />

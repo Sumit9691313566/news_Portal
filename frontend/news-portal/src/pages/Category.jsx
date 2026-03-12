@@ -14,6 +14,22 @@ const formatIssueDate = (value) => {
   return `${day}-${month}-${year}`;
 };
 
+const getCloudinaryPdfPreviewUrl = (epaper) => {
+  if (!epaper?.fileUrl || epaper.fileType !== "pdf") return "";
+
+  const cloudMatch = epaper.fileUrl.match(/res\.cloudinary\.com\/([^/]+)/i);
+  const cloudName = cloudMatch?.[1];
+  if (!cloudName) return "";
+
+  const rawPublicId = (epaper.publicId || "")
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/^\/+/, "");
+
+  if (!rawPublicId) return "";
+
+  return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,f_jpg,q_auto,w_1200/${rawPublicId}.jpg`;
+};
+
 export default function Category() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -767,6 +783,11 @@ export default function Category() {
                       <div className="epaper-preview-thumb">
                         {e.fileType === "image" ? (
                           <img src={e.fileUrl} alt={e.title} />
+                        ) : isCompactMobile && getCloudinaryPdfPreviewUrl(e) ? (
+                          <img
+                            src={getCloudinaryPdfPreviewUrl(e)}
+                            alt={`${e.title} preview`}
+                          />
                         ) : !isCompactMobile && epaperPreviewUrls[e._id] ? (
                           <iframe
                             src={epaperPreviewUrls[e._id]}
