@@ -64,6 +64,42 @@ export default function VideoPlayer() {
     window.open(target, "_blank", "noopener,noreferrer");
   };
 
+  const downloadVideo = async () => {
+    if (!url) {
+      alert("Video URL उपलब्ध नहीं है");
+      return;
+    }
+
+    try {
+      const safeTitle = (title || "video")
+        .trim()
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        .toLowerCase();
+
+      const extMatch = url.match(/\.([a-z0-9]{2,6})(?:\?|$)/i);
+      const ext = extMatch ? extMatch[1] : "mp4";
+      const fileName = `${safeTitle || "video"}.${ext}`;
+
+      const response = await fetch(url, { mode: "cors" });
+      if (!response.ok) throw new Error("Failed to fetch video");
+      const blob = await response.blob();
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+      alert("डाउनलोड शुरू हो गया");
+    } catch (err) {
+      console.error(err);
+      alert("डाउनलोड विफल हुआ");
+    }
+  };
+
   const handleTwitterShare = () => {
     const target = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
       shareUrl
@@ -110,6 +146,10 @@ export default function VideoPlayer() {
             <button type="button" className="share-item" onClick={handleFacebookShare}>
               <span className="share-icon">f</span>
               <span>फेसबुक</span>
+            </button>
+            <button type="button" className="share-item" onClick={downloadVideo}>
+              <span className="share-icon">⬇</span>
+              <span>डाउनलोड</span>
             </button>
             <button type="button" className="share-item" onClick={handleTwitterShare}>
               <span className="share-icon">X</span>
