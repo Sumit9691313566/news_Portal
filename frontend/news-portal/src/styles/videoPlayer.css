@@ -226,19 +226,22 @@
   .video-share-rail {
     flex-direction: row;
     justify-content: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .share-item {
-    width: 82px;
-    gap: 4px;
+    width: 64px;
+    gap: 6px;
   }
 
   .share-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 22px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
   }
 
   .share-item span:last-child {
