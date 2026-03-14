@@ -114,13 +114,21 @@ let server = null;
 
 const startServer = async () => {
   if (!MONGO_URI) {
-    throw new Error("MONGO_URI is missing. Check backend/.env");
+    console.warn("MONGO_URI is missing. Starting server without DB connection.");
+    server = app.listen(PORT, () => {
+      console.log(`Server running on ${PORT} (${NODE_ENV}) without DB`);
+    });
+    return;
   }
 
-  await mongoose.connect(MONGO_URI);
-  console.log("MongoDB Connected");
-
-  startRetentionJob();
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log("MongoDB Connected");
+    startRetentionJob();
+  } catch (err) {
+    console.error("Failed to connect to MongoDB:", err);
+    console.warn("Starting server without DB connection.");
+  }
 
   server = app.listen(PORT, () => {
     console.log(`Server running on ${PORT} (${NODE_ENV})`);

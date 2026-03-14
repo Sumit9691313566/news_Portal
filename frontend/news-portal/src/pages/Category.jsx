@@ -47,9 +47,6 @@ export default function Category() {
   const [visibleCount, setVisibleCount] = useState(5);
   const [epapers, setEpapers] = useState([]);
   const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
-  const [isCompactMobile, setIsCompactMobile] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth <= 600 : false
-  );
 
   const scrollToNewsStart = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -126,12 +123,6 @@ export default function Category() {
   }, []);
 
   useEffect(() => {
-    const handleResize = () => setIsCompactMobile(window.innerWidth <= 600);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const nextView = params.get("view") || "home";
     const nextCategory = params.get("cat") || "All";
@@ -180,11 +171,6 @@ export default function Category() {
   };
 
   useEffect(() => {
-    if (isCompactMobile) {
-      setEpaperPreviewUrls({});
-      return undefined;
-    }
-
     const pdfEpapers = epapers.filter(
       (epaper) => epaper.fileType === "pdf" && epaper.fileUrl
     );
@@ -229,7 +215,7 @@ export default function Category() {
       active = false;
       createdUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [epapers, isCompactMobile]);
+  }, [epapers]);
 
 
   /* ================= FILTER ================= */
@@ -783,16 +769,16 @@ export default function Category() {
                       <div className="epaper-preview-thumb">
                         {e.fileType === "image" ? (
                           <img src={e.fileUrl} alt={e.title} />
-                        ) : isCompactMobile && getCloudinaryPdfPreviewUrl(e) ? (
-                          <img
-                            src={getCloudinaryPdfPreviewUrl(e)}
-                            alt={`${e.title} preview`}
-                          />
-                        ) : !isCompactMobile && epaperPreviewUrls[e._id] ? (
+                        ) : epaperPreviewUrls[e._id] ? (
                           <iframe
                             src={epaperPreviewUrls[e._id]}
                             className="epaper-preview-frame"
                             title={e.title}
+                          />
+                        ) : getCloudinaryPdfPreviewUrl(e) ? (
+                          <img
+                            src={getCloudinaryPdfPreviewUrl(e)}
+                            alt={`${e.title} preview`}
                           />
                         ) : (
                           <div className="pdf-thumb">PDF</div>

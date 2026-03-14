@@ -1,4 +1,5 @@
 import News from "../models/News.js";
+import mongoose from "mongoose";
 import DeletedNews from "../models/DeletedNews.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
@@ -371,6 +372,12 @@ export const deleteDeletedNewsBulk = async (req, res) => {
 /* ================= GET ALL NEWS ================= */
 export const getAllNews = async (req, res) => {
   try {
+    // If MongoDB is not connected, return an empty array so frontend can still load.
+    if (mongoose.connection && mongoose.connection.readyState !== 1) {
+      console.warn("MongoDB not connected - returning empty news list");
+      return res.json([]);
+    }
+
     let query = {};
     if (!req?.admin) {
       query = { status: "published" };
