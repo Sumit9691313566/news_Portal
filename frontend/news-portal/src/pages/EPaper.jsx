@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/category.css";
-import { fetchWithTimeout } from "../services/api";
+import { fetchWithTimeout, buildApiUrl } from "../services/api";
 
 const formatIssueDate = (value) => {
   const date = new Date(value);
@@ -77,25 +77,11 @@ export default function EPaper() {
     const createdUrls = [];
 
     const loadPreviewUrls = async () => {
-      const entries = await Promise.all(
-        pdfEpapers.map(async (epaper) => {
-          try {
-            const response = await fetch(epaper.fileUrl, { mode: "cors" });
-            if (!response.ok) {
-              return [epaper._id, ""];
-            }
-
-            const sourceBlob = await response.blob();
-            const blobUrl = URL.createObjectURL(
-              new Blob([sourceBlob], { type: "application/pdf" })
-            );
-            createdUrls.push(blobUrl);
-            return [epaper._id, `${blobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`];
-          } catch {
-            return [epaper._id, ""];
-          }
-        })
-      );
+      const entries = pdfEpapers.map((epaper) => {
+        // Prefer backend file proxy so previews don't fail due to CORS.
+        const backendFile = buildApiUrl(`epaper/${epaper._id}/file`);
+        return [epaper._id, `${backendFile}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`];
+      });
 
       if (active) {
         setEpaperPreviewUrls(Object.fromEntries(entries));

@@ -1,4 +1,5 @@
 import Epaper from "../models/Epaper.js";
+import mongoose from "mongoose";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
@@ -57,11 +58,19 @@ export const createEpaper = async (req, res) => {
 
 export const getAllEpaper = async (req, res) => {
   try {
+    // If MongoDB is not connected, return an empty list so the frontend
+    // can still render and fall back to other preview strategies.
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+      console.warn("MongoDB not connected - returning empty epaper list");
+      return res.json([]);
+    }
+
     const epapers = await Epaper.find().sort({ createdAt: -1 });
     res.json(epapers);
   } catch (error) {
     console.error("EPAPER GET ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    // On unexpected errors, return an empty list to avoid breaking the UI.
+    res.json([]);
   }
 };
 
