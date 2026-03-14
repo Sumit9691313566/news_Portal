@@ -4,6 +4,22 @@ import DeletedNews from "../models/DeletedNews.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
+const REMOTE_API_BASE = String(
+  process.env.DEV_REMOTE_API_BASE ||
+    "https://newsportal-production-164d.up.railway.app/api"
+).replace(/\/+$/, "");
+const canUseRemoteReadFallback = () =>
+  process.env.NODE_ENV !== "production" &&
+  (!mongoose.connection || mongoose.connection.readyState !== 1);
+
+const fetchRemoteJson = async (path) => {
+  const response = await fetch(`${REMOTE_API_BASE}/${String(path).replace(/^\/+/, "")}`);
+  if (!response.ok) {
+    throw new Error(`Remote API failed with status ${response.status}`);
+  }
+  return response.json();
+};
+
 const toBoolean = (value) =>
   value === true || value === "true" || value === "1" || value === 1;
 const isMainAdmin = (req) => {
@@ -372,10 +388,10 @@ export const deleteDeletedNewsBulk = async (req, res) => {
 /* ================= GET ALL NEWS ================= */
 export const getAllNews = async (req, res) => {
   try {
-    // If MongoDB is not connected, return an empty array so frontend can still load.
-    if (mongoose.connection && mongoose.connection.readyState !== 1) {
-      console.warn("MongoDB not connected - returning empty news list");
-      return res.json([]);
+    if (canUseRemoteReadFallback()) {
+      console.warn("MongoDB not connected - serving news from remote fallback");
+      const remoteNews = await fetchRemoteJson("news");
+      return res.json(Array.isArray(remoteNews) ? remoteNews : []);
     }
 
     let query = {};

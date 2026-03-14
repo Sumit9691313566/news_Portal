@@ -3,6 +3,22 @@ import mongoose from "mongoose";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
+const REMOTE_API_BASE = String(
+  process.env.DEV_REMOTE_API_BASE ||
+    "https://newsportal-production-164d.up.railway.app/api"
+).replace(/\/+$/, "");
+const canUseRemoteReadFallback = () =>
+  process.env.NODE_ENV !== "production" &&
+  (!mongoose.connection || mongoose.connection.readyState !== 1);
+
+const fetchRemoteResponse = async (path) => {
+  const response = await fetch(`${REMOTE_API_BASE}/${String(path).replace(/^\/+/, "")}`);
+  if (!response.ok) {
+    throw new Error(`Remote API failed with status ${response.status}`);
+  }
+  return response;
+};
+
 const uploadToCloudinary = (file, resourceType) =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -58,24 +74,30 @@ export const createEpaper = async (req, res) => {
 
 export const getAllEpaper = async (req, res) => {
   try {
-    // If MongoDB is not connected, return an empty list so the frontend
-    // can still render and fall back to other preview strategies.
-    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
-      console.warn("MongoDB not connected - returning empty epaper list");
-      return res.json([]);
+    if (canUseRemoteReadFallback()) {
+      console.warn("MongoDB not connected - serving epaper list from remote fallback");
+      const response = await fetchRemoteResponse("epaper");
+      const remoteEpapers = await response.json();
+      return res.json(Array.isArray(remoteEpapers) ? remoteEpapers : []);
     }
 
     const epapers = await Epaper.find().sort({ createdAt: -1 });
     res.json(epapers);
   } catch (error) {
     console.error("EPAPER GET ERROR:", error);
-    // On unexpected errors, return an empty list to avoid breaking the UI.
     res.json([]);
   }
 };
 
 export const getEpaperById = async (req, res) => {
   try {
+    if (canUseRemoteReadFallback()) {
+      console.warn("MongoDB not connected - serving epaper by id from remote fallback");
+      const response = await fetchRemoteResponse(`epaper/${req.params.id}`);
+      const remoteEpaper = await response.json();
+      return res.json(remoteEpaper);
+    }
+
     const epaper = await Epaper.findById(req.params.id);
     if (!epaper) {
       return res.status(404).json({ message: "Epaper not found" });
@@ -89,6 +111,27 @@ export const getEpaperById = async (req, res) => {
 
 export const streamEpaperFile = async (req, res) => {
   try {
+    if (canUseRemoteReadFallback()) {
+      console.warn("MongoDB not connected - streaming epaper file from remote fallback");
+      const response = await fetchRemoteResponse(`epaper/${req.params.id}/file`);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      res.setHeader(
+        "Content-Type",
+        response.headers.get("content-type") || "application/pdf"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        response.headers.get("content-disposition") || 'inline; filename="epaper.pdf"'
+      );
+      res.setHeader(
+        "Cache-Control",
+        response.headers.get("cache-control") || "public, max-age=300"
+      );
+      return res.send(buffer);
+    }
+
     const epaper = await Epaper.findById(req.params.id);
     if (!epaper) {
       return res.status(404).json({ message: "Epaper not found" });

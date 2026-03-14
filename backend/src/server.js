@@ -125,11 +125,12 @@ app.use((err, req, res, next) => {
 let server = null;
 
 const startServer = async () => {
+  server = app.listen(PORT, () => {
+    console.log(`Server running on ${PORT} (${NODE_ENV})`);
+  });
+
   if (!MONGO_URI) {
     console.warn("MONGO_URI is missing. Starting server without DB connection.");
-    server = app.listen(PORT, () => {
-      console.log(`Server running on ${PORT} (${NODE_ENV}) without DB`);
-    });
     return;
   }
 
@@ -141,12 +142,8 @@ const startServer = async () => {
     startRetentionJob();
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err);
-    console.warn("Starting server without DB connection.");
+    console.warn("Continuing without DB connection.");
   }
-
-  server = app.listen(PORT, () => {
-    console.log(`Server running on ${PORT} (${NODE_ENV})`);
-  });
 };
 
 startServer().catch((err) => {
