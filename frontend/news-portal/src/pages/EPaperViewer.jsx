@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 const clampZoom = (value) => Math.min(3, Math.max(0.8, +value.toFixed(2)));
 
@@ -152,7 +152,7 @@ export default function EPaperViewer() {
         setError("");
         setMobilePdfPages([]);
 
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
         pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
         const candidateUrls = [directFileUrl, epaper.fileUrl].filter(Boolean);
         let pdfData = null;
