@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../styles/category.css";
-import { fetchWithTimeout } from "../services/api";
+import { buildApiUrl, fetchWithTimeout } from "../services/api";
 
 const clampZoom = (value) => Math.min(3, Math.max(0.8, +value.toFixed(2)));
 
@@ -24,6 +24,9 @@ export default function EPaperViewer() {
   const [pdfBlobUrl, setPdfBlobUrl] = useState("");
   const [preparingPdf, setPreparingPdf] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
   const pinchStateRef = useRef({ distance: 0, zoom: 1 });
 
   const goBackSafe = () => {
@@ -40,6 +43,17 @@ export default function EPaperViewer() {
     if (!pdfBlobUrl) return "";
     return `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
   }, [epaper, pdfBlobUrl]);
+
+  const directFileUrl = useMemo(() => {
+    if (!epaper?._id) return "";
+    return buildApiUrl(`epaper/${epaper._id}/file`);
+  }, [epaper]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (epaper || !id) return;
@@ -61,7 +75,7 @@ export default function EPaperViewer() {
   }, [id, epaper]);
 
   useEffect(() => {
-    if (!epaper?.fileUrl || epaper.fileType !== "pdf") {
+    if (!epaper?.fileUrl || epaper.fileType !== "pdf" || isMobileView) {
       setPdfBlobUrl("");
       setPreparingPdf(false);
       return undefined;
@@ -108,7 +122,7 @@ export default function EPaperViewer() {
         URL.revokeObjectURL(nextBlobUrl);
       }
     };
-  }, [epaper]);
+  }, [epaper, isMobileView]);
 
   useEffect(() => {
     if (!actionMessage) return undefined;
@@ -170,8 +184,14 @@ export default function EPaperViewer() {
   };
 
   const openPdfDirect = () => {
-    const openUrl = pdfBlobUrl || epaper?.fileUrl;
+    const openUrl = directFileUrl || pdfBlobUrl || epaper?.fileUrl;
     if (!openUrl) return;
+
+    if (isMobileView) {
+      window.location.href = openUrl;
+      return;
+    }
+
     const popup = window.open(openUrl, "_blank", "noopener,noreferrer");
     if (!popup) {
       window.location.href = openUrl;
@@ -277,12 +297,15 @@ export default function EPaperViewer() {
             className={`epaper-zoom${zoom > 1 ? " epaper-zoom-active" : ""}`}
             style={{ transform: `scale(${zoom})` }}
           >
-            {epaper.fileType === "pdf" && pdfSrc ? (
+            {epaper.fileType === "pdf" && !isMobileView && pdfSrc ? (
               <iframe title={epaper.title} src={pdfSrc} />
             ) : epaper.fileType === "pdf" ? (
               <div className="epaper-native-fallback">
                 <div className="pdf-thumb">PDF</div>
-                <p>Preview load nahi ho pa raha. Open par click karke PDF dekho.</p>
+                <p>
+                  Mobile browser me inline preview blank aa sakta hai. Open PDF
+                  par click karke native viewer me dekho.
+                </p>
                 <button type="button" onClick={openPdfDirect}>
                   Open PDF
                 </button>
