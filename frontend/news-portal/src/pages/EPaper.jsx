@@ -170,18 +170,16 @@ export default function EPaper() {
                 <div className="epaper-edition-thumb">
                   {epaper.fileType === "image" ? (
                     <img src={epaper.fileUrl} alt={epaper.title} />
-                  ) : epaperPreviewUrls[epaper._id] ? (
-                    <iframe
-                      src={epaperPreviewUrls[epaper._id]}
-                      className="epaper-edition-frame"
-                      title={epaper.title}
-                    />
                   ) : getCloudinaryPdfPreviewUrl(epaper) ? (
+                    // Use Cloudinary-generated preview image for PDFs in lists
                     <img
                       src={getCloudinaryPdfPreviewUrl(epaper)}
                       alt={`${epaper.title} preview`}
                     />
                   ) : (
+                    // Avoid embedding the PDF in an iframe inside the listing —
+                    // mobile browsers show their own "Open" overlay. Show a
+                    // simple PDF placeholder instead.
                     <div className="pdf-thumb">PDF</div>
                   )}
                 </div>

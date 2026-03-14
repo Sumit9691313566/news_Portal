@@ -769,12 +769,6 @@ export default function Category() {
                       <div className="epaper-preview-thumb">
                         {e.fileType === "image" ? (
                           <img src={e.fileUrl} alt={e.title} />
-                        ) : epaperPreviewUrls[e._id] ? (
-                          <iframe
-                            src={epaperPreviewUrls[e._id]}
-                            className="epaper-preview-frame"
-                            title={e.title}
-                          />
                         ) : getCloudinaryPdfPreviewUrl(e) ? (
                           <img
                             src={getCloudinaryPdfPreviewUrl(e)}
