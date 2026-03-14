@@ -2042,6 +2042,23 @@ body {
   display: block;
 }
 
+.epaper-mobile-pages {
+  width: min(100%, 900px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 auto;
+}
+
+.epaper-mobile-page {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+}
+
 .epaper-native-fallback {
   width: min(420px, 100%);
   min-height: 320px;

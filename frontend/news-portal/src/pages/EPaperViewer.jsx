@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
+import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 const clampZoom = (value) => Math.min(3, Math.max(0.8, +value.toFixed(2)));
 
@@ -11,6 +12,20 @@ const getTouchDistance = (touches) => {
   const dx = first.clientX - second.clientX;
   const dy = first.clientY - second.clientY;
   return Math.hypot(dx, dy);
+};
+
+const isHandheldDevice = () => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
+
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+  const mobileUa =
+    /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(
+      navigator.userAgent || ""
+    );
+
+  return Boolean(coarsePointer || mobileUa);
 };
 
 export default function EPaperViewer() {
@@ -24,9 +39,8 @@ export default function EPaperViewer() {
   const [pdfBlobUrl, setPdfBlobUrl] = useState("");
   const [preparingPdf, setPreparingPdf] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
-  const [isMobileView, setIsMobileView] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth <= 768 : false
-  );
+  const [isMobileView, setIsMobileView] = useState(() => isHandheldDevice());
+  const [mobilePdfPages, setMobilePdfPages] = useState([]);
   const pinchStateRef = useRef({ distance: 0, zoom: 1 });
 
   const goBackSafe = () => {
@@ -50,7 +64,7 @@ export default function EPaperViewer() {
   }, [epaper]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobileView(window.innerWidth <= 768);
+    const handleResize = () => setIsMobileView(isHandheldDevice());
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -123,6 +137,97 @@ export default function EPaperViewer() {
       }
     };
   }, [epaper, isMobileView]);
+
+  useEffect(() => {
+    if (!epaper?.fileUrl || epaper.fileType !== "pdf" || !isMobileView) {
+      setMobilePdfPages([]);
+      return undefined;
+    }
+
+    let active = true;
+
+    const renderMobilePdf = async () => {
+      try {
+        setPreparingPdf(true);
+        setError("");
+        setMobilePdfPages([]);
+
+        const pdfjs = await import("pdfjs-dist");
+        pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+        const candidateUrls = [directFileUrl, epaper.fileUrl].filter(Boolean);
+        let pdfData = null;
+        let lastError = null;
+
+        for (const url of candidateUrls) {
+          try {
+            const response = await fetch(url, { mode: "cors" });
+            if (!response.ok) {
+              throw new Error(`PDF response ${response.status}`);
+            }
+            pdfData = new Uint8Array(await response.arrayBuffer());
+            break;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        if (!pdfData) {
+          throw lastError || new Error("PDF file fetch nahi ho pa raha");
+        }
+
+        const loadingTask = pdfjs.getDocument({ data: pdfData });
+        const pdf = await loadingTask.promise;
+        const renderedPages = [];
+        const targetWidth =
+          typeof window !== "undefined"
+            ? Math.max(280, Math.min(window.innerWidth - 32, 900))
+            : 360;
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          const page = await pdf.getPage(pageNumber);
+          const baseViewport = page.getViewport({ scale: 1 });
+          const scale = targetWidth / baseViewport.width;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d", { alpha: false });
+
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+
+          await page.render({
+            canvasContext: context,
+            viewport,
+          }).promise;
+
+          renderedPages.push({
+            pageNumber,
+            src: canvas.toDataURL("image/jpeg", 0.92),
+            width: viewport.width,
+            height: viewport.height,
+          });
+        }
+
+        if (active) {
+          setMobilePdfPages(renderedPages);
+        }
+      } catch (err) {
+        if (active) {
+          setMobilePdfPages([]);
+          setError(err.message || "PDF load nahi ho pa raha");
+        }
+      } finally {
+        if (active) {
+          setPreparingPdf(false);
+        }
+      }
+    };
+
+    renderMobilePdf();
+
+    return () => {
+      active = false;
+    };
+  }, [directFileUrl, epaper, isMobileView]);
 
   useEffect(() => {
     if (!actionMessage) return undefined;
@@ -297,14 +402,25 @@ export default function EPaperViewer() {
             className={`epaper-zoom${zoom > 1 ? " epaper-zoom-active" : ""}`}
             style={{ transform: `scale(${zoom})` }}
           >
-            {epaper.fileType === "pdf" && !isMobileView && pdfSrc ? (
+            {epaper.fileType === "pdf" && isMobileView && mobilePdfPages.length > 0 ? (
+              <div className="epaper-mobile-pages">
+                {mobilePdfPages.map((page) => (
+                  <img
+                    key={page.pageNumber}
+                    src={page.src}
+                    alt={`${epaper.title} page ${page.pageNumber}`}
+                    className="epaper-mobile-page"
+                  />
+                ))}
+              </div>
+            ) : epaper.fileType === "pdf" && !isMobileView && pdfSrc ? (
               <iframe title={epaper.title} src={pdfSrc} />
             ) : epaper.fileType === "pdf" ? (
               <div className="epaper-native-fallback">
                 <div className="pdf-thumb">PDF</div>
                 <p>
-                  Mobile browser me inline preview blank aa sakta hai. Open PDF
-                  par click karke native viewer me dekho.
+                  Preview abhi load nahi ho pa raha. Open PDF par click karke
+                  file ko direct viewer me kholo.
                 </p>
                 <button type="button" onClick={openPdfDirect}>
                   Open PDF
