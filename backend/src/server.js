@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import dns from "node:dns";
 
 import newsRoutes from "./routes/newsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -16,6 +17,17 @@ console.log("Cloudinary Env Check:", {
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 const MONGO_URI = process.env.MONGO_URI;
+const MONGO_DNS_SERVERS = String(
+  process.env.MONGO_DNS_SERVERS || "8.8.8.8,1.1.1.1"
+)
+  .split(",")
+  .map((server) => server.trim())
+  .filter(Boolean);
+
+if (MONGO_DNS_SERVERS.length > 0) {
+  dns.setServers(MONGO_DNS_SERVERS);
+  console.log("Mongo DNS servers:", MONGO_DNS_SERVERS);
+}
 
 const app = express();
 
@@ -122,7 +134,9 @@ const startServer = async () => {
   }
 
   try {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 15000,
+    });
     console.log("MongoDB Connected");
     startRetentionJob();
   } catch (err) {

@@ -47,6 +47,7 @@ export default function Category() {
   const [visibleCount, setVisibleCount] = useState(5);
   const [epapers, setEpapers] = useState([]);
   const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
+  const [subscribeMessage, setSubscribeMessage] = useState("");
 
   const scrollToNewsStart = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -424,9 +425,21 @@ export default function Category() {
           </div>
           <div className="top-right">
             <span className="edition">Morning Edition</span>
-            <button type="button" className="subscribe-btn">
-              Subscribe
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="subscribe-btn"
+                onClick={() => {
+                  setSubscribeMessage("Coming soon");
+                  window.setTimeout(() => setSubscribeMessage(""), 2200);
+                }}
+              >
+                Subscribe
+              </button>
+              {subscribeMessage && (
+                <div className="subscribe-toast">{subscribeMessage}</div>
+              )}
+            </div>
           </div>
         </div>
 

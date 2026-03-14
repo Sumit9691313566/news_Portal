@@ -147,6 +147,20 @@ body {
 .brand {
   display: flex;
   flex-direction: column;
+/* Small transient toast shown when Subscribe is clicked */
+.subscribe-toast {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  background: #111827;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  white-space: nowrap;
+  z-index: 40;
+}
   align-items: flex-start;
   gap: 0;
 }
