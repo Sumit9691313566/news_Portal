@@ -12,7 +12,7 @@ COPY backend/ ./
 # Install dependencies: prefer `npm ci` when lockfile exists for reproducible installs,
 # otherwise fall back to `npm install`. Use --omit=dev to skip dev dependencies.
 RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev; \
+      npm ci --omit=dev || npm install --omit=dev; \
     else \
       npm install --omit=dev; \
     fi
