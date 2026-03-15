@@ -43,18 +43,24 @@ export const registerAndSubscribe = async () => {
 export const promptForSubscription = async () => {
   // During development on localhost always show prompt to help testing
   try {
-    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('localhost')) {
-      localStorage.removeItem('pushPromptSeen');
+    // Allow an explicit reset via URL param for testing, otherwise respect user's previous choice
+    if (typeof window !== 'undefined' && window.location) {
+      const params = new URL(window.location.href).searchParams;
+      if (params.get('resetPushPrompt') === '1') {
+        localStorage.removeItem('pushPromptSeen');
+      }
     }
   } catch {}
-
   const already = localStorage.getItem('pushPromptSeen');
   if (already === '1') return;
-  localStorage.setItem('pushPromptSeen', '1');
 
   // Simple popup prompt (Hindi)
   const allow = window.confirm(
     'क्या आप ब्रेकिंग न्यूज़ नोटिफिकेशन चालू करना चाहते हैं? अनुमति के लिए OK दबाएँ, बाद में करने के लिए Cancel दबाएँ।'
   );
+  try {
+    // persist the user's choice so the prompt won't reappear
+    localStorage.setItem('pushPromptSeen', '1');
+  } catch {}
   if (allow) await registerAndSubscribe();
 };
