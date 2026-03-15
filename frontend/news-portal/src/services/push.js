@@ -1,0 +1,60 @@
+import { API_BASE_URL } from "./api";
+
+const urlBase64ToUint8Array = (base64String) => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+};
+
+export const registerAndSubscribe = async () => {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+
+    const resp = await fetch(`${API_BASE_URL}/push/vapidPublicKey`);
+    if (!resp.ok) return;
+    const { publicKey } = await resp.json();
+    if (!publicKey) return;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    await fetch(`${API_BASE_URL}/push/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subscription),
+    });
+    localStorage.setItem('pushSubscribed', '1');
+  } catch (err) {
+    console.warn('Push subscribe failed', err);
+  }
+};
+
+export const promptForSubscription = async () => {
+  // During development on localhost always show prompt to help testing
+  try {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('localhost')) {
+      localStorage.removeItem('pushPromptSeen');
+    }
+  } catch {}
+
+  const already = localStorage.getItem('pushPromptSeen');
+  if (already === '1') return;
+  localStorage.setItem('pushPromptSeen', '1');
+
+  // Simple popup prompt (Hindi)
+  const allow = window.confirm(
+    'क्या आप ब्रेकिंग न्यूज़ नोटिफिकेशन चालू करना चाहते हैं? अनुमति के लिए OK दबाएँ, बाद में करने के लिए Cancel दबाएँ।'
+  );
+  if (allow) await registerAndSubscribe();
+};

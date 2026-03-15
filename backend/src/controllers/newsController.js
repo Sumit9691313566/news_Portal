@@ -1,6 +1,7 @@
 import News from "../models/News.js";
 import mongoose from "mongoose";
 import DeletedNews from "../models/DeletedNews.js";
+import { sendNotificationToAll } from "../utils/push.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
@@ -184,6 +185,20 @@ export const createNews = async (req, res) => {
     });
 
     res.status(201).json(news);
+    try {
+      if (news.status === "published") {
+        const payload = {
+          title: "गरुड़ समाचार",
+          message: news.title || "नया समाचार प्रकाशित हुआ है",
+          image: news.mediaUrl || (Array.isArray(news.blocks) && news.blocks[0]?.url) || null,
+          url: `${process.env.FRONTEND_URL || ""}/news/${news._id}`,
+          tag: `news-${news._id}`,
+        };
+        sendNotificationToAll(payload).catch((e) => console.warn("push send error", e.message || e));
+      }
+    } catch (err) {
+      console.warn("Notification trigger failed:", err?.message || err);
+    }
   } catch (error) {
     console.error("CREATE NEWS ERROR:", error);
     const message = error.message || "Failed to create news";
@@ -287,6 +302,21 @@ export const updateNews = async (req, res) => {
     await news.save();
 
     res.json(news);
+    try {
+      // If the news was published (status now published), trigger notification
+      if (news.status === "published") {
+        const payload = {
+          title: "Breaking News",
+          message: news.title || "New story published",
+          image: news.mediaUrl || (Array.isArray(news.blocks) && news.blocks[0]?.url) || null,
+          url: `${process.env.FRONTEND_URL || ""}/news/${news._id}`,
+          tag: `news-${news._id}`,
+        };
+        sendNotificationToAll(payload).catch((e) => console.warn("push send error", e.message || e));
+      }
+    } catch (err) {
+      console.warn("Notification trigger failed:", err?.message || err);
+    }
   } catch (error) {
     console.error("UPDATE NEWS ERROR:", error);
     const message = error.message || "Failed to update news";

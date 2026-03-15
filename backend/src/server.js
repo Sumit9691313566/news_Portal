@@ -7,7 +7,9 @@ import dns from "node:dns";
 import newsRoutes from "./routes/newsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import epaperRoutes from "./routes/epaperRoutes.js";
+import pushRoutes from "./routes/pushRoutes.js";
 import { startRetentionJob } from "./utils/retention.js";
+import { startDailyDigestJobs } from "./utils/digest.js";
 
 console.log("Cloudinary Env Check:", {
   cloud: process.env.CLOUDINARY_CLOUD_NAME,
@@ -101,6 +103,7 @@ app.get("/debug", (req, res) => {
 app.use("/api/news", newsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/epaper", epaperRoutes);
+app.use("/api/push", pushRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err);
@@ -140,6 +143,8 @@ const startServer = async () => {
     });
     console.log("MongoDB Connected");
     startRetentionJob();
+    // start daily digest scheduler
+    startDailyDigestJobs();
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err);
     console.warn("Continuing without DB connection.");

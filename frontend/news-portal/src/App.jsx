@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import MainAdminDashboard from "./pages/MainAdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import { useEffect } from "react";
+import { promptForSubscription } from "./services/push";
 
 // 👇 NEW PAGES
 import Videos from "./pages/Videos";
@@ -12,8 +14,13 @@ import Search from "./pages/Search";
 import EPaper from "./pages/EPaper";
 import VideoPlayer from "./pages/VideoPlayer";
 import EPaperViewer from "./pages/EPaperViewer";
+import NotificationPanel from "./pages/NotificationPanel";
 
 function App() {
+  useEffect(() => {
+    promptForSubscription().catch(() => {});
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -44,6 +51,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="main-admin">
               <MainAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/main-admin/notifications"
+          element={
+            <ProtectedRoute requiredRole="main-admin">
+              <NotificationPanel />
             </ProtectedRoute>
           }
         />
