@@ -1,32 +1,191 @@
-﻿import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { fetchWithTimeout } from "../services/api";
+import { fallbackVideos, normalizeVideosFromNews } from "../utils/videoFeed";
 import "../styles/videoPlayer.css";
 
 export default function VideoPlayer() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { state } = useLocation();
+  const feedRef = useRef(null);
+  const cardRefs = useRef([]);
+  const videoRefs = useRef([]);
 
-  const title = state?.title || "Video";
-  const url = state?.url || "";
-  const summary = (state?.summary || "").trim();
-  const category = state?.category || "Article";
-  const newsId = state?.newsId || null;
-  const shortTitle = (summary || title)
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 3)
-    .join(" ");
+  const [videos, setVideos] = useState(() => {
+    if (Array.isArray(state?.videos) && state.videos.length > 0) {
+      return state.videos;
+    }
 
-  const categoryLabelMap = {
-    National: "राष्ट्रीय",
-    Business: "बिज़नेस",
-    Politics: "राजनीति",
-    Sports: "खेल",
-    Tech: "टेक",
-    Entertainment: "मनोरंजन",
-    World: "दुनिया",
-    Article: "आर्टिकल",
-  };
-  const categoryLabel = categoryLabelMap[category] || "आर्टिकल";
+    if (state?.url) {
+      return [
+        {
+          id: state?.selectedVideoId || id || "video",
+          mediaUrl: state.url,
+          title: state.title || "Video",
+          summary: state.summary || "",
+          category: state.category || "Article",
+          createdAt: state.createdAt,
+          newsId: state.newsId || null,
+        },
+      ];
+    }
+
+    return [];
+  });
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(videos.length === 0);
+  const lastRouteVideoIdRef = useRef(null);
+
+  useEffect(() => {
+    const selectedId = state?.selectedVideoId || id;
+    if (!selectedId || videos.length === 0) return;
+
+    const index = videos.findIndex((video) => String(video.id || video._id) === String(selectedId));
+    if (index >= 0) {
+      setActiveIndex(index);
+    }
+  }, [id, state?.selectedVideoId, videos]);
+
+  useEffect(() => {
+    if (videos.length > 0) {
+      setIsLoading(false);
+      return;
+    }
+
+    let ignore = false;
+
+    const load = async () => {
+      try {
+        const res = await fetchWithTimeout("news");
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        const normalized = normalizeVideosFromNews(list);
+        if (ignore) return;
+
+        const nextVideos = normalized.length > 0 ? normalized : fallbackVideos;
+        setVideos(nextVideos);
+
+        const selectedId = state?.selectedVideoId || id;
+        const index = nextVideos.findIndex(
+          (video) =>
+            String(video.id || video._id) === String(selectedId) ||
+            String(video.newsId) === String(selectedId)
+        );
+        setActiveIndex(index >= 0 ? index : 0);
+      } catch (err) {
+        console.error("Failed to load video feed", err);
+        if (!ignore) {
+          setVideos(fallbackVideos);
+          setActiveIndex(0);
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      ignore = true;
+    };
+  }, [id, state?.selectedVideoId, videos.length]);
+
+  useEffect(() => {
+    if (!feedRef.current || !cardRefs.current[activeIndex]) return;
+
+    cardRefs.current[activeIndex].scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const activeVideo = videos[activeIndex];
+    if (!activeVideo) return;
+
+    const routeVideoId = activeVideo.id || activeVideo._id;
+    if (lastRouteVideoIdRef.current === routeVideoId) {
+      return;
+    }
+
+    lastRouteVideoIdRef.current = routeVideoId;
+
+    navigate(`/videos/${routeVideoId}`, {
+      replace: true,
+      state: {
+        videos,
+        selectedVideoId: routeVideoId,
+        url: activeVideo.mediaUrl,
+        title: activeVideo.title,
+        summary: activeVideo.summary || "",
+        category: activeVideo.category || "Article",
+        createdAt: activeVideo.createdAt,
+        newsId: activeVideo.newsId,
+      },
+    });
+  }, [activeIndex, navigate, videos]);
+
+  useEffect(() => {
+    videoRefs.current.forEach((videoEl, index) => {
+      if (!videoEl) return;
+
+      if (index === activeIndex) {
+        const playPromise = videoEl.play();
+        if (playPromise?.catch) {
+          playPromise.catch(() => {});
+        }
+      } else {
+        videoEl.pause();
+      }
+    });
+  }, [activeIndex, videos]);
+
+  useEffect(() => {
+    const root = feedRef.current;
+    if (!root || videos.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let nextIndex = activeIndex;
+        let maxRatio = 0;
+
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const index = Number(entry.target.dataset.index);
+          if (entry.intersectionRatio > maxRatio) {
+            maxRatio = entry.intersectionRatio;
+            nextIndex = index;
+          }
+        });
+
+        if (nextIndex !== activeIndex) {
+          setActiveIndex(nextIndex);
+        }
+      },
+      {
+        root,
+        threshold: [0.55, 0.7, 0.9],
+      }
+    );
+
+    cardRefs.current.forEach((card) => {
+      if (card) observer.observe(card);
+    });
+
+    return () => observer.disconnect();
+  }, [activeIndex, videos]);
+
+  const activeVideo = videos[activeIndex];
+
+  const shareUrl = useMemo(() => {
+    if (!activeVideo) return window.location.href;
+    const currentId = activeVideo.id || activeVideo._id || id;
+    return `${window.location.origin}/videos/${currentId}`;
+  }, [activeVideo, id]);
 
   const goBackSafe = () => {
     if (window.history.length > 1) {
@@ -45,17 +204,14 @@ export default function VideoPlayer() {
     }
   };
 
-  const openRelatedNews = () => {
+  const openRelatedNews = (newsId) => {
     if (!newsId) {
       navigate("/");
       return;
     }
+
     navigate("/", { state: { openNewsId: newsId } });
   };
-
-  const shareUrl = newsId
-    ? `${window.location.origin}/videos/${newsId}`
-    : window.location.href;
 
   const handleFacebookShare = () => {
     const target = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
@@ -64,27 +220,34 @@ export default function VideoPlayer() {
     window.open(target, "_blank", "noopener,noreferrer");
   };
 
+  const handleTwitterShare = () => {
+    const target = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+      shareUrl
+    )}&text=${encodeURIComponent(activeVideo?.title || "Video")}`;
+    window.open(target, "_blank", "noopener,noreferrer");
+  };
+
   const downloadVideo = async () => {
-    if (!url) {
+    if (!activeVideo?.mediaUrl) {
       alert("Video URL उपलब्ध नहीं है");
       return;
     }
 
     try {
-      const safeTitle = (title || "video")
+      const safeTitle = (activeVideo.title || "video")
         .trim()
         .replace(/[^a-z0-9]+/gi, "-")
         .replace(/^-+|-+$/g, "")
         .toLowerCase();
 
-      const extMatch = url.match(/\.([a-z0-9]{2,6})(?:\?|$)/i);
+      const extMatch = activeVideo.mediaUrl.match(/\.([a-z0-9]{2,6})(?:\?|$)/i);
       const ext = extMatch ? extMatch[1] : "mp4";
       const fileName = `${safeTitle || "video"}.${ext}`;
 
-      const response = await fetch(url, { mode: "cors" });
+      const response = await fetch(activeVideo.mediaUrl, { mode: "cors" });
       if (!response.ok) throw new Error("Failed to fetch video");
-      const blob = await response.blob();
 
+      const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
@@ -100,12 +263,18 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleTwitterShare = () => {
-    const target = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-      shareUrl
-    )}&text=${encodeURIComponent(title)}`;
-    window.open(target, "_blank", "noopener,noreferrer");
+  const showNextVideo = () => {
+    if (videos.length <= 1) return;
+    setActiveIndex((current) => (current + 1) % videos.length);
   };
+
+  if (isLoading) {
+    return <div className="video-empty">वीडियो लोड हो रहे हैं...</div>;
+  }
+
+  if (!activeVideo) {
+    return <div className="video-empty">Video not found.</div>;
+  }
 
   return (
     <div className="video-page">
@@ -113,55 +282,69 @@ export default function VideoPlayer() {
         <button className="video-back" onClick={goBackSafe}>
           &larr; Back
         </button>
-        <h1>{title}</h1>
+        <h1>{activeVideo.title || "Video"}</h1>
       </div>
 
-      {!url && <div className="video-empty">Video not found.</div>}
-
-      {url && (
-        <div className="video-stage">
-          <div className="video-player">
-            <video src={url} controls playsInline />
-
-            <div className="video-top-overlay">
-              <button
-                type="button"
-                className="video-read-btn"
-                onClick={openRelatedNews}
+      <div className="video-feed-layout">
+        <div className="video-feed-shell" ref={feedRef}>
+          {videos.map((video, index) => {
+            return (
+              <article
+                key={video.id || video._id || index}
+                ref={(node) => {
+                  cardRefs.current[index] = node;
+                }}
+                data-index={index}
+                className={`video-feed-item ${
+                  index === activeIndex ? "is-active" : ""
+                }`}
               >
-                खबर पढ़ें
-              </button>
-            </div>
+                <div className="video-player">
+                  <video
+                    ref={(node) => {
+                      videoRefs.current[index] = node;
+                    }}
+                    src={video.mediaUrl}
+                    controls
+                    playsInline
+                    preload={index === activeIndex ? "auto" : "metadata"}
+                    onEnded={showNextVideo}
+                  />
 
-            <button
-              type="button"
-              className="video-tag-chip"
-              onClick={openRelatedNews}
-            >
-              {shortTitle || categoryLabel}
-            </button>
-          </div>
-
-          <div className="video-share-rail">
-            <button type="button" className="share-item" onClick={handleFacebookShare}>
-              <span className="share-icon">f</span>
-              <span>फेसबुक</span>
-            </button>
-            <button type="button" className="share-item" onClick={downloadVideo}>
-              <span className="share-icon">⬇</span>
-              <span>डाउनलोड</span>
-            </button>
-            <button type="button" className="share-item" onClick={handleTwitterShare}>
-              <span className="share-icon">X</span>
-              <span>ट्विटर</span>
-            </button>
-            <button type="button" className="share-item" onClick={copyVideoLink}>
-              <span className="share-icon">🔗</span>
-              <span>कॉपी लिंक</span>
-            </button>
-          </div>
+                  <div className="video-top-overlay">
+                    <button
+                      type="button"
+                      className="video-read-btn"
+                      onClick={() => openRelatedNews(video.newsId)}
+                    >
+                      खबर पढ़ें
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
-      )}
+
+        <div className="video-share-rail">
+          <button type="button" className="share-item" onClick={handleFacebookShare}>
+            <span className="share-icon">f</span>
+            <span>फेसबुक</span>
+          </button>
+          <button type="button" className="share-item" onClick={downloadVideo}>
+            <span className="share-icon">⬇</span>
+            <span>डाउनलोड</span>
+          </button>
+          <button type="button" className="share-item" onClick={handleTwitterShare}>
+            <span className="share-icon">X</span>
+            <span>ट्विटर</span>
+          </button>
+          <button type="button" className="share-item" onClick={copyVideoLink}>
+            <span className="share-icon">🔗</span>
+            <span>कॉपी लिंक</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
