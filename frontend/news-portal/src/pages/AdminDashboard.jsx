@@ -61,6 +61,8 @@ const mediaTypeFromUrl = (url) => {
 
 const readingMinutes = (words = 0) => Math.max(1, Math.ceil(words / 220));
 
+import NotificationPanel from "./NotificationPanel";
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
   const [breaking, setBreaking] = useState(false);
+  const [notify, setNotify] = useState(true);
   const [editId, setEditId] = useState(null);
   const [blocks, setBlocks] = useState([
     { id: Date.now(), type: "text", text: "" },
@@ -132,11 +135,12 @@ export default function AdminDashboard() {
       status,
       featured,
       breaking,
+      notify,
       blocks,
     };
     localStorage.setItem("adminDraft", JSON.stringify(payload));
     setLastSaved(new Date());
-  }, [title, category, status, featured, breaking, blocks]);
+  }, [title, category, status, featured, breaking, notify, blocks]);
 
   // Load draft once on mount
   useEffect(() => {
@@ -152,6 +156,7 @@ export default function AdminDashboard() {
       }
       if (typeof saved?.featured === "boolean") setFeatured(saved.featured);
       if (typeof saved?.breaking === "boolean") setBreaking(saved.breaking);
+      if (typeof saved?.notify === "boolean") setNotify(saved.notify);
       if (Array.isArray(saved?.blocks) && saved.blocks.length > 0) {
         setBlocks(
           saved.blocks.map((b) => ({
@@ -220,6 +225,7 @@ export default function AdminDashboard() {
     formData.append("status", safeStatus);
     formData.append("featured", featured);
     formData.append("breaking", breaking);
+    formData.append("notify", notify);
 
     const blocksPayload = blocks.map((b, index) => {
       if (b.type === "text") {
@@ -812,6 +818,15 @@ export default function AdminDashboard() {
               Breaking News
             </label>
 
+            <label className="checkbox field-label">
+              <input
+                type="checkbox"
+                checked={notify}
+                onChange={(e) => setNotify(e.target.checked)}
+              />
+              Send Notification on Publish
+            </label>
+
             <button className="btn primary full-btn" onClick={saveNews}>
               {editId
                 ? "Update News"
@@ -1043,6 +1058,11 @@ export default function AdminDashboard() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ===== NOTIFICATION PANEL (Manual send) ===== */}
+      <div className="card">
+        <NotificationPanel />
       </div>
     </div>
   );

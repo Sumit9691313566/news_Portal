@@ -2,18 +2,18 @@ import cron from "node-cron";
 import News from "../models/News.js";
 import { sendNotificationToAll } from "./push.js";
 
-// Build a digest payload from top 5 recent published news
-const buildDailyDigestPayload = (newsList) => {
+// Build a digest payload from top 5 recent published news using a custom title
+const buildDailyDigestPayload = (newsList, titleText = "आज की बड़ी खबरें पढ़ें") => {
   const titles = newsList.map((n, i) => `${i + 1}. ${n.title}`);
   return {
-    title: "आज की 5 बड़ी खबरें",
+    title: titleText,
     message: titles.join(" \n"),
     url: "/",
     tag: "daily-digest",
   };
 };
 
-export const sendDailyDigestNow = async () => {
+export const sendDailyDigestNow = async (titleText = "आज की बड़ी खबरें पढ़ें") => {
   try {
     const top5 = await News.find({ status: "published" })
       .sort({ createdAt: -1 })
@@ -22,7 +22,7 @@ export const sendDailyDigestNow = async () => {
 
     if (!top5 || top5.length === 0) return { sent: 0, reason: "no-news" };
 
-    const payload = buildDailyDigestPayload(top5);
+    const payload = buildDailyDigestPayload(top5, titleText);
     const result = await sendNotificationToAll(payload);
     return result;
   } catch (err) {
@@ -33,16 +33,16 @@ export const sendDailyDigestNow = async () => {
 
 export const startDailyDigestJobs = () => {
   try {
-    // Morning 8:00
+    // Morning 8:00 - friendly title
     cron.schedule("0 8 * * *", () => {
       console.log("Running morning daily digest (8:00)");
-      sendDailyDigestNow().catch((e) => console.warn("digest send failed", e.message || e));
+      sendDailyDigestNow("आज की बड़ी खबरें पढ़ें").catch((e) => console.warn("digest send failed", e.message || e));
     });
 
-    // Evening 19:00 (7 PM)
+    // Evening 19:00 (7 PM) - evening title
     cron.schedule("0 19 * * *", () => {
       console.log("Running evening daily digest (19:00)");
-      sendDailyDigestNow().catch((e) => console.warn("digest send failed", e.message || e));
+      sendDailyDigestNow("आज दिनभर में क्या हुआ").catch((e) => console.warn("digest send failed", e.message || e));
     });
 
     console.log("Daily digest jobs scheduled: 08:00 & 19:00");

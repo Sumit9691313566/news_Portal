@@ -15,6 +15,7 @@ const newsSchema = new mongoose.Schema(
       default: "draft",
     },
     featured: { type: Boolean, default: false },
+    notify: { type: Boolean, default: false },
     breaking: { type: Boolean, default: false },
     author: { type: String, default: "Admin" },
     views: { type: Number, default: 0 },

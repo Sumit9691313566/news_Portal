@@ -106,6 +106,7 @@ export const createNews = async (req, res) => {
       status,
       featured,
       breaking,
+      notify,
       author,
       blocks: rawBlocks,
     } = req.body;
@@ -180,13 +181,21 @@ export const createNews = async (req, res) => {
       status: resolveCreateStatus(req, status),
       featured: toBoolean(featured),
       breaking: toBoolean(breaking),
+      notify: toBoolean(notify),
       author: author || req?.admin?.name || "Admin",
       blocks,
     });
 
     res.status(201).json(news);
     try {
-      if (news.status === "published") {
+      const notifyCategories = String(process.env.NOTIFY_ON_PUBLISH_CATEGORIES || "").split(",").map((s) => s.trim()).filter(Boolean);
+      const shouldNotify = () => {
+        if (news.breaking) return true;
+        if (notifyCategories.length > 0 && news.category && notifyCategories.includes(String(news.category))) return true;
+        return false;
+      };
+
+      if (news.status === "published" && (news.notify || shouldNotify())) {
         const payload = {
           title: "गरुड़ समाचार",
           message: news.title || "नया समाचार प्रकाशित हुआ है",
@@ -218,6 +227,7 @@ export const updateNews = async (req, res) => {
       status,
       featured,
       breaking,
+      notify,
       author,
       blocks: rawBlocks,
     } = req.body;
@@ -269,6 +279,7 @@ export const updateNews = async (req, res) => {
     }
     if (featured !== undefined) news.featured = toBoolean(featured);
     if (breaking !== undefined) news.breaking = toBoolean(breaking);
+    if (notify !== undefined) news.notify = toBoolean(notify);
     if (author !== undefined) news.author = author;
 
     if (blocks.length > 0) {
@@ -304,7 +315,14 @@ export const updateNews = async (req, res) => {
     res.json(news);
     try {
       // If the news was published (status now published), trigger notification
-      if (news.status === "published") {
+      const notifyCategories = String(process.env.NOTIFY_ON_PUBLISH_CATEGORIES || "").split(",").map((s) => s.trim()).filter(Boolean);
+      const shouldNotifyUpdated = () => {
+        if (news.breaking) return true;
+        if (notifyCategories.length > 0 && news.category && notifyCategories.includes(String(news.category))) return true;
+        return false;
+      };
+
+      if (news.status === "published" && (news.notify || shouldNotifyUpdated())) {
         const payload = {
           title: "Breaking News",
           message: news.title || "New story published",
