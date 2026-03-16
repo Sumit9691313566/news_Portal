@@ -61,7 +61,6 @@ const mediaTypeFromUrl = (url) => {
 
 const readingMinutes = (words = 0) => Math.max(1, Math.ceil(words / 220));
 
-import NotificationPanel from "./NotificationPanel";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -1060,10 +1059,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* ===== NOTIFICATION PANEL (Manual send) ===== */}
-      <div className="card">
-        <NotificationPanel />
-      </div>
+      {/* Notification panel removed from admin dashboard */}
     </div>
   );
 }
