@@ -11,7 +11,7 @@ const urlBase64ToUint8Array = (base64String) => {
   return outputArray;
 };
 
-export const registerAndSubscribe = async () => {
+export const subscribeWithServiceWorker = async () => {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
@@ -20,9 +20,6 @@ export const registerAndSubscribe = async () => {
     if (!resp.ok) return;
     const { publicKey } = await resp.json();
     if (!publicKey) return;
-
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
 
     const subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -37,6 +34,18 @@ export const registerAndSubscribe = async () => {
     localStorage.setItem('pushSubscribed', '1');
   } catch (err) {
     console.warn('Push subscribe failed', err);
+  }
+};
+
+export const registerAndSubscribe = async () => {
+  // Request permission immediately (should be called from a user gesture).
+  if (!('Notification' in window)) return;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    await subscribeWithServiceWorker();
+  } catch (err) {
+    console.warn('Requesting notification permission failed', err);
   }
 };
 
