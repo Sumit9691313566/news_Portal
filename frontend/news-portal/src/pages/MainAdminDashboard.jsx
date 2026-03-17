@@ -33,6 +33,7 @@ export default function MainAdminDashboard() {
   const [selectedNews, setSelectedNews] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
+  const [editTitleColor, setEditTitleColor] = useState("#1f2937");
   const [editCategory, setEditCategory] = useState("Tech");
   const [editContent, setEditContent] = useState("");
   const [editFeatured, setEditFeatured] = useState(false);
@@ -105,6 +106,7 @@ export default function MainAdminDashboard() {
     setSelectedNews(news);
     setEditMode(false);
     setEditTitle(news.title || "");
+    setEditTitleColor(news.titleColor || "#1f2937");
     setEditCategory(news.category || "Tech");
     setEditContent(news.content || "");
     setEditFeatured(Boolean(news.featured));
@@ -158,6 +160,7 @@ export default function MainAdminDashboard() {
 
     const payload = {
       title: editTitle.trim(),
+      titleColor: editTitleColor,
       category: editCategory,
       featured: editFeatured,
       breaking: editBreaking,
@@ -362,7 +365,12 @@ export default function MainAdminDashboard() {
 
           {!editMode && (
             <div className="preview-body">
-              <div className="preview-title">{selectedNews.title}</div>
+              <div
+                className="preview-title"
+                style={{ color: selectedNews.titleColor || undefined }}
+              >
+                {selectedNews.title}
+              </div>
 
               {Array.isArray(selectedNews.blocks) && selectedNews.blocks.length > 0 ? (
                 <div className="preview-content">
@@ -396,11 +404,21 @@ export default function MainAdminDashboard() {
             <div className="add-news-grid">
               <div className="form-left">
                 <label className="field-label">Title</label>
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  placeholder="News Title"
-                />
+                <div className="title-editor-row">
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="News Title"
+                  />
+                  <label className="title-color-control" title="Title color">
+                    <span>Color</span>
+                    <input
+                      type="color"
+                      value={editTitleColor}
+                      onChange={(e) => setEditTitleColor(e.target.value)}
+                    />
+                  </label>
+                </div>
 
                 {editBlocks.length > 0 ? (
                   <div className="blocks-editor">

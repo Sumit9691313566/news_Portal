@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const newsSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    titleColor: { type: String, default: "" },
     content: { type: String, required: true },
     category: { type: String, default: "All" },
     mediaType: { type: String, enum: ["image", "video", "text"], default: "text" },

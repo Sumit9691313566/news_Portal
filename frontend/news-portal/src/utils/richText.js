@@ -65,6 +65,29 @@ const sanitizeStyle = (styleValue = "") =>
     .filter(Boolean)
     .join("; ");
 
+const normalizeBlockAlignment = (tag, styleValue = "") => {
+  if (!styleValue) return "";
+  if (!["div", "h1", "h2", "h3", "h4", "h5", "h6"].includes(tag)) {
+    return styleValue;
+  }
+
+  return styleValue
+    .split(";")
+    .map((rule) => rule.trim())
+    .filter(Boolean)
+    .map((rule) => {
+      const idx = rule.indexOf(":");
+      if (idx === -1) return rule;
+      const key = rule.slice(0, idx).trim().toLowerCase();
+      const value = rule.slice(idx + 1).trim().toLowerCase();
+      if (key === "text-align" && value === "justify") {
+        return "text-align: left";
+      }
+      return rule;
+    })
+    .join("; ");
+};
+
 const normalizeNode = (node) => {
   if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
   const tag = node.tagName.toLowerCase();
@@ -104,7 +127,7 @@ const normalizeNode = (node) => {
     }
 
     if (name === "style") {
-      const cleaned = sanitizeStyle(attr.value);
+      const cleaned = normalizeBlockAlignment(tag, sanitizeStyle(attr.value));
       if (cleaned) node.setAttribute("style", cleaned);
       else node.removeAttribute("style");
       return;

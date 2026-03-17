@@ -582,6 +582,9 @@ export default function Category() {
     )
   );
 
+  const titleStyle = (news) =>
+    news?.titleColor ? { color: news.titleColor } : undefined;
+
   return (
     <div className="layout-wrapper">
       <header className="masthead">
@@ -742,7 +745,10 @@ export default function Category() {
                     )}
                     <div className="featured-info">
                       <span>{featuredNews.category}</span>
-                      <h1 className={categoryClass(featuredNews.category)}>
+                      <h1
+                        className={categoryClass(featuredNews.category)}
+                        style={titleStyle(featuredNews)}
+                      >
                         {featuredNews.title}
                       </h1>
                     </div>
@@ -1104,7 +1110,10 @@ export default function Category() {
                   {"← वापस"}
                 </button>
 
-                <h1 className={categoryClass(selectedNews.category)}>
+                <h1
+                  className={categoryClass(selectedNews.category)}
+                  style={titleStyle(selectedNews)}
+                >
                   {selectedNews.title}
                 </h1>
                 <small>

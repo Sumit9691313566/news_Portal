@@ -328,6 +328,39 @@ body {
   resize: vertical;
 }
 
+.title-editor-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.title-editor-row > input {
+  flex: 1;
+}
+
+.title-color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.title-color-control input {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
 .checkbox {
   display: flex;
   align-items: center;

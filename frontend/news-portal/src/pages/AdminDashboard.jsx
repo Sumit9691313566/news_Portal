@@ -79,6 +79,7 @@ export default function AdminDashboard() {
 
   // form
   const [title, setTitle] = useState("");
+  const [titleColor, setTitleColor] = useState("#1f2937");
   const [category, setCategory] = useState("Tech");
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
@@ -130,6 +131,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const payload = {
       title,
+      titleColor,
       category,
       status,
       featured,
@@ -139,7 +141,7 @@ export default function AdminDashboard() {
     };
     localStorage.setItem("adminDraft", JSON.stringify(payload));
     setLastSaved(new Date());
-  }, [title, category, status, featured, breaking, notify, blocks]);
+  }, [title, titleColor, category, status, featured, breaking, notify, blocks]);
 
   // Load draft once on mount
   useEffect(() => {
@@ -148,6 +150,7 @@ export default function AdminDashboard() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (saved?.title) setTitle(saved.title);
+      if (saved?.titleColor) setTitleColor(saved.titleColor);
       if (saved?.category) setCategory(saved.category);
       if (saved?.status) {
         const draftStatus = String(saved.status).toLowerCase();
@@ -218,6 +221,7 @@ export default function AdminDashboard() {
       deriveContentFromBlocks(blocks) || "Media content";
 
     formData.append("title", title);
+    formData.append("titleColor", titleColor);
     formData.append("content", derivedContent);
     formData.append("category", category);
     const safeStatus = "draft";
@@ -270,6 +274,7 @@ export default function AdminDashboard() {
   const editNews = (n) => {
     setEditId(n._id);
     setTitle(n.title);
+    setTitleColor(n.titleColor || "#1f2937");
     setCategory(n.category);
     setStatus("draft");
     setFeatured(!!n.featured);
@@ -303,6 +308,7 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setTitle("");
+    setTitleColor("#1f2937");
     setCategory("Tech");
     setStatus("draft");
     setFeatured(false);
@@ -697,11 +703,21 @@ export default function AdminDashboard() {
         <div className="add-news-grid">
           <div className="form-left">
             <label className="field-label">Title</label>
-            <input
-              placeholder="News Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <div className="title-editor-row">
+              <input
+                placeholder="News Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <label className="title-color-control" title="Title color">
+                <span>Color</span>
+                <input
+                  type="color"
+                  value={titleColor}
+                  onChange={(e) => setTitleColor(e.target.value)}
+                />
+              </label>
+            </div>
             <div className="title-help">
               <span>{titleLength}/120 chars</span>
               <span>
@@ -881,7 +897,7 @@ export default function AdminDashboard() {
             <div className="preview-card">
               <div className="preview-head">Live Preview</div>
               <div className="preview-body">
-                <div className="preview-title">
+                <div className="preview-title" style={{ color: titleColor || undefined }}>
                   {title || "News Title Preview"}
                 </div>
                 <div className="preview-meta">

@@ -1594,8 +1594,7 @@ body {
   overflow-wrap: break-word;
 }
 
-.rich-output p,
-.rich-output div {
+.rich-output p {
   margin: 0 0 14px;
   text-align: justify;
   text-justify: inter-word;
@@ -1614,6 +1613,7 @@ body {
 .rich-output h3 {
   margin: 6px 0 12px;
   line-height: 1.35;
+  text-align: left;
 }
 
 .rich-output blockquote {
@@ -3122,12 +3122,20 @@ body {
 
   .full-content p,
   .rich-output p,
-  .rich-output div,
   .rich-output li,
   .rich-output blockquote {
     text-align: justify;
     text-align-last: left;
     -webkit-text-align-last: left;
+  }
+
+  .rich-output h1,
+  .rich-output h2,
+  .rich-output h3,
+  .rich-output strong {
+    text-align: left;
+    text-align-last: auto;
+    -webkit-text-align-last: auto;
   }
 
   .news-card {

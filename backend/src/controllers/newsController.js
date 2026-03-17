@@ -23,6 +23,10 @@ const fetchRemoteJson = async (path) => {
 
 const toBoolean = (value) =>
   value === true || value === "true" || value === "1" || value === 1;
+const normalizeColor = (value) => {
+  const color = String(value || "").trim();
+  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color) ? color : "";
+};
 const isMainAdmin = (req) => {
   const role = String(req?.admin?.role || "").toLowerCase();
   const adminId = String(req?.admin?.adminId || "").toLowerCase();
@@ -135,6 +139,7 @@ export const createNews = async (req, res) => {
   try {
     const {
       title,
+      titleColor,
       content,
       category,
       mediaType,
@@ -207,6 +212,7 @@ export const createNews = async (req, res) => {
 
     const news = await News.create({
       title,
+      titleColor: normalizeColor(titleColor),
       content: finalContent,
       category,
       mediaType: blocks.length ? "text" : resolvedMediaType,
@@ -257,6 +263,7 @@ export const updateNews = async (req, res) => {
   try {
     const {
       title,
+      titleColor,
       content,
       category,
       mediaType,
@@ -309,6 +316,7 @@ export const updateNews = async (req, res) => {
     }
 
     if (title !== undefined) news.title = title;
+    if (titleColor !== undefined) news.titleColor = normalizeColor(titleColor);
     if (content !== undefined) news.content = content;
     if (category !== undefined) news.category = category;
     if (status !== undefined) {
