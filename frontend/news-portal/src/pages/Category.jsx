@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { FaFacebookF, FaLink, FaShareAlt, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
@@ -51,6 +52,7 @@ export default function Category() {
   const [renderedPdfPreviewUrls, setRenderedPdfPreviewUrls] = useState({});
   const [failedEpaperPreviewIds, setFailedEpaperPreviewIds] = useState({});
   const [subscribeMessage, setSubscribeMessage] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
 
   const scrollToNewsStart = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -337,6 +339,126 @@ export default function Category() {
     }).catch(() => {});
   };
 
+  const getNewsShareUrl = (news) => {
+    const newsId = news?._id || news?.id;
+    if (!newsId || typeof window === "undefined") return "";
+
+    const shareUrl = new URL("/", window.location.origin);
+    shareUrl.searchParams.set("newsId", newsId);
+    return shareUrl.toString();
+  };
+
+  const getNewsShareText = (news) => {
+    const title = String(news?.title || "Latest news");
+    const shareUrl = getNewsShareUrl(news);
+    return `${title} | गरुड़ समाचार ${shareUrl}`.trim();
+  };
+
+  const showShareMessage = (message) => {
+    setShareMessage(message);
+    window.setTimeout(() => setShareMessage(""), 2200);
+  };
+
+  const copyNewsLink = async (news) => {
+    const shareUrl = getNewsShareUrl(news);
+    if (!shareUrl) return;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const helperInput = document.createElement("input");
+        helperInput.value = shareUrl;
+        document.body.appendChild(helperInput);
+        helperInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(helperInput);
+      }
+      showShareMessage("News link copied");
+    } catch {
+      showShareMessage("Link copy nahi ho paya");
+    }
+  };
+
+  const shareToWhatsApp = (news) => {
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
+      getNewsShareText(news)
+    )}`;
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const shareToFacebook = (news) => {
+    const shareUrl = getNewsShareUrl(news);
+    if (!shareUrl) return;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      shareUrl
+    )}`;
+    window.open(facebookUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const renderShareActions = (news, variant = "card") => {
+    const isDetail = variant === "detail";
+
+    return (
+      <div
+        className={`share-actions ${
+          isDetail ? "share-actions-detail" : "share-actions-card"
+        }`}
+      >
+        {isDetail && (
+          <div className="share-heading">
+            <span className="share-heading-icon">
+              <FaShareAlt />
+            </span>
+            <span>Share this news</span>
+          </div>
+        )}
+
+        <div className="share-buttons">
+          <button
+            type="button"
+            className="share-btn share-btn-whatsapp"
+            aria-label="Share on WhatsApp"
+            title="Share on WhatsApp"
+            onClick={(event) => {
+              event.stopPropagation();
+              shareToWhatsApp(news);
+            }}
+          >
+            <FaWhatsapp />
+            {isDetail && <span>WhatsApp</span>}
+          </button>
+          <button
+            type="button"
+            className="share-btn share-btn-facebook"
+            aria-label="Share on Facebook"
+            title="Share on Facebook"
+            onClick={(event) => {
+              event.stopPropagation();
+              shareToFacebook(news);
+            }}
+          >
+            <FaFacebookF />
+            {isDetail && <span>Facebook</span>}
+          </button>
+          <button
+            type="button"
+            className="share-btn share-btn-copy"
+            aria-label="Copy news link"
+            title="Copy news link"
+            onClick={(event) => {
+              event.stopPropagation();
+              copyNewsLink(news);
+            }}
+          >
+            <FaLink />
+            {isDetail && <span>Copy Link</span>}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   useEffect(() => {
     const requestedId =
       location.state?.openNewsId ||
@@ -598,6 +720,7 @@ export default function Category() {
           }`}
         >
           <div className="main-column">
+            {shareMessage && <div className="share-toast">{shareMessage}</div>}
             {view === "home" && !selectedNews && (
               <>
                 {featuredNews && (
@@ -683,6 +806,7 @@ export default function Category() {
                               <p>
                                 {news.content?.slice(0, 120)}...
                               </p>
+                              {renderShareActions(news)}
                             </div>
                           </div>
                         ))}
@@ -813,6 +937,7 @@ export default function Category() {
                             {news.title}
                           </h2>
                           <p>{news.content?.slice(0, 120)}...</p>
+                          {renderShareActions(news)}
                         </div>
                       </div>
                     ))}
@@ -941,6 +1066,7 @@ export default function Category() {
                           <small className="views-count">
                             {news.views || 0} views
                           </small>
+                          {renderShareActions(news)}
                         </div>
                       </div>
                     ))
@@ -970,6 +1096,7 @@ export default function Category() {
                     selectedNews.createdAt
                   ).toLocaleString()}
                 </small>
+                {renderShareActions(selectedNews, "detail")}
 
                 {!hasLeadMediaInBlocks &&
                   selectedNews.mediaUrl &&
@@ -1064,6 +1191,7 @@ export default function Category() {
                             {news.title}
                           </h4>
                           <p>{news.content?.slice(0, 90)}...</p>
+                          {renderShareActions(news)}
                         </div>
                       </div>
                     ))}
