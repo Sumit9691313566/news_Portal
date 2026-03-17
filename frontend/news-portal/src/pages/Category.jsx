@@ -396,68 +396,72 @@ export default function Category() {
     window.open(facebookUrl, "_blank", "noopener,noreferrer");
   };
 
-  const renderShareActions = (news, variant = "card") => {
-    const isDetail = variant === "detail";
+  const shareEpaper = async (epaper) => {
+    const epaperId = epaper?._id;
+    if (!epaperId || typeof window === "undefined") return;
 
-    return (
-      <div
-        className={`share-actions ${
-          isDetail ? "share-actions-detail" : "share-actions-card"
-        }`}
-      >
-        {isDetail && (
-          <div className="share-heading">
-            <span className="share-heading-icon">
-              <FaShareAlt />
-            </span>
-            <span>Share this news</span>
-          </div>
-        )}
+    const shareUrl = new URL(`/epaper/${epaperId}`, resolvePublicSiteUrl()).toString();
+    const shareTitle = epaper?.title || "E-Paper";
 
-        <div className="share-buttons">
-          <button
-            type="button"
-            className="share-btn share-btn-whatsapp"
-            aria-label="Share on WhatsApp"
-            title="Share on WhatsApp"
-            onClick={(event) => {
-              event.stopPropagation();
-              shareToWhatsApp(news);
-            }}
-          >
-            <FaWhatsapp />
-            {isDetail && <span>WhatsApp</span>}
-          </button>
-          <button
-            type="button"
-            className="share-btn share-btn-facebook"
-            aria-label="Share on Facebook"
-            title="Share on Facebook"
-            onClick={(event) => {
-              event.stopPropagation();
-              shareToFacebook(news);
-            }}
-          >
-            <FaFacebookF />
-            {isDetail && <span>Facebook</span>}
-          </button>
-          <button
-            type="button"
-            className="share-btn share-btn-copy"
-            aria-label="Copy news link"
-            title="Copy news link"
-            onClick={(event) => {
-              event.stopPropagation();
-              copyNewsLink(news);
-            }}
-          >
-            <FaLink />
-            {isDetail && <span>Copy Link</span>}
-          </button>
-        </div>
-      </div>
-    );
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareTitle,
+          url: shareUrl,
+        });
+        showShareMessage("E-paper shared");
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        showShareMessage("E-paper link copied");
+      } else {
+        showShareMessage("Share unavailable");
+      }
+    } catch {
+      showShareMessage("Share cancelled");
+    }
   };
+
+  const renderShareActions = (news) => (
+    <div className="share-actions share-actions-card">
+      <button
+        type="button"
+        className="share-btn share-btn-whatsapp"
+        aria-label="Share on WhatsApp"
+        title="Share on WhatsApp"
+        onClick={(event) => {
+          event.stopPropagation();
+          shareToWhatsApp(news);
+        }}
+      >
+        <FaWhatsapp />
+      </button>
+      <button
+        type="button"
+        className="share-btn share-btn-facebook"
+        aria-label="Share on Facebook"
+        title="Share on Facebook"
+        onClick={(event) => {
+          event.stopPropagation();
+          shareToFacebook(news);
+        }}
+      >
+        <FaFacebookF />
+      </button>
+      <button
+        type="button"
+        className="share-btn share-btn-copy"
+        aria-label="Copy news link"
+        title="Copy news link"
+        onClick={(event) => {
+          event.stopPropagation();
+          copyNewsLink(news);
+        }}
+      >
+        <FaLink />
+      </button>
+    </div>
+  );
 
   useEffect(() => {
     const requestedId =
@@ -949,8 +953,22 @@ export default function Category() {
               <>
                 {epapers.length === 0 && <p>No e-paper uploaded yet.</p>}
                 <div className="epaper-preview-grid">
-                  {epapers.map((e) => (
-                    <article key={e._id} className="epaper-preview-card">
+                  {epapers.map((e) => {
+                    const openEpaper = () =>
+                      navigate(`/epaper/${e._id}`, {
+                        state: { epaper: e },
+                      });
+
+                    return (
+                    <article
+                      key={e._id}
+                      className="epaper-preview-card"
+                      onClick={openEpaper}
+                      onDoubleClick={openEpaper}
+                    >
+                      <div className="epaper-preview-body">
+                        <h3>{e.title}</h3>
+                      </div>
                       <div className="epaper-preview-thumb">
                         {e.fileType === "image" &&
                         !failedEpaperPreviewIds[e._id] ? (
@@ -981,25 +999,23 @@ export default function Category() {
                           </div>
                         )}
                       </div>
-                      <div className="epaper-preview-body">
-                        <h3>{e.title}</h3>
-                        <div className="epaper-preview-meta">
-                          <span>{formatIssueDate(e.createdAt) || "Latest edition"}</span>
-                          <button
-                            type="button"
-                            className="epaper-preview-link"
-                            onClick={() =>
-                              navigate(`/epaper/${e._id}`, {
-                                state: { epaper: e },
-                              })
-                            }
-                          >
-                            Open
-                          </button>
-                        </div>
+                      <div className="epaper-preview-meta">
+                        <span>{formatIssueDate(e.createdAt) || "Latest edition"}</span>
+                        <button
+                          type="button"
+                          className="epaper-preview-share"
+                          aria-label={`Share ${e.title}`}
+                          title="Share e-paper"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            shareEpaper(e);
+                          }}
+                        >
+                          <FaShareAlt />
+                        </button>
                       </div>
                     </article>
-                  ))}
+                  )})}
                 </div>
               </>
             )}
@@ -1096,7 +1112,7 @@ export default function Category() {
                     selectedNews.createdAt
                   ).toLocaleString()}
                 </small>
-                {renderShareActions(selectedNews, "detail")}
+                {renderShareActions(selectedNews)}
 
                 {!hasLeadMediaInBlocks &&
                   selectedNews.mediaUrl &&

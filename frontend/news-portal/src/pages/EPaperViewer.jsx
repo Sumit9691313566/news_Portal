@@ -4,7 +4,8 @@ import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
-const clampZoom = (value) => Math.min(3, Math.max(0.8, +value.toFixed(2)));
+const clampZoom = (value, min = 0.8) =>
+  Math.min(3, Math.max(min, +value.toFixed(2)));
 
 const getTouchDistance = (touches) => {
   if (touches.length < 2) return 0;
@@ -42,6 +43,7 @@ export default function EPaperViewer() {
   const [isMobileView, setIsMobileView] = useState(() => isHandheldDevice());
   const [mobilePdfPages, setMobilePdfPages] = useState([]);
   const pinchStateRef = useRef({ distance: 0, zoom: 1 });
+  const minZoom = isMobileView ? 1 : 0.8;
 
   const goBackSafe = () => {
     if (window.history.length > 1) {
@@ -182,12 +184,17 @@ export default function EPaperViewer() {
           typeof window !== "undefined"
             ? Math.max(280, Math.min(window.innerWidth - 32, 900))
             : 360;
+        const renderScaleBoost =
+          typeof window !== "undefined"
+            ? Math.max(2, Math.min(window.devicePixelRatio || 1, 3))
+            : 2;
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);
           const baseViewport = page.getViewport({ scale: 1 });
-          const scale = targetWidth / baseViewport.width;
-          const viewport = page.getViewport({ scale });
+          const displayScale = targetWidth / baseViewport.width;
+          const renderScale = displayScale * renderScaleBoost;
+          const viewport = page.getViewport({ scale: renderScale });
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d", { alpha: false });
 
@@ -202,8 +209,8 @@ export default function EPaperViewer() {
           renderedPages.push({
             pageNumber,
             src: canvas.toDataURL("image/jpeg", 0.92),
-            width: viewport.width,
-            height: viewport.height,
+            width: baseViewport.width * displayScale,
+            height: baseViewport.height * displayScale,
           });
         }
 
@@ -319,7 +326,7 @@ export default function EPaperViewer() {
 
     event.preventDefault();
     const scaleFactor = nextDistance / startDistance;
-    setZoom(clampZoom(pinchStateRef.current.zoom * scaleFactor));
+    setZoom(clampZoom(pinchStateRef.current.zoom * scaleFactor, minZoom));
   };
 
   const handleTouchEnd = (event) => {
@@ -341,7 +348,7 @@ export default function EPaperViewer() {
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
     const delta = event.deltaY < 0 ? 0.12 : -0.12;
-    setZoom((current) => clampZoom(current + delta));
+    setZoom((current) => clampZoom(current + delta, minZoom));
   };
 
   return (
@@ -365,13 +372,13 @@ export default function EPaperViewer() {
         <div className="epaper-zoom-controls">
           <button
             type="button"
-            onClick={() => setZoom((z) => clampZoom(z - 0.1))}
+            onClick={() => setZoom((z) => clampZoom(z - 0.1, minZoom))}
           >
             -
           </button>
           <button
             type="button"
-            onClick={() => setZoom((z) => clampZoom(z + 0.1))}
+            onClick={() => setZoom((z) => clampZoom(z + 0.1, minZoom))}
           >
             +
           </button>
