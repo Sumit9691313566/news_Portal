@@ -12,7 +12,10 @@ self.addEventListener('push', function (event) {
     body: payload.message || payload.body || '',
     icon: payload.image || '/logo192.png',
     badge: payload.image || '/logo192.png',
-    data: { url: payload.url || '/' },
+    data: {
+      url: payload.url || '/',
+      newsId: payload.newsId || null,
+    },
     tag: payload.tag || undefined,
   };
 
@@ -21,11 +24,18 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
+  const data = event.notification.data || {};
+  const url = data.url || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
       for (const client of clientList) {
-        if (client.url === url && 'focus' in client) return client.focus();
+        if ('focus' in client) {
+          client.focus();
+          if ('navigate' in client) {
+            return client.navigate(url);
+          }
+          return client;
+        }
       }
       if (clients.openWindow) return clients.openWindow(url);
     })

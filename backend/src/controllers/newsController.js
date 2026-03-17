@@ -79,6 +79,41 @@ const contentFromBlocks = (blocks) =>
     .filter(Boolean)
     .join("\n\n");
 
+const buildFrontendNewsUrl = (newsId) => {
+  const frontendBase = String(process.env.FRONTEND_URL || "").replace(/\/+$/, "");
+  if (!frontendBase || !newsId) return "/";
+  return `${frontendBase}/?newsId=${newsId}`;
+};
+
+const getNotificationImage = (news) => {
+  if (news?.mediaUrl) return news.mediaUrl;
+  if (!Array.isArray(news?.blocks)) return null;
+  const firstMediaBlock = news.blocks.find(
+    (block) => block?.url && (block.type === "image" || block.type === "video")
+  );
+  return firstMediaBlock?.url || null;
+};
+
+const sendPublishedNewsNotification = async (news) => {
+  if (!news?._id || news.status !== "published") return;
+
+  const payload = {
+    title: "Garud Samachar",
+    message: news.title || "Nayi news publish hui hai",
+    image: getNotificationImage(news),
+    url: buildFrontendNewsUrl(news._id),
+    tag: `news-${news._id}`,
+    newsId: String(news._id),
+    timestamp: Date.now(),
+  };
+
+  try {
+    await sendNotificationToAll(payload);
+  } catch (error) {
+    console.warn("push send error", error?.message || error);
+  }
+};
+
 const uploadToCloudinary = (file, resourceType) =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -187,6 +222,7 @@ export const createNews = async (req, res) => {
     });
 
     res.status(201).json(news);
+    await sendPublishedNewsNotification(news);
     try {
       const notifyCategories = String(process.env.NOTIFY_ON_PUBLISH_CATEGORIES || "").split(",").map((s) => s.trim()).filter(Boolean);
       const shouldNotify = () => {
@@ -195,7 +231,7 @@ export const createNews = async (req, res) => {
         return false;
       };
 
-      if (news.status === "published" && (news.notify || shouldNotify())) {
+      if (false) {
         const payload = {
           title: "गरुड़ समाचार",
           message: news.title || "नया समाचार प्रकाशित हुआ है",
@@ -236,6 +272,7 @@ export const updateNews = async (req, res) => {
     if (!news) {
       return res.status(404).json({ message: "News not found" });
     }
+    const wasPublishedBefore = news.status === "published";
 
     const files = Array.isArray(req.files) ? req.files : [];
     const filesByField = new Map(files.map((f) => [f.fieldname, f]));
@@ -313,6 +350,9 @@ export const updateNews = async (req, res) => {
     await news.save();
 
     res.json(news);
+    if (!wasPublishedBefore && news.status === "published") {
+      await sendPublishedNewsNotification(news);
+    }
     try {
       // If the news was published (status now published), trigger notification
       const notifyCategories = String(process.env.NOTIFY_ON_PUBLISH_CATEGORIES || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -322,7 +362,7 @@ export const updateNews = async (req, res) => {
         return false;
       };
 
-      if (news.status === "published" && (news.notify || shouldNotifyUpdated())) {
+      if (false) {
         const payload = {
           title: "Breaking News",
           message: news.title || "New story published",

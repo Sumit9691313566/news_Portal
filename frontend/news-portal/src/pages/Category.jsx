@@ -338,7 +338,9 @@ export default function Category() {
   };
 
   useEffect(() => {
-    const requestedId = location.state?.openNewsId;
+    const requestedId =
+      location.state?.openNewsId ||
+      new URLSearchParams(location.search).get("newsId");
     if (!requestedId || allNews.length === 0) return;
 
     const matched = allNews.find(
