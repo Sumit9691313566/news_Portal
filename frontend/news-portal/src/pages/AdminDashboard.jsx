@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
-import { fetchWithTimeout } from "../services/api";
+import { API_FALLBACK_URL, buildApiUrl, fetchWithTimeout } from "../services/api";
 import RichTextEditor from "../components/RichTextEditor";
 import {
   countWordsFromHtml,
@@ -504,23 +504,63 @@ export default function AdminDashboard() {
     formData.append("title", epaperTitle);
     formData.append("file", epaperFile);
 
-    await fetchWithTimeout("epaper", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const res = await fetchWithTimeout(
+        "epaper",
+        {
+          method: "POST",
+          body: formData,
+        },
+        120000
+      );
 
-    setEpaperTitle("");
-    setEpaperFile(null);
-    loadEpaper();
-    alert("E-paper uploaded successfully ✅");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Upload failed: ${res.status} ${res.statusText}`
+        );
+      }
+
+      setEpaperTitle("");
+      setEpaperFile(null);
+      await loadEpaper();
+      alert("E-paper uploaded successfully");
+    } catch (error) {
+      console.error("EPAPER UPLOAD ERROR:", error);
+      alert(`E-paper upload failed: ${error.message}`);
+    }
   };
 
   const deleteEpaper = async (id) => {
     if (!window.confirm("Delete this e-paper?")) return;
-    await fetchWithTimeout(`epaper/${id}`, {
-      method: "DELETE",
-    });
-    loadEpaper();
+    try {
+      let res = await fetchWithTimeout(`epaper/${id}`, {
+        method: "DELETE",
+      });
+
+      if (
+        !res.ok &&
+        API_FALLBACK_URL &&
+        !String(API_FALLBACK_URL).includes("localhost")
+      ) {
+        res = await fetch(buildApiUrl(`epaper/${id}`, API_FALLBACK_URL), {
+          method: "DELETE",
+        });
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Delete failed: ${res.status} ${res.statusText}`
+        );
+      }
+
+      await loadEpaper();
+      alert("E-paper deleted successfully");
+    } catch (error) {
+      console.error("EPAPER DELETE ERROR:", error);
+      alert(`E-paper delete failed: ${error.message}`);
+    }
   };
 
   /* ================= QUICK TOGGLE ================= */
@@ -1063,3 +1103,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

@@ -14,6 +14,7 @@ const formatIssueDate = (value) => {
 };
 
 const getCloudinaryPdfPreviewUrl = (epaper) => {
+  if (epaper?.previewImageUrl) return epaper.previewImageUrl;
   if (!epaper?.fileUrl || epaper.fileType !== "pdf") return "";
 
   const cloudMatch = epaper.fileUrl.match(/res\.cloudinary\.com\/([^/]+)/i);
@@ -33,6 +34,7 @@ export default function EPaper() {
   const navigate = useNavigate();
   const [epapers, setEpapers] = useState([]);
   const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
+  const [failedEpaperPreviewIds, setFailedEpaperPreviewIds] = useState({});
   const [shareMessage, setShareMessage] = useState("");
 
   const goBackSafe = () => {
@@ -118,6 +120,14 @@ export default function EPaper() {
     window.setTimeout(() => setShareMessage(""), 2200);
   };
 
+  const markEpaperPreviewFailed = (epaperId) => {
+    if (!epaperId) return;
+    setFailedEpaperPreviewIds((prev) => {
+      if (prev[epaperId]) return prev;
+      return { ...prev, [epaperId]: true };
+    });
+  };
+
   return (
     <div className="epaper-hub">
       <header className="epaper-portal-header">
@@ -168,18 +178,21 @@ export default function EPaper() {
             {epapers.map((epaper) => (
               <article key={epaper._id} className="epaper-edition-card">
                 <div className="epaper-edition-thumb">
-                  {epaper.fileType === "image" ? (
-                    <img src={epaper.fileUrl} alt={epaper.title} />
-                  ) : getCloudinaryPdfPreviewUrl(epaper) ? (
-                    // Use Cloudinary-generated preview image for PDFs in lists
+                  {epaper.fileType === "image" &&
+                  !failedEpaperPreviewIds[epaper._id] ? (
+                    <img
+                      src={epaper.previewImageUrl || epaper.fileUrl}
+                      alt={epaper.title}
+                      onError={() => markEpaperPreviewFailed(epaper._id)}
+                    />
+                  ) : getCloudinaryPdfPreviewUrl(epaper) &&
+                    !failedEpaperPreviewIds[epaper._id] ? (
                     <img
                       src={getCloudinaryPdfPreviewUrl(epaper)}
                       alt={`${epaper.title} preview`}
+                      onError={() => markEpaperPreviewFailed(epaper._id)}
                     />
                   ) : (
-                    // Avoid embedding the PDF in an iframe inside the listing —
-                    // mobile browsers show their own "Open" overlay. Show a
-                    // simple PDF placeholder instead.
                     <div className="pdf-thumb">PDF</div>
                   )}
                 </div>
@@ -220,3 +233,4 @@ export default function EPaper() {
     </div>
   );
 }
+

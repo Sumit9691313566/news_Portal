@@ -1637,6 +1637,7 @@ body {
   padding: 24px;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  min-width: 0;
 }
 
 .epaper-preview-card:hover {
@@ -1669,6 +1670,51 @@ body {
 .epaper-preview-frame {
   border: none;
   pointer-events: auto;
+}
+
+.epaper-preview-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 233, 0.95), rgba(244, 235, 220, 0.95)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(94, 9, 19, 0.05) 0 2px,
+      transparent 2px 20px
+    );
+  color: #5e0913;
+}
+
+.epaper-fallback-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #b31224;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.epaper-preview-fallback strong {
+  font-family: var(--font-head);
+  font-size: 22px;
+  line-height: 1.1;
+  color: #22160f;
+}
+
+.epaper-preview-fallback small {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b6258;
 }
 
 .epaper-preview-body {
@@ -1851,7 +1897,7 @@ body {
 
 .epaper-hub-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 26px 24px;
 }
 

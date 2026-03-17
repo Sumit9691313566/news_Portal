@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
+import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 const formatIssueDate = (value) => {
   const date = new Date(value);
@@ -15,6 +16,7 @@ const formatIssueDate = (value) => {
 };
 
 const getCloudinaryPdfPreviewUrl = (epaper) => {
+  if (epaper?.previewImageUrl) return epaper.previewImageUrl;
   if (!epaper?.fileUrl || epaper.fileType !== "pdf") return "";
 
   const cloudMatch = epaper.fileUrl.match(/res\.cloudinary\.com\/([^/]+)/i);
@@ -46,7 +48,8 @@ export default function Category() {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(5);
   const [epapers, setEpapers] = useState([]);
-  const [epaperPreviewUrls, setEpaperPreviewUrls] = useState({});
+  const [renderedPdfPreviewUrls, setRenderedPdfPreviewUrls] = useState({});
+  const [failedEpaperPreviewIds, setFailedEpaperPreviewIds] = useState({});
   const [subscribeMessage, setSubscribeMessage] = useState("");
 
   const scrollToNewsStart = () => {
@@ -171,53 +174,89 @@ export default function Category() {
     }
   };
 
+  const markEpaperPreviewFailed = (epaperId) => {
+    if (!epaperId) return;
+    setFailedEpaperPreviewIds((prev) => {
+      if (prev[epaperId]) return prev;
+      return { ...prev, [epaperId]: true };
+    });
+  };
+
   useEffect(() => {
     const pdfEpapers = epapers.filter(
-      (epaper) => epaper.fileType === "pdf" && epaper.fileUrl
+      (epaper) => epaper.fileType === "pdf" && epaper._id
     );
 
     if (pdfEpapers.length === 0) {
-      setEpaperPreviewUrls({});
+      setRenderedPdfPreviewUrls({});
       return undefined;
     }
 
     let active = true;
-    const createdUrls = [];
 
-    const loadPreviewUrls = async () => {
-      const entries = await Promise.all(
-        pdfEpapers.map(async (epaper) => {
-          try {
-            const response = await fetch(epaper.fileUrl, { mode: "cors" });
-            if (!response.ok) {
-              return [epaper._id, ""];
+    const renderPdfPreviews = async () => {
+      try {
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
+        const entries = await Promise.all(
+          pdfEpapers.map(async (epaper) => {
+            const candidateUrls = [
+              buildApiUrl(`epaper/${epaper._id}/file`),
+              epaper.fileUrl,
+            ].filter(Boolean);
+
+            for (const url of candidateUrls) {
+              try {
+                const response = await fetch(url, { mode: "cors" });
+                if (!response.ok) continue;
+
+                const pdfData = new Uint8Array(await response.arrayBuffer());
+                const loadingTask = pdfjs.getDocument({ data: pdfData });
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                const baseViewport = page.getViewport({ scale: 1 });
+                const viewport = page.getViewport({
+                  scale: 760 / baseViewport.width,
+                });
+
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d", { alpha: false });
+                canvas.width = Math.ceil(viewport.width);
+                canvas.height = Math.ceil(viewport.height);
+
+                await page.render({
+                  canvasContext: context,
+                  viewport,
+                }).promise;
+
+                return [epaper._id, canvas.toDataURL("image/jpeg", 0.92)];
+              } catch {
+                // Try next candidate URL.
+              }
             }
 
-            const sourceBlob = await response.blob();
-            const blobUrl = URL.createObjectURL(
-              new Blob([sourceBlob], { type: "application/pdf" })
-            );
-            createdUrls.push(blobUrl);
-            return [epaper._id, `${blobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`];
-          } catch {
             return [epaper._id, ""];
-          }
-        })
-      );
+          })
+        );
 
-      if (active) {
-        setEpaperPreviewUrls(Object.fromEntries(entries));
+        if (active) {
+          setRenderedPdfPreviewUrls(Object.fromEntries(entries));
+        }
+      } catch (error) {
+        console.error("Failed to render PDF previews", error);
+        if (active) {
+          setRenderedPdfPreviewUrls({});
+        }
       }
     };
 
-    loadPreviewUrls();
+    renderPdfPreviews();
 
     return () => {
       active = false;
-      createdUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [epapers]);
-
 
   /* ================= FILTER ================= */
   const categoryAlias = {
@@ -549,7 +588,13 @@ export default function Category() {
           </div>
         </div>
 
-        <div className="content-grid">
+        <div
+          className={`content-grid ${
+            view === "video" || view === "epaper" || view === "search"
+              ? "content-grid-reading"
+              : ""
+          }`}
+        >
           <div className="main-column">
             {view === "home" && !selectedNews && (
               <>
@@ -780,15 +825,33 @@ export default function Category() {
                   {epapers.map((e) => (
                     <article key={e._id} className="epaper-preview-card">
                       <div className="epaper-preview-thumb">
-                        {e.fileType === "image" ? (
-                          <img src={e.fileUrl} alt={e.title} />
-                        ) : getCloudinaryPdfPreviewUrl(e) ? (
+                        {e.fileType === "image" &&
+                        !failedEpaperPreviewIds[e._id] ? (
+                          <img
+                            src={e.previewImageUrl || e.fileUrl}
+                            alt={e.title}
+                            onError={() => markEpaperPreviewFailed(e._id)}
+                          />
+                        ) : renderedPdfPreviewUrls[e._id] ? (
+                          <img
+                            src={renderedPdfPreviewUrls[e._id]}
+                            alt={`${e.title} preview`}
+                          />
+                        ) : getCloudinaryPdfPreviewUrl(e) &&
+                          !failedEpaperPreviewIds[e._id] ? (
                           <img
                             src={getCloudinaryPdfPreviewUrl(e)}
                             alt={`${e.title} preview`}
+                            onError={() => markEpaperPreviewFailed(e._id)}
                           />
                         ) : (
-                          <div className="pdf-thumb">PDF</div>
+                          <div className="epaper-preview-fallback">
+                            <span className="epaper-fallback-badge">E-PAPER</span>
+                            <strong>{e.title}</strong>
+                            <small>
+                              {formatIssueDate(e.createdAt) || "Latest edition"}
+                            </small>
+                          </div>
                         )}
                       </div>
                       <div className="epaper-preview-body">

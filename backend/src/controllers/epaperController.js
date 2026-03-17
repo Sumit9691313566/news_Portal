@@ -35,9 +35,27 @@ const uploadToCloudinary = (file, resourceType) =>
     streamifier.createReadStream(file.buffer).pipe(stream);
   });
 
+const buildPdfPreviewUrl = (publicId = "") => {
+  const normalizedPublicId = String(publicId || "")
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/^\/+/, "");
+
+  if (!normalizedPublicId) return "";
+
+  return cloudinary.url(normalizedPublicId, {
+    resource_type: "image",
+    format: "jpg",
+    transformation: [
+      { page: 1 },
+      { quality: "auto" },
+      { width: 1200, crop: "scale" },
+    ],
+  });
+};
+
 export const createEpaper = async (req, res) => {
   try {
-    const { title } = req.body;
+    const title = String(req.body?.title || "").trim();
     const file = req.file;
 
     if (!title || !file) {
@@ -63,12 +81,15 @@ export const createEpaper = async (req, res) => {
       fileType: isPdf ? "pdf" : "image",
       fileUrl: uploadResult.secure_url,
       publicId: uploadResult.public_id,
+      previewImageUrl: isPdf
+        ? buildPdfPreviewUrl(uploadResult.public_id)
+        : uploadResult.secure_url,
     });
 
     res.status(201).json(epaper);
   } catch (error) {
     console.error("EPAPER CREATE ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 

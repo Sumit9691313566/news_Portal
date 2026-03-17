@@ -6,6 +6,7 @@ const epaperSchema = new mongoose.Schema(
     fileType: { type: String, enum: ["pdf", "image"], required: true },
     fileUrl: { type: String, required: true },
     publicId: { type: String, required: true },
+    previewImageUrl: { type: String, default: "" },
   },
   { timestamps: true }
 );
