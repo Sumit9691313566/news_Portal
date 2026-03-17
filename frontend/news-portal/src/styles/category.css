@@ -1582,16 +1582,25 @@ body {
   line-height: 1.7;
   color: #374151;
   font-family: var(--font-body);
+  text-align: justify;
+  text-justify: inter-word;
 }
 
 .full-content p {
   margin: 0 0 16px;
-  text-align: left;
+  text-align: justify;
+  text-justify: inter-word;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .rich-output p,
 .rich-output div {
   margin: 0 0 14px;
+  text-align: justify;
+  text-justify: inter-word;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .rich-output ul,
@@ -3109,6 +3118,16 @@ body {
   .full-content {
     font-size: 16px;
     line-height: 1.7;
+  }
+
+  .full-content p,
+  .rich-output p,
+  .rich-output div,
+  .rich-output li,
+  .rich-output blockquote {
+    text-align: justify;
+    text-align-last: left;
+    -webkit-text-align-last: left;
   }
 
   .news-card {
