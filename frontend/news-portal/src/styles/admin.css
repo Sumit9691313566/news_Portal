@@ -649,6 +649,24 @@ body {
   margin: 0 0 10px;
 }
 
+.rich-output table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.rich-output th,
+.rich-output td {
+  border: 1px solid #d7dce2;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-output th {
+  background: #f7f7f7;
+}
+
 .rich-output h1,
 .rich-output h2,
 .rich-output h3 {

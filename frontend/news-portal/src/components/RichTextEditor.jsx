@@ -151,6 +151,47 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     applyCommand("createLink", href);
   };
 
+  const insertTable = () => {
+    const rowInput = window.prompt("Table me kitni rows chahiye?", "2");
+    if (!rowInput) return;
+
+    const colInput = window.prompt("Table me kitne columns chahiye?", "2");
+    if (!colInput) return;
+
+    const rows = Math.min(12, Math.max(1, Number.parseInt(rowInput, 10) || 0));
+    const cols = Math.min(8, Math.max(1, Number.parseInt(colInput, 10) || 0));
+
+    if (!rows || !cols) {
+      window.alert("Valid rows aur columns enter karo.");
+      return;
+    }
+
+    const headCells = Array.from({ length: cols }, (_, index) => {
+      return `<th style="border: 1px solid #d7dce2; padding: 8px; background-color: #f7f7f7;">Heading ${index + 1}</th>`;
+    }).join("");
+
+    const bodyRows = Array.from({ length: rows }, (_, rowIndex) => {
+      const cells = Array.from({ length: cols }, (_, colIndex) => {
+        return `<td style="border: 1px solid #d7dce2; padding: 8px;">Row ${rowIndex + 1} Col ${colIndex + 1}</td>`;
+      }).join("");
+      return `<tr>${cells}</tr>`;
+    }).join("");
+
+    const tableHtml = `
+      <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
+        <thead>
+          <tr>${headCells}</tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>
+      <p></p>
+    `;
+
+    applyCommand("insertHTML", tableHtml);
+  };
+
   const blockOptions = useMemo(
     () => [
       { label: "Normal", value: "p" },
@@ -308,6 +349,9 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
         <div className="toolbar-group">
           <button type="button" onClick={insertLink} title="Insert link">
             Link
+          </button>
+          <button type="button" onClick={insertTable} title="Insert table">
+            Table
           </button>
           <button type="button" onClick={() => applyCommand("unlink")} title="Remove link">
             Unlink

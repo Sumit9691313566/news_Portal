@@ -84,7 +84,6 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
   const [breaking, setBreaking] = useState(false);
-  const [notify, setNotify] = useState(true);
   const [editId, setEditId] = useState(null);
   const [blocks, setBlocks] = useState([
     { id: Date.now(), type: "text", text: "" },
@@ -136,12 +135,11 @@ export default function AdminDashboard() {
       status,
       featured,
       breaking,
-      notify,
       blocks,
     };
     localStorage.setItem("adminDraft", JSON.stringify(payload));
     setLastSaved(new Date());
-  }, [title, titleColor, category, status, featured, breaking, notify, blocks]);
+  }, [title, titleColor, category, status, featured, breaking, blocks]);
 
   // Load draft once on mount
   useEffect(() => {
@@ -158,7 +156,6 @@ export default function AdminDashboard() {
       }
       if (typeof saved?.featured === "boolean") setFeatured(saved.featured);
       if (typeof saved?.breaking === "boolean") setBreaking(saved.breaking);
-      if (typeof saved?.notify === "boolean") setNotify(saved.notify);
       if (Array.isArray(saved?.blocks) && saved.blocks.length > 0) {
         setBlocks(
           saved.blocks.map((b) => ({
@@ -228,7 +225,6 @@ export default function AdminDashboard() {
     formData.append("status", safeStatus);
     formData.append("featured", featured);
     formData.append("breaking", breaking);
-    formData.append("notify", notify);
 
     const blocksPayload = blocks.map((b, index) => {
       if (b.type === "text") {
@@ -390,9 +386,23 @@ export default function AdminDashboard() {
   };
 
   const removeBlock = (id) => {
-    setBlocks((prev) =>
-      prev.length > 1 ? prev.filter((b) => b.id !== id) : prev
-    );
+    setBlocks((prev) => {
+      if (prev.length > 1) {
+        return prev.filter((b) => b.id !== id);
+      }
+
+      return prev.map((b) =>
+        b.id === id
+          ? {
+              ...b,
+              type: "text",
+              text: "",
+              url: "",
+              file: null,
+            }
+          : b
+      );
+    });
   };
 
   const duplicateBlock = (id) => {
@@ -871,15 +881,6 @@ export default function AdminDashboard() {
                 onChange={(e) => setBreaking(e.target.checked)}
               />
               Breaking News
-            </label>
-
-            <label className="checkbox field-label">
-              <input
-                type="checkbox"
-                checked={notify}
-                onChange={(e) => setNotify(e.target.checked)}
-              />
-              Send Notification on Publish
             </label>
 
             <button className="btn primary full-btn" onClick={saveNews}>

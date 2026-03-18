@@ -34,6 +34,12 @@ const ALLOWED_TAGS = new Set([
   "blockquote",
   "a",
   "div",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
 ]);
 
 const ALLOWED_STYLE_PROPS = new Set([
@@ -46,6 +52,10 @@ const ALLOWED_STYLE_PROPS = new Set([
   "text-align",
   "line-height",
   "margin-left",
+  "border",
+  "border-collapse",
+  "padding",
+  "width",
 ]);
 
 const sanitizeStyle = (styleValue = "") =>
