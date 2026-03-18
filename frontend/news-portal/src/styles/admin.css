@@ -72,6 +72,45 @@ body {
   align-items: center;
 }
 
+.visitor-banner {
+  flex: 1;
+  min-width: 260px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 8px;
+}
+
+.visitor-banner-item {
+  background: linear-gradient(180deg, #fffaf5 0%, #fff 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-soft);
+  min-width: 0;
+}
+
+.visitor-banner-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.visitor-banner-item strong {
+  display: block;
+  font-size: clamp(22px, 2.2vw, 26px);
+  line-height: 1;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
 .btn {
   padding: 10px 16px;
   border-radius: 8px;
@@ -789,6 +828,11 @@ body {
     flex-wrap: wrap;
   }
 
+  .visitor-banner {
+    width: 100%;
+    margin: 0;
+  }
+
   .filter-bar input,
   .filter-bar select {
     width: 100%;
@@ -810,6 +854,10 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .visitor-banner {
+    grid-template-columns: 1fr;
   }
 
   .status-tabs {

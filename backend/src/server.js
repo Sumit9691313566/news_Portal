@@ -8,6 +8,7 @@ import newsRoutes from "./routes/newsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import epaperRoutes from "./routes/epaperRoutes.js";
 import pushRoutes from "./routes/pushRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 import { startRetentionJob } from "./utils/retention.js";
 import { startDailyDigestJobs } from "./utils/digest.js";
 
@@ -104,6 +105,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/epaper", epaperRoutes);
 app.use("/api/push", pushRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err);

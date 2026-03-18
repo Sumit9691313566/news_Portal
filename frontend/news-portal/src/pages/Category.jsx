@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FaFacebookF, FaLink, FaShareAlt, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
+import { trackVisit } from "../services/analytics";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
@@ -126,6 +127,7 @@ export default function Category() {
   useEffect(() => {
     loadNews();
     loadEpapers();
+    trackVisit().catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -329,6 +331,7 @@ export default function Category() {
     setSelectedNews(news);
     scrollToNewsStart();
     if (!news?._id) return;
+    trackVisit({ markAsReader: true }).catch(() => {});
     setAllNews((prev) =>
       prev.map((n) =>
         n._id === news._id ? { ...n, views: (n.views || 0) + 1 } : n
