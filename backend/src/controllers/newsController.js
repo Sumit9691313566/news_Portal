@@ -118,6 +118,14 @@ const sendPublishedNewsNotification = async (news) => {
   }
 };
 
+const markFirstPublishedIfNeeded = (news, wasPublishedBefore = false) => {
+  if (!news || news.status !== "published") return false;
+  if (news.firstPublishedAt) return false;
+
+  news.firstPublishedAt = wasPublishedBefore ? news.createdAt || new Date() : new Date();
+  return !wasPublishedBefore;
+};
+
 const uploadToCloudinary = (file, resourceType) =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -220,6 +228,7 @@ export const createNews = async (req, res) => {
       mediaPublicId,
       mediaResourceType,
       status: resolveCreateStatus(req, status),
+      firstPublishedAt: null,
       featured: toBoolean(featured),
       breaking: toBoolean(breaking),
       notify: toBoolean(notify),
@@ -227,8 +236,15 @@ export const createNews = async (req, res) => {
       blocks,
     });
 
+    const shouldSendFirstPublishNotification = markFirstPublishedIfNeeded(news);
+    if (shouldSendFirstPublishNotification) {
+      await news.save();
+    }
+
     res.status(201).json(news);
-    await sendPublishedNewsNotification(news);
+    if (shouldSendFirstPublishNotification) {
+      await sendPublishedNewsNotification(news);
+    }
     try {
       const notifyCategories = String(process.env.NOTIFY_ON_PUBLISH_CATEGORIES || "").split(",").map((s) => s.trim()).filter(Boolean);
       const shouldNotify = () => {
@@ -355,10 +371,15 @@ export const updateNews = async (req, res) => {
       }
     }
 
+    const shouldSendFirstPublishNotification = markFirstPublishedIfNeeded(
+      news,
+      wasPublishedBefore
+    );
+
     await news.save();
 
     res.json(news);
-    if (!wasPublishedBefore && news.status === "published") {
+    if (shouldSendFirstPublishNotification) {
       await sendPublishedNewsNotification(news);
     }
     try {

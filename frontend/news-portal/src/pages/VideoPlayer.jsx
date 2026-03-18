@@ -11,6 +11,7 @@ export default function VideoPlayer() {
   const feedRef = useRef(null);
   const cardRefs = useRef([]);
   const videoRefs = useRef([]);
+  const lastRouteVideoIdRef = useRef(null);
 
   const [videos, setVideos] = useState(() => {
     if (Array.isArray(state?.videos) && state.videos.length > 0) {
@@ -35,13 +36,14 @@ export default function VideoPlayer() {
   });
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(videos.length === 0);
-  const lastRouteVideoIdRef = useRef(null);
 
   useEffect(() => {
     const selectedId = state?.selectedVideoId || id;
     if (!selectedId || videos.length === 0) return;
 
-    const index = videos.findIndex((video) => String(video.id || video._id) === String(selectedId));
+    const index = videos.findIndex(
+      (video) => String(video.id || video._id) === String(selectedId)
+    );
     if (index >= 0) {
       setActiveIndex(index);
     }
@@ -187,6 +189,14 @@ export default function VideoPlayer() {
     return `${window.location.origin}/videos/${currentId}`;
   }, [activeVideo, id]);
 
+  const activeVideoCreatedAt = activeVideo?.createdAt
+    ? new Date(activeVideo.createdAt).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+
   const goBackSafe = () => {
     if (window.history.length > 1) {
       navigate(-1);
@@ -198,9 +208,9 @@ export default function VideoPlayer() {
   const copyVideoLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      alert("लिंक कॉपी हो गया");
+      alert("Link copy ho gaya");
     } catch {
-      alert("लिंक कॉपी नहीं हो पाया");
+      alert("Link copy nahi ho paya");
     }
   };
 
@@ -229,7 +239,7 @@ export default function VideoPlayer() {
 
   const downloadVideo = async () => {
     if (!activeVideo?.mediaUrl) {
-      alert("Video URL उपलब्ध नहीं है");
+      alert("Video URL available nahi hai");
       return;
     }
 
@@ -256,10 +266,10 @@ export default function VideoPlayer() {
       link.click();
       link.remove();
       URL.revokeObjectURL(blobUrl);
-      alert("डाउनलोड शुरू हो गया");
+      alert("Download start ho gaya");
     } catch (err) {
       console.error(err);
-      alert("डाउनलोड विफल हुआ");
+      alert("Download fail hua");
     }
   };
 
@@ -269,7 +279,7 @@ export default function VideoPlayer() {
   };
 
   if (isLoading) {
-    return <div className="video-empty">वीडियो लोड हो रहे हैं...</div>;
+    return <div className="video-empty">Videos load ho rahe hain...</div>;
   }
 
   if (!activeVideo) {
@@ -278,72 +288,96 @@ export default function VideoPlayer() {
 
   return (
     <div className="video-page">
-      <div className="video-header">
-        <button className="video-back" onClick={goBackSafe}>
-          &larr; Back
-        </button>
-        <h1>{activeVideo.title || "Video"}</h1>
-      </div>
+      <div className="video-feed-shell" ref={feedRef}>
+        {videos.map((video, index) => {
+          const isActive = index === activeIndex;
 
-      <div className="video-feed-layout">
-        <div className="video-feed-shell" ref={feedRef}>
-          {videos.map((video, index) => {
-            return (
-              <article
-                key={video.id || video._id || index}
-                ref={(node) => {
-                  cardRefs.current[index] = node;
-                }}
-                data-index={index}
-                className={`video-feed-item ${
-                  index === activeIndex ? "is-active" : ""
-                }`}
-              >
-                <div className="video-player">
-                  <video
-                    ref={(node) => {
-                      videoRefs.current[index] = node;
-                    }}
-                    src={video.mediaUrl}
-                    controls
-                    playsInline
-                    preload={index === activeIndex ? "auto" : "metadata"}
-                    onEnded={showNextVideo}
-                  />
+          return (
+            <article
+              key={video.id || video._id || index}
+              ref={(node) => {
+                cardRefs.current[index] = node;
+              }}
+              data-index={index}
+              className={`video-feed-item ${isActive ? "is-active" : ""}`}
+            >
+              <div className="video-player">
+                <video
+                  ref={(node) => {
+                    videoRefs.current[index] = node;
+                  }}
+                  src={video.mediaUrl}
+                  controls
+                  playsInline
+                  preload={isActive ? "auto" : "metadata"}
+                  onEnded={showNextVideo}
+                />
 
-                  <div className="video-top-overlay">
-                    <button
-                      type="button"
-                      className="video-read-btn"
-                      onClick={() => openRelatedNews(video.newsId)}
-                    >
-                      खबर पढ़ें
-                    </button>
+                <div className="video-overlay video-overlay-top">
+                  <button
+                    type="button"
+                    className="video-icon-btn video-back-btn"
+                    onClick={goBackSafe}
+                  >
+                    &larr;
+                  </button>
+                  <div className="video-brand">गरुड़ समाचार</div>
+                  <button
+                    type="button"
+                    className="video-read-btn"
+                    onClick={() => openRelatedNews(video.newsId)}
+                  >
+                    न्यूज पढ़ें
+                  </button>
+                </div>
+
+                <div className="video-overlay video-overlay-side">
+                  <button
+                    type="button"
+                    className="video-action-btn"
+                    onClick={downloadVideo}
+                  >
+                    <span className="video-action-icon">↓</span>
+                    <span>डाउनलोड</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="video-action-btn"
+                    onClick={handleFacebookShare}
+                  >
+                    <span className="video-action-icon">f</span>
+                    <span>शेयर</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="video-action-btn"
+                    onClick={copyVideoLink}
+                  >
+                    <span className="video-action-icon">⤴</span>
+                    <span>कॉपी</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="video-action-btn"
+                    onClick={handleTwitterShare}
+                  >
+                    <span className="video-action-icon">⋯</span>
+                    <span>More</span>
+                  </button>
+                </div>
+
+                <div className="video-overlay video-overlay-bottom">
+                  <div className="video-chip">{video.category || "Article"}</div>
+                  <div className="video-meta">
+                    <h1>{video.title || "Video"}</h1>
+                    {video.summary ? <p>{video.summary}</p> : null}
+                    <small>{isActive ? activeVideoCreatedAt : ""}</small>
                   </div>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-
-        <div className="video-share-rail">
-          <button type="button" className="share-item" onClick={handleFacebookShare}>
-            <span className="share-icon">f</span>
-            <span>फेसबुक</span>
-          </button>
-          <button type="button" className="share-item" onClick={downloadVideo}>
-            <span className="share-icon">⬇</span>
-            <span>डाउनलोड</span>
-          </button>
-          <button type="button" className="share-item" onClick={handleTwitterShare}>
-            <span className="share-icon">X</span>
-            <span>ट्विटर</span>
-          </button>
-          <button type="button" className="share-item" onClick={copyVideoLink}>
-            <span className="share-icon">🔗</span>
-            <span>कॉपी लिंक</span>
-          </button>
-        </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ const newsSchema = new mongoose.Schema(
       enum: ["published", "draft", "pending"],
       default: "draft",
     },
+    firstPublishedAt: { type: Date, default: null },
     featured: { type: Boolean, default: false },
     notify: { type: Boolean, default: false },
     breaking: { type: Boolean, default: false },

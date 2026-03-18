@@ -3355,14 +3355,15 @@ body {
   }
 
   .videos-page .media-grid {
-    grid-template-columns: 1fr;
-    max-width: 290px;
-    margin: 0 auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: none;
+    margin: 0;
   }
 
   .videos-page-bhaskar .media-grid {
-    grid-template-columns: 1fr;
-    max-width: 290px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, calc(100% - 20px));
+    max-width: none;
   }
 
   .video-title-overlay {
