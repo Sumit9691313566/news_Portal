@@ -845,7 +845,7 @@ export default function Category() {
                   {videoNews.map((news) => (
                     <div
                       key={news._id || news.id}
-                      className="media-card"
+                      className="media-card home-video-card"
                       onClick={() =>
                         navigate(`/videos/${news._id || news.id}`, {
                           state: {
@@ -864,6 +864,9 @@ export default function Category() {
                           <video
                             src={news.mediaUrl}
                             muted
+                            autoPlay
+                            loop
+                            playsInline
                             preload="metadata"
                           />
                           <div className="play-badge">▶</div>
@@ -1139,10 +1142,28 @@ export default function Category() {
                 {!hasLeadMediaInBlocks &&
                   selectedNews.mediaUrl &&
                   selectedNews.mediaType === "video" && (
-                    <div className="news-lead-video-wrap">
+                    <div
+                      className="news-lead-video-wrap clickable-video-preview"
+                      onClick={() =>
+                        navigate(`/videos/${selectedNews._id || selectedNews.id}`, {
+                          state: {
+                            url: selectedNews.mediaUrl,
+                            title: selectedNews.title,
+                            summary: selectedNews.content || "",
+                            category: selectedNews.category || "Article",
+                            createdAt: selectedNews.createdAt,
+                            newsId: selectedNews._id || selectedNews.id,
+                          },
+                        })
+                      }
+                    >
                       <video
                         src={selectedNews.mediaUrl}
-                        controls
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        preload="metadata"
                         className="news-lead-video"
                       />
                     </div>
@@ -1169,10 +1190,28 @@ export default function Category() {
                           />
                         )}
                         {b.type === "video" && b.url && (
-                          <div className="full-video-wrap">
+                          <div
+                            className="full-video-wrap clickable-video-preview"
+                            onClick={() =>
+                              navigate(`/videos/${selectedNews._id || selectedNews.id}`, {
+                                state: {
+                                  url: b.url,
+                                  title: selectedNews.title,
+                                  summary: selectedNews.content || "",
+                                  category: selectedNews.category || "Article",
+                                  createdAt: selectedNews.createdAt,
+                                  newsId: selectedNews._id || selectedNews.id,
+                                },
+                              })
+                            }
+                          >
                             <video
                               src={b.url}
-                              controls
+                              muted
+                              autoPlay
+                              loop
+                              playsInline
+                              preload="metadata"
                               className="full-video"
                             />
                           </div>
