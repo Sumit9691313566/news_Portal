@@ -60,6 +60,13 @@ const mediaTypeFromUrl = (url) => {
 };
 
 const readingMinutes = (words = 0) => Math.max(1, Math.ceil(words / 220));
+const isBlockEmpty = (block) => {
+  if (!block) return true;
+  if (block.type === "text") {
+    return !String(block.text || "").replace(/<[^>]*>/g, "").trim();
+  }
+  return !String(block.url || "").trim() && !block.file;
+};
 
 
 export default function AdminDashboard() {
@@ -340,6 +347,14 @@ export default function AdminDashboard() {
     );
   };
 
+  const updateBlockUrl = (id, url) => {
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === id ? { ...b, url, file: null } : b
+      )
+    );
+  };
+
   const addMediaBlockFromFile = (file) => {
     const type = file.type.startsWith("image/") ? "image" : "video";
     setBlocks((prev) => [
@@ -365,6 +380,15 @@ export default function AdminDashboard() {
   };
 
   const handlePaste = (e) => {
+    const target = e.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target?.isContentEditable
+    ) {
+      return;
+    }
+
     const items = e.clipboardData?.items || [];
     for (const item of items) {
       if (item.kind === "file") {
@@ -385,8 +409,58 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleMediaPaste = (blockId, expectedType, e) => {
+    const items = e.clipboardData?.items || [];
+    for (const item of items) {
+      if (item.kind !== "file") continue;
+      const file = item.getAsFile();
+      if (!file) continue;
+
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      if (!isImage && !isVideo) continue;
+
+      if (
+        (expectedType === "image" && !isImage) ||
+        (expectedType === "video" && !isVideo)
+      ) {
+        window.alert(
+          expectedType === "image"
+            ? "Yahaan sirf image paste ho sakti hai."
+            : "Yahaan sirf video paste ho sakta hai."
+        );
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      updateBlockFile(blockId, file);
+      return;
+    }
+  };
+
   const removeBlock = (id) => {
     setBlocks((prev) => {
+      const targetBlock = prev.find((b) => b.id === id);
+      if (!targetBlock) return prev;
+
+      const clearedBlocks = prev.map((b) =>
+        b.id === id
+          ? {
+              ...b,
+              text: "",
+              url: "",
+              file: null,
+            }
+          : b
+      );
+
+      if (!isBlockEmpty(targetBlock)) {
+        return clearedBlocks;
+      }
+
       if (prev.length > 1) {
         return prev.filter((b) => b.id !== id);
       }
@@ -787,7 +861,10 @@ export default function AdminDashboard() {
                   )}
 
                   {(block.type === "image" || block.type === "video") && (
-                    <div className="block-media">
+                    <div
+                      className="block-media"
+                      onPaste={(e) => handleMediaPaste(block.id, block.type, e)}
+                    >
                       <input
                         type="file"
                         accept={block.type === "image" ? "image/*" : "video/*"}
@@ -799,13 +876,7 @@ export default function AdminDashboard() {
                         type="text"
                         placeholder="Paste image/video URL (optional)"
                         value={block.url || ""}
-                        onChange={(e) =>
-                          setBlocks((prev) =>
-                            prev.map((b) =>
-                              b.id === block.id ? { ...b, url: e.target.value } : b
-                            )
-                          )
-                        }
+                        onChange={(e) => updateBlockUrl(block.id, e.target.value)}
                       />
                       {block.url && block.type === "image" && (
                         <img src={block.url} alt="preview" />
