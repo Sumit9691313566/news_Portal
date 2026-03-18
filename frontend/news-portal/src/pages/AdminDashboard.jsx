@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 import { API_FALLBACK_URL, buildApiUrl, fetchWithTimeout } from "../services/api";
-import { fetchVisitorSummary } from "../services/analytics";
 import RichTextEditor from "../components/RichTextEditor";
 import {
   countWordsFromHtml,
@@ -95,11 +94,6 @@ export default function AdminDashboard() {
   const [epaperFile, setEpaperFile] = useState(null);
   const [epaperList, setEpaperList] = useState([]);
   const [lastSaved, setLastSaved] = useState(null);
-  const [visitorStats, setVisitorStats] = useState({
-    totalVisitors: 0,
-    uniqueReaders: 0,
-    todayVisitors: 0,
-  });
   const addArticleRef = useRef(null);
 
   /* ================= LOAD ================= */
@@ -127,38 +121,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const loadVisitorStats = async () => {
-    try {
-      const res = await fetchVisitorSummary(token);
-      if (!res.ok) {
-        setVisitorStats({
-          totalVisitors: 0,
-          uniqueReaders: 0,
-          todayVisitors: 0,
-        });
-        return;
-      }
-
-      const data = await res.json();
-      setVisitorStats({
-        totalVisitors: Number(data?.totalVisitors) || 0,
-        uniqueReaders: Number(data?.uniqueReaders) || 0,
-        todayVisitors: Number(data?.todayVisitors) || 0,
-      });
-    } catch {
-      setVisitorStats({
-        totalVisitors: 0,
-        uniqueReaders: 0,
-        todayVisitors: 0,
-      });
-    }
-  };
-
   useEffect(() => {
     loadNews();
     loadEpaper();
     loadDeletedNews();
-    loadVisitorStats();
   }, []);
 
   // Auto-save draft to localStorage (editor safety)
@@ -611,20 +577,6 @@ export default function AdminDashboard() {
         <div>
           <h1>Admin Dashboard</h1>
           <p>Welcome {adminName}</p>
-        </div>
-        <div className="visitor-banner" aria-label="Unique visitor summary">
-          <div className="visitor-banner-item">
-            <span className="visitor-banner-label">Total Visitors</span>
-            <strong>{visitorStats.totalVisitors}</strong>
-          </div>
-          <div className="visitor-banner-item">
-            <span className="visitor-banner-label">Readers</span>
-            <strong>{visitorStats.uniqueReaders}</strong>
-          </div>
-          <div className="visitor-banner-item">
-            <span className="visitor-banner-label">Today</span>
-            <strong>{visitorStats.todayVisitors}</strong>
-          </div>
         </div>
         <div className="admin-actions">
           <button

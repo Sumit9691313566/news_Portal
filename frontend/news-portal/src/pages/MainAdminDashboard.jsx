@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
+import { fetchVisitorSummary } from "../services/analytics";
 import RichTextEditor from "../components/RichTextEditor";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 import "../styles/admin.css";
@@ -40,6 +41,11 @@ export default function MainAdminDashboard() {
   const [editBreaking, setEditBreaking] = useState(false);
   const [editBlocks, setEditBlocks] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [visitorStats, setVisitorStats] = useState({
+    totalVisitors: 0,
+    uniqueReaders: 0,
+    todayVisitors: 0,
+  });
 
   const loadNews = async () => {
     const res = await fetchWithTimeout("news", {
@@ -49,8 +55,36 @@ export default function MainAdminDashboard() {
     setNewsList(Array.isArray(data) ? data : []);
   };
 
+  const loadVisitorStats = async () => {
+    try {
+      const res = await fetchVisitorSummary(token);
+      if (!res.ok) {
+        setVisitorStats({
+          totalVisitors: 0,
+          uniqueReaders: 0,
+          todayVisitors: 0,
+        });
+        return;
+      }
+
+      const data = await res.json();
+      setVisitorStats({
+        totalVisitors: Number(data?.totalVisitors) || 0,
+        uniqueReaders: Number(data?.uniqueReaders) || 0,
+        todayVisitors: Number(data?.todayVisitors) || 0,
+      });
+    } catch {
+      setVisitorStats({
+        totalVisitors: 0,
+        uniqueReaders: 0,
+        todayVisitors: 0,
+      });
+    }
+  };
+
   useEffect(() => {
     loadNews();
+    loadVisitorStats();
   }, []);
 
   const reviewNews = useMemo(
@@ -223,6 +257,20 @@ export default function MainAdminDashboard() {
         <div>
           <h1>Main Admin</h1>
           <p>Sub-admin uploads stay in draft until you publish</p>
+        </div>
+        <div className="visitor-banner" aria-label="Visitor summary">
+          <div className="visitor-banner-item">
+            <span className="visitor-banner-label">Total Visitors</span>
+            <strong>{visitorStats.totalVisitors}</strong>
+          </div>
+          <div className="visitor-banner-item">
+            <span className="visitor-banner-label">Readers</span>
+            <strong>{visitorStats.uniqueReaders}</strong>
+          </div>
+          <div className="visitor-banner-item">
+            <span className="visitor-banner-label">Today</span>
+            <strong>{visitorStats.todayVisitors}</strong>
+          </div>
         </div>
         <div className="admin-actions">
           <button className="btn" onClick={() => navigate("/admin-dashboard")}>
