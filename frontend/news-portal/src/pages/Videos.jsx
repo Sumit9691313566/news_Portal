@@ -20,13 +20,26 @@ const formatTimeAgo = (date) => {
   return `${days} दिन पहले`;
 };
 
+const toHindiCategory = (category) => {
+  const key = String(category || "").trim().toLowerCase();
+  if (key === "national") return "देश";
+  if (key === "business") return "बिजनेस";
+  if (key === "politics") return "राजनीति";
+  if (key === "sports") return "खेल";
+  if (key === "tech") return "टेक";
+  if (key === "entertainment") return "मनोरंजन";
+  if (key === "world") return "दुनिया";
+  if (key === "article") return "आर्टिकल";
+  return category || "वीडियो";
+};
+
 const categoryClass = (category) => {
-  const key = (category || "").toLowerCase();
+  const key = String(category || "").trim().toLowerCase();
   if (key === "national") return "cat-national";
+  if (key === "business") return "cat-business";
   if (key === "politics") return "cat-politics";
   if (key === "sports") return "cat-sports";
   if (key === "tech") return "cat-tech";
-  if (key === "business") return "cat-business";
   if (key === "entertainment") return "cat-entertainment";
   if (key === "world") return "cat-world";
   if (key === "article") return "cat-article";
@@ -82,7 +95,7 @@ export default function Videos() {
 
   return (
     <div className="layout">
-      <main className="content media-page videos-page">
+      <main className="content media-page videos-page videos-page-bhaskar">
         <div className="page-toolbar page-toolbar-videos">
           <button type="button" className="page-toolbar-btn" onClick={goBackSafe}>
             &larr; Back
@@ -96,33 +109,46 @@ export default function Videos() {
           </button>
         </div>
 
-        {!loading && videos.length === 0 && <p>No videos uploaded yet.</p>}
+        {!loading && videos.length === 0 && (
+          <div className="videos-empty-state">
+            <h2>No videos uploaded yet.</h2>
+            <p>Video news aate hi yahan 4-column layout mein dikhengi.</p>
+          </div>
+        )}
 
         <div className="media-grid">
           {videos.map((video) => (
-            <div
+            <article
               key={video.id || video._id}
-              className="media-card"
+              className="media-card video-news-card"
               onClick={() => openVideo(video)}
             >
               <div className="media-thumb media-thumb-video">
-                <video src={video.mediaUrl} muted preload="metadata" />
+                <video
+                  src={video.mediaUrl}
+                  muted
+                  autoPlay
+                  loop
+                  playsInline
+                  preload="metadata"
+                />
+                <div className="video-thumb-shade" />
                 <div className="play-badge">▶</div>
-                <div className="video-story-overlay">
-                  <h3
-                    className={`video-story-title ${categoryClass(video.category)}`}
-                  >
+                <div className="video-title-overlay">
+                  <h3 className={`video-thumb-title ${categoryClass(video.category)}`}>
                     {video.title}
                   </h3>
-                  <p className="video-story-summary">
-                    {video.summary || "वीडियो समाचार"}
-                  </p>
-                  <small className="video-story-meta">
-                    {formatTimeAgo(video.createdAt)}
-                  </small>
+                  <div className="video-inline-meta">
+                    <span className="video-inline-category">
+                      {toHindiCategory(video.category)}
+                    </span>
+                    <span className="video-inline-time">
+                      {formatTimeAgo(video.createdAt)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </main>
