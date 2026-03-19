@@ -4,6 +4,8 @@ import { fetchWithTimeout } from "../services/api";
 import { fallbackVideos, normalizeVideosFromNews } from "../utils/videoFeed";
 import "../styles/videoPlayer.css";
 
+const LOOP_REPEAT_COUNT = 3;
+
 export default function VideoPlayer() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -36,6 +38,18 @@ export default function VideoPlayer() {
   });
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(videos.length === 0);
+  const [activeRenderIndex, setActiveRenderIndex] = useState(0);
+
+  const hasLoopFeed = videos.length > 1;
+  const renderedVideos = useMemo(() => {
+    if (!hasLoopFeed) return videos;
+    return Array.from({ length: LOOP_REPEAT_COUNT }, () => videos).flat();
+  }, [hasLoopFeed, videos]);
+
+  const getMiddleRenderIndex = (index) => {
+    if (!hasLoopFeed) return index;
+    return videos.length + index;
+  };
 
   useEffect(() => {
     const selectedId = state?.selectedVideoId || id;
@@ -48,6 +62,11 @@ export default function VideoPlayer() {
       setActiveIndex(index);
     }
   }, [id, state?.selectedVideoId, videos]);
+
+  useEffect(() => {
+    if (videos.length === 0) return;
+    setActiveRenderIndex(getMiddleRenderIndex(activeIndex));
+  }, [activeIndex, hasLoopFeed, videos.length]);
 
   useEffect(() => {
     if (videos.length > 0) {
@@ -96,13 +115,13 @@ export default function VideoPlayer() {
   }, [id, state?.selectedVideoId, videos.length]);
 
   useEffect(() => {
-    if (!feedRef.current || !cardRefs.current[activeIndex]) return;
+    if (!feedRef.current || !cardRefs.current[activeRenderIndex]) return;
 
-    cardRefs.current[activeIndex].scrollIntoView({
+    cardRefs.current[activeRenderIndex].scrollIntoView({
       behavior: "smooth",
       block: "nearest",
     });
-  }, [activeIndex]);
+  }, [activeRenderIndex]);
 
   useEffect(() => {
     const activeVideo = videos[activeIndex];
@@ -134,7 +153,7 @@ export default function VideoPlayer() {
     videoRefs.current.forEach((videoEl, index) => {
       if (!videoEl) return;
 
-      if (index === activeIndex) {
+      if (index === activeRenderIndex) {
         const playPromise = videoEl.play();
         if (playPromise?.catch) {
           playPromise.catch(() => {});
@@ -143,15 +162,33 @@ export default function VideoPlayer() {
         videoEl.pause();
       }
     });
-  }, [activeIndex, videos]);
+  }, [activeRenderIndex, videos]);
+
+  useEffect(() => {
+    if (!hasLoopFeed || !feedRef.current) return;
+    if (activeRenderIndex < videos.length || activeRenderIndex >= videos.length * 2) {
+      const normalizedIndex = ((activeRenderIndex % videos.length) + videos.length) % videos.length;
+      const middleIndex = getMiddleRenderIndex(normalizedIndex);
+      const nextCard = cardRefs.current[middleIndex];
+      if (!nextCard) return;
+
+      requestAnimationFrame(() => {
+        nextCard.scrollIntoView({
+          behavior: "auto",
+          block: "nearest",
+        });
+        setActiveRenderIndex(middleIndex);
+      });
+    }
+  }, [activeRenderIndex, hasLoopFeed, videos.length]);
 
   useEffect(() => {
     const root = feedRef.current;
-    if (!root || videos.length === 0) return;
+    if (!root || renderedVideos.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        let nextIndex = activeIndex;
+        let nextIndex = activeRenderIndex;
         let maxRatio = 0;
 
         entries.forEach((entry) => {
@@ -164,8 +201,11 @@ export default function VideoPlayer() {
           }
         });
 
-        if (nextIndex !== activeIndex) {
-          setActiveIndex(nextIndex);
+        if (nextIndex !== activeRenderIndex) {
+          setActiveRenderIndex(nextIndex);
+          if (videos.length > 0) {
+            setActiveIndex(nextIndex % videos.length);
+          }
         }
       },
       {
@@ -179,7 +219,7 @@ export default function VideoPlayer() {
     });
 
     return () => observer.disconnect();
-  }, [activeIndex, videos]);
+  }, [activeRenderIndex, renderedVideos.length, videos.length]);
 
   const activeVideo = videos[activeIndex];
 
@@ -230,11 +270,22 @@ export default function VideoPlayer() {
     window.open(target, "_blank", "noopener,noreferrer");
   };
 
-  const handleTwitterShare = () => {
-    const target = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-      shareUrl
-    )}&text=${encodeURIComponent(activeVideo?.title || "Video")}`;
-    window.open(target, "_blank", "noopener,noreferrer");
+  const handleMoreAction = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: activeVideo?.title || "Video",
+          text: activeVideo?.summary || activeVideo?.title || "Video",
+          url: shareUrl,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Link copy ho gaya");
+    } catch {
+      alert("Share cancel ho gaya");
+    }
   };
 
   const downloadVideo = async () => {
@@ -276,6 +327,7 @@ export default function VideoPlayer() {
   const showNextVideo = () => {
     if (videos.length <= 1) return;
     setActiveIndex((current) => (current + 1) % videos.length);
+    setActiveRenderIndex((current) => current + 1);
   };
 
   if (isLoading) {
@@ -289,12 +341,12 @@ export default function VideoPlayer() {
   return (
     <div className="video-page">
       <div className="video-feed-shell" ref={feedRef}>
-        {videos.map((video, index) => {
-          const isActive = index === activeIndex;
+        {renderedVideos.map((video, index) => {
+          const isActive = index === activeRenderIndex;
 
           return (
             <article
-              key={video.id || video._id || index}
+              key={`${video.id || video._id || "video"}-${index}`}
               ref={(node) => {
                 cardRefs.current[index] = node;
               }}
@@ -359,7 +411,7 @@ export default function VideoPlayer() {
                   <button
                     type="button"
                     className="video-action-btn"
-                    onClick={handleTwitterShare}
+                    onClick={handleMoreAction}
                   >
                     <span className="video-action-icon">⋯</span>
                     <span>More</span>

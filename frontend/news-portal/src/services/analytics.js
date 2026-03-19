@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from "./api";
+import { buildApiUrl, fetchWithTimeout } from "./api";
 
 const VISITOR_STORAGE_KEY = "newsPortalVisitorId";
 
@@ -37,6 +37,25 @@ export const trackVisit = async ({ markAsReader = false } = {}) => {
     });
   } catch (error) {
     console.warn("Visitor tracking failed", error);
+  }
+};
+
+export const trackUniqueNewsView = async (newsId) => {
+  const visitorId = getVisitorId();
+  if (!visitorId || !newsId) return null;
+
+  try {
+    const res = await fetch(buildApiUrl(`news/${newsId}/view`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId }),
+    });
+
+    if (!res.ok) return null;
+    return await res.json().catch(() => null);
+  } catch (error) {
+    console.warn("News view tracking failed", error);
+    return null;
   }
 };
 

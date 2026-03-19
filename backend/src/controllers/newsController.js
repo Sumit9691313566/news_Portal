@@ -1,6 +1,7 @@
 import News from "../models/News.js";
 import mongoose from "mongoose";
 import DeletedNews from "../models/DeletedNews.js";
+import NewsView from "../models/NewsView.js";
 import { sendNotificationToAll } from "../utils/push.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
@@ -528,17 +529,67 @@ export const getAllNews = async (req, res) => {
 /* ================= INCREMENT VIEWS ================= */
 export const incrementViews = async (req, res) => {
   try {
-    const news = await News.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { views: 1 } },
-      { new: true }
-    );
+    const newsId = req.params.id;
+    const visitorId = String(req.body?.visitorId || "").trim();
+
+    const news = await News.findById(newsId);
     if (!news) {
       return res.status(404).json({ message: "News not found" });
     }
-    res.json({ views: news.views });
+
+    if (!visitorId) {
+      return res.json({ views: news.views, unique: false });
+    }
+
+    const existingView = await NewsView.findOne({ newsId, visitorId }).lean();
+    if (existingView) {
+      return res.json({ views: news.views, unique: false });
+    }
+
+    await NewsView.create({
+      newsId,
+      visitorId,
+      viewedAt: new Date(),
+    });
+
+    news.views = (news.views || 0) + 1;
+    await news.save();
+
+    res.json({ views: news.views, unique: true });
   } catch (error) {
     console.error("INCREMENT VIEWS ERROR:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const resetAllViews = async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(403).json({ message: "Not allowed in production" });
+    }
+
+    const forwardedFor = String(req.headers["x-forwarded-for"] || "");
+    const remoteAddress = String(req.socket?.remoteAddress || "");
+    const isLocalRequest =
+      forwardedFor.includes("127.0.0.1") ||
+      forwardedFor.includes("::1") ||
+      remoteAddress.includes("127.0.0.1") ||
+      remoteAddress.includes("::1");
+
+    if (!isLocalRequest) {
+      return res.status(403).json({ message: "Local reset only" });
+    }
+
+    const newsResult = await News.updateMany({}, { $set: { views: 0 } });
+    const viewResult = await NewsView.deleteMany({});
+
+    return res.json({
+      success: true,
+      resetNews: newsResult.modifiedCount || 0,
+      deletedViewRecords: viewResult.deletedCount || 0,
+    });
+  } catch (error) {
+    console.error("RESET VIEWS ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

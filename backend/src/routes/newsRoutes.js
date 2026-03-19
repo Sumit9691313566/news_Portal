@@ -6,6 +6,7 @@ import {
   updateNews,
   deleteNews,
   incrementViews,
+  resetAllViews,
   getDeletedNews,
   deleteDeletedNews,
   deleteDeletedNewsBulk,
@@ -26,6 +27,7 @@ const upload = multer({
 });
 
 router.get("/", optionalAdminAuth, getAllNews);
+router.post("/reset-views", resetAllViews);
 router.get("/deleted", adminAuth, getDeletedNews);
 router.delete("/deleted/:id", adminAuth, deleteDeletedNews);
 router.delete("/deleted", adminAuth, deleteDeletedNewsBulk);

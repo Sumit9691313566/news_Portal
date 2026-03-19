@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FaFacebookF, FaLink, FaShareAlt, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
-import { trackVisit } from "../services/analytics";
+import { trackUniqueNewsView, trackVisit } from "../services/analytics";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
@@ -332,14 +332,14 @@ export default function Category() {
     scrollToNewsStart();
     if (!news?._id) return;
     trackVisit({ markAsReader: true }).catch(() => {});
-    setAllNews((prev) =>
-      prev.map((n) =>
-        n._id === news._id ? { ...n, views: (n.views || 0) + 1 } : n
-      )
-    );
-    fetch(buildApiUrl(`news/${news._id}/view`), {
-      method: "POST",
-    }).catch(() => {});
+    trackUniqueNewsView(news._id).then((result) => {
+      if (!result?.unique) return;
+      setAllNews((prev) =>
+        prev.map((n) =>
+          n._id === news._id ? { ...n, views: result.views ?? (n.views || 0) + 1 } : n
+        )
+      );
+    });
   };
 
   const getNewsShareUrl = (news) => {
