@@ -35,6 +35,13 @@ const isMainAdmin = (req) => {
   if (role !== "main-admin") return false;
   return adminId === "mainadmin" || email === "mainadmin@gmail.com";
 };
+const isReporter = (req) => String(req?.admin?.role || "").toLowerCase() === "reporter";
+const isSubAdmin = (req) => String(req?.admin?.role || "").toLowerCase() === "sub-admin";
+const isOwner = (req, news) =>
+  String(news?.createdById || "").toLowerCase() ===
+  String(req?.admin?.adminId || "").toLowerCase();
+const canReporterModify = (req, news) =>
+  isReporter(req) && isOwner(req, news) && String(news?.status || "").toLowerCase() !== "published";
 const normalizeIncomingStatus = (status) => {
   const nextStatus = String(status || "").trim().toLowerCase();
   if (nextStatus === "draft") return "draft";
@@ -44,11 +51,13 @@ const normalizeIncomingStatus = (status) => {
 };
 const resolveCreateStatus = (req, status) => {
   if (isMainAdmin(req)) return normalizeIncomingStatus(status);
+  if (isReporter(req)) return "pending";
   return "draft";
 };
 const resolveUpdateStatus = (req, currentStatus, status) => {
   if (status === undefined) return currentStatus;
   if (isMainAdmin(req)) return normalizeIncomingStatus(status);
+  if (isReporter(req)) return "pending";
   return "draft";
 };
 
@@ -234,6 +243,9 @@ export const createNews = async (req, res) => {
       breaking: toBoolean(breaking),
       notify: toBoolean(notify),
       author: author || req?.admin?.name || "Admin",
+      createdById: req?.admin?.adminId || "",
+      createdByName: req?.admin?.name || author || "Admin",
+      createdByRole: req?.admin?.role || "",
       blocks,
     });
 
@@ -296,6 +308,9 @@ export const updateNews = async (req, res) => {
     if (!news) {
       return res.status(404).json({ message: "News not found" });
     }
+    if (isReporter(req) && !canReporterModify(req, news)) {
+      return res.status(403).json({ message: "Reporter can edit only their own news" });
+    }
     const wasPublishedBefore = news.status === "published";
 
     const files = Array.isArray(req.files) ? req.files : [];
@@ -343,6 +358,9 @@ export const updateNews = async (req, res) => {
     if (breaking !== undefined) news.breaking = toBoolean(breaking);
     if (notify !== undefined) news.notify = toBoolean(notify);
     if (author !== undefined) news.author = author;
+    if (!news.createdById) news.createdById = req?.admin?.adminId || "";
+    if (!news.createdByName) news.createdByName = req?.admin?.name || news.author || "Admin";
+    if (!news.createdByRole) news.createdByRole = req?.admin?.role || "";
 
     if (blocks.length > 0) {
       news.blocks = blocks;
@@ -420,6 +438,9 @@ export const deleteNews = async (req, res) => {
     if (!news) {
       return res.status(404).json({ message: "News not found" });
     }
+    if (isReporter(req) && !canReporterModify(req, news)) {
+      return res.status(403).json({ message: "Reporter can delete only their own news" });
+    }
 
     // Save to deleted collection (admin can review)
     await DeletedNews.create({
@@ -433,6 +454,9 @@ export const deleteNews = async (req, res) => {
       featured: !!news.featured,
       breaking: !!news.breaking,
       author: news.author || "Admin",
+      createdById: news.createdById || "",
+      createdByName: news.createdByName || news.author || "Admin",
+      createdByRole: news.createdByRole || "",
       views: news.views || 0,
       createdAt: news.createdAt,
       deletedAt: new Date(),
@@ -515,6 +539,8 @@ export const getAllNews = async (req, res) => {
     let query = {};
     if (!req?.admin) {
       query = { status: "published" };
+    } else if (isReporter(req)) {
+      query = { createdById: req.admin.adminId };
     } else if (!isMainAdmin(req)) {
       query = { $or: [{ status: "published" }, { status: "draft" }, { status: "pending" }] };
     }

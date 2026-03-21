@@ -4,6 +4,7 @@ import Category from "./pages/Category";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import MainAdminDashboard from "./pages/MainAdminDashboard";
+import ReporterDashboard from "./pages/ReporterDashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { useEffect } from "react";
 import { promptForSubscription } from "./services/push";
@@ -51,6 +52,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="main-admin">
               <MainAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reporter-dashboard"
+          element={
+            <ProtectedRoute requiredRole="reporter">
+              <ReporterDashboard />
             </ProtectedRoute>
           }
         />

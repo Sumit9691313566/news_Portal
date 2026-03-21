@@ -20,6 +20,13 @@ const newsSchema = new mongoose.Schema(
     notify: { type: Boolean, default: false },
     breaking: { type: Boolean, default: false },
     author: { type: String, default: "Admin" },
+    createdById: { type: String, default: "" },
+    createdByName: { type: String, default: "" },
+    createdByRole: {
+      type: String,
+      enum: ["main-admin", "sub-admin", "reporter", ""],
+      default: "",
+    },
     views: { type: Number, default: 0 },
     blocks: [
       {

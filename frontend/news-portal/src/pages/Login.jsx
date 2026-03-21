@@ -1,12 +1,9 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const loginMode = searchParams.get("role") === "main-admin" ? "main-admin" : "admin";
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,17 +48,10 @@ export default function Login() {
       localStorage.setItem("adminName", data?.admin?.name || "Admin");
       localStorage.setItem("adminEmail", data?.admin?.email || "");
 
-      if (loginMode === "main-admin" && data?.admin?.role !== "main-admin") {
-        localStorage.removeItem("adminToken");
-        localStorage.removeItem("adminRole");
-        localStorage.removeItem("adminName");
-        localStorage.removeItem("adminEmail");
-        alert("Ye main admin account nahi hai");
-        return;
-      }
-
       if (data?.admin?.role === "main-admin") {
         navigate("/main-admin", { replace: true });
+      } else if (data?.admin?.role === "reporter") {
+        navigate("/reporter-dashboard", { replace: true });
       } else {
         navigate("/admin-dashboard", { replace: true });
       }
@@ -93,8 +83,11 @@ export default function Login() {
         }}
       >
         <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-          {loginMode === "main-admin" ? "Main Admin Login" : "Admin Login"}
+          Portal Login
         </h2>
+        <p style={{ textAlign: "center", marginBottom: "16px", color: "#555" }}>
+         
+        </p>
 
         <button
           type="button"

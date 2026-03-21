@@ -22,6 +22,9 @@ const normalizeRole = (role, adminId, email) => {
   if (isCanonicalMainAdmin) {
     return "main-admin";
   }
+  if (cleaned === "reporter") {
+    return "reporter";
+  }
   if (cleaned === "admin" || cleaned === "main-admin") {
     return "sub-admin";
   }
