@@ -29,6 +29,14 @@ const visitorSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    sourceHost: {
+      type: String,
+      default: "",
+    },
+    sourceOrigin: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

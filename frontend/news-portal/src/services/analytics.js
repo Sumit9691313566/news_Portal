@@ -1,6 +1,15 @@
 import { buildApiUrl, fetchWithTimeout } from "./api";
 
 const VISITOR_STORAGE_KEY = "newsPortalVisitorId";
+const TEST_UA_MARKERS = [
+  "headlesschrome",
+  "lighthouse",
+  "puppeteer",
+  "playwright",
+  "cypress",
+  "selenium",
+  "webdriver",
+];
 
 const createVisitorId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -22,7 +31,21 @@ export const getVisitorId = () => {
   return visitorId;
 };
 
+const shouldSkipAnalytics = () => {
+  if (typeof window === "undefined") return true;
+
+  const host = String(window.location.hostname || "").toLowerCase();
+  if (host === "localhost" || host === "127.0.0.1") {
+    return true;
+  }
+
+  const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+  return TEST_UA_MARKERS.some((marker) => userAgent.includes(marker));
+};
+
 export const trackVisit = async ({ markAsReader = false } = {}) => {
+  if (shouldSkipAnalytics()) return;
+
   const visitorId = getVisitorId();
   if (!visitorId) return;
 
@@ -41,6 +64,8 @@ export const trackVisit = async ({ markAsReader = false } = {}) => {
 };
 
 export const trackUniqueNewsView = async (newsId) => {
+  if (shouldSkipAnalytics()) return null;
+
   const visitorId = getVisitorId();
   if (!visitorId || !newsId) return null;
 
