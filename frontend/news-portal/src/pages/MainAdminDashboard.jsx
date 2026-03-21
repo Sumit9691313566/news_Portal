@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fetchVisitorSummary } from "../services/analytics";
@@ -47,6 +47,7 @@ export default function MainAdminDashboard() {
   const [reporterName, setReporterName] = useState("");
   const [reporterId, setReporterId] = useState("");
   const [reporterPassword, setReporterPassword] = useState("");
+  const detailRef = useRef(null);
   const [visitorStats, setVisitorStats] = useState({
     totalVisitors: 0,
     uniqueReaders: 0,
@@ -104,6 +105,11 @@ export default function MainAdminDashboard() {
     loadReporters();
     loadDeletedNews();
   }, []);
+
+  useEffect(() => {
+    if (!selectedNews || !detailRef.current) return;
+    detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedNews]);
 
   const filteredNews = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -535,87 +541,8 @@ export default function MainAdminDashboard() {
         </div>
       </div>
 
-      <div className="card">
-        <h2>Deleted News</h2>
-
-        {deletedNewsList.length === 0 ? (
-          <p className="muted">No deleted news yet.</p>
-        ) : (
-          <>
-            <div className="deleted-actions">
-              <label className="deleted-select-all">
-                <input
-                  type="checkbox"
-                  checked={
-                    selectedDeletedIds.length > 0 &&
-                    selectedDeletedIds.length === deletedNewsList.length
-                  }
-                  onChange={(event) => {
-                    if (event.target.checked) {
-                      setSelectedDeletedIds(deletedNewsList.map((item) => item._id));
-                    } else {
-                      setSelectedDeletedIds([]);
-                    }
-                  }}
-                />
-                Select All
-              </label>
-              <button
-                className="btn danger"
-                type="button"
-                onClick={deleteDeletedNewsBulk}
-                disabled={selectedDeletedIds.length === 0}
-              >
-                Bulk Delete
-              </button>
-            </div>
-
-            <div className="news-list">
-              {deletedNewsList.map((item) => (
-                <div className="news-card" key={item._id}>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <small>
-                      {item.category || "All"} |{" "}
-                      {item.deletedAt ? new Date(item.deletedAt).toLocaleString() : "Deleted"}
-                    </small>
-                    <div className="badges">
-                      <span className="badge draft">Deleted</span>
-                      {item.deletedReason === "retention" && (
-                        <span className="badge featured">Auto</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="actions">
-                    <label className="deleted-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={selectedDeletedIds.includes(item._id)}
-                        onChange={(event) => {
-                          setSelectedDeletedIds((prev) =>
-                            event.target.checked
-                              ? [...prev, item._id]
-                              : prev.filter((id) => id !== item._id)
-                          );
-                        }}
-                      />
-                    </label>
-                    <button
-                      className="btn danger small"
-                      onClick={() => deleteDeletedNews(item._id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
       {selectedNews && (
-        <div className="card">
+        <div className="card" ref={detailRef}>
           <div className="admin-header" style={{ marginBottom: 12 }}>
             <div>
               <h2>News Detail</h2>
@@ -780,6 +707,85 @@ export default function MainAdminDashboard() {
           )}
         </div>
       )}
+
+      <div className="card">
+        <h2>Deleted News</h2>
+
+        {deletedNewsList.length === 0 ? (
+          <p className="muted">No deleted news yet.</p>
+        ) : (
+          <>
+            <div className="deleted-actions">
+              <label className="deleted-select-all">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedDeletedIds.length > 0 &&
+                    selectedDeletedIds.length === deletedNewsList.length
+                  }
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      setSelectedDeletedIds(deletedNewsList.map((item) => item._id));
+                    } else {
+                      setSelectedDeletedIds([]);
+                    }
+                  }}
+                />
+                Select All
+              </label>
+              <button
+                className="btn danger"
+                type="button"
+                onClick={deleteDeletedNewsBulk}
+                disabled={selectedDeletedIds.length === 0}
+              >
+                Bulk Delete
+              </button>
+            </div>
+
+            <div className="news-list">
+              {deletedNewsList.map((item) => (
+                <div className="news-card" key={item._id}>
+                  <div>
+                    <h3>{item.title}</h3>
+                    <small>
+                      {item.category || "All"} |{" "}
+                      {item.deletedAt ? new Date(item.deletedAt).toLocaleString() : "Deleted"}
+                    </small>
+                    <div className="badges">
+                      <span className="badge draft">Deleted</span>
+                      {item.deletedReason === "retention" && (
+                        <span className="badge featured">Auto</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="actions">
+                    <label className="deleted-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedDeletedIds.includes(item._id)}
+                        onChange={(event) => {
+                          setSelectedDeletedIds((prev) =>
+                            event.target.checked
+                              ? [...prev, item._id]
+                              : prev.filter((id) => id !== item._id)
+                          );
+                        }}
+                      />
+                    </label>
+                    <button
+                      className="btn danger small"
+                      onClick={() => deleteDeletedNews(item._id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
