@@ -54,6 +54,10 @@ export default function Category() {
   const [failedEpaperPreviewIds, setFailedEpaperPreviewIds] = useState({});
   const [subscribeMessage, setSubscribeMessage] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 768px)").matches;
+  });
 
   const scrollToNewsStart = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -128,6 +132,22 @@ export default function Category() {
     loadNews();
     loadEpapers();
     trackVisit().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const updateViewportState = (event) => {
+      setIsMobileView(event.matches);
+    };
+
+    setIsMobileView(mediaQuery.matches);
+    mediaQuery.addEventListener("change", updateViewportState);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewportState);
+    };
   }, []);
 
   useEffect(() => {
@@ -287,6 +307,16 @@ export default function Category() {
         );
 
   const videoNews = allNews.filter((n) => n.mediaType === "video");
+  const mobileVideoFeed = videoNews.map((news) => ({
+    id: news._id || news.id,
+    _id: news._id || news.id,
+    mediaUrl: news.mediaUrl,
+    title: news.title,
+    summary: news.content || "",
+    category: news.category || "Article",
+    createdAt: news.createdAt,
+    newsId: news._id || news.id,
+  }));
   const searchResults = allNews.filter(
     (n) =>
       n.category?.toLowerCase() === searchTerm.trim().toLowerCase()
@@ -540,6 +570,29 @@ export default function Category() {
     if (nextView === "trending" && !trendingAvailable) {
       return;
     }
+
+    if (nextView === "video" && isMobileView) {
+      const firstVideo = mobileVideoFeed[0];
+      if (!firstVideo) {
+        navigate("/videos");
+        return;
+      }
+
+      navigate(`/videos/${firstVideo.id || firstVideo._id}`, {
+        state: {
+          videos: mobileVideoFeed,
+          selectedVideoId: firstVideo.id || firstVideo._id,
+          url: firstVideo.mediaUrl,
+          title: firstVideo.title,
+          summary: firstVideo.summary || "",
+          category: firstVideo.category || "Article",
+          createdAt: firstVideo.createdAt,
+          newsId: firstVideo.newsId,
+        },
+      });
+      return;
+    }
+
     setSelectedNews(null);
     setView(nextView);
     if (nextView === "home") {

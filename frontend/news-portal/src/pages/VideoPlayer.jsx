@@ -39,6 +39,7 @@ export default function VideoPlayer() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(videos.length === 0);
   const [activeRenderIndex, setActiveRenderIndex] = useState(0);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   const hasLoopFeed = videos.length > 1;
   const renderedVideos = useMemo(() => {
@@ -115,6 +116,10 @@ export default function VideoPlayer() {
   }, [id, state?.selectedVideoId, videos.length]);
 
   useEffect(() => {
+    setIsMoreMenuOpen(false);
+  }, [activeIndex]);
+
+  useEffect(() => {
     if (!feedRef.current || !cardRefs.current[activeRenderIndex]) return;
 
     cardRefs.current[activeRenderIndex].scrollIntoView({
@@ -167,7 +172,8 @@ export default function VideoPlayer() {
   useEffect(() => {
     if (!hasLoopFeed || !feedRef.current) return;
     if (activeRenderIndex < videos.length || activeRenderIndex >= videos.length * 2) {
-      const normalizedIndex = ((activeRenderIndex % videos.length) + videos.length) % videos.length;
+      const normalizedIndex =
+        ((activeRenderIndex % videos.length) + videos.length) % videos.length;
       const middleIndex = getMiddleRenderIndex(normalizedIndex);
       const nextCard = cardRefs.current[middleIndex];
       if (!nextCard) return;
@@ -238,14 +244,12 @@ export default function VideoPlayer() {
     : "";
 
   const goBackSafe = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate("/videos");
+    navigate("/");
   };
 
   const copyVideoLink = async () => {
+    setIsMoreMenuOpen(false);
+
     try {
       await navigator.clipboard.writeText(shareUrl);
       alert("Link copy ho gaya");
@@ -255,6 +259,8 @@ export default function VideoPlayer() {
   };
 
   const openRelatedNews = (newsId) => {
+    setIsMoreMenuOpen(false);
+
     if (!newsId) {
       navigate("/");
       return;
@@ -264,13 +270,25 @@ export default function VideoPlayer() {
   };
 
   const handleFacebookShare = () => {
+    setIsMoreMenuOpen(false);
+
     const target = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
       shareUrl
     )}`;
     window.open(target, "_blank", "noopener,noreferrer");
   };
 
+  const shareToWhatsApp = (video) => {
+    setIsMoreMenuOpen(false);
+
+    const text = [video?.title, shareUrl].filter(Boolean).join(" ");
+    const target = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(target, "_blank", "noopener,noreferrer");
+  };
+
   const handleMoreAction = async () => {
+    setIsMoreMenuOpen(false);
+
     try {
       if (navigator.share) {
         await navigator.share({
@@ -288,7 +306,13 @@ export default function VideoPlayer() {
     }
   };
 
+  const toggleMoreMenu = () => {
+    setIsMoreMenuOpen((current) => !current);
+  };
+
   const downloadVideo = async () => {
+    setIsMoreMenuOpen(false);
+
     if (!activeVideo?.mediaUrl) {
       alert("Video URL available nahi hai");
       return;
@@ -365,6 +389,15 @@ export default function VideoPlayer() {
                   onEnded={showNextVideo}
                 />
 
+                {isMoreMenuOpen ? (
+                  <button
+                    type="button"
+                    className="video-more-backdrop"
+                    aria-label="Close more options"
+                    onClick={() => setIsMoreMenuOpen(false)}
+                  />
+                ) : null}
+
                 <div className="video-overlay video-overlay-top">
                   <button
                     type="button"
@@ -411,11 +444,52 @@ export default function VideoPlayer() {
                   <button
                     type="button"
                     className="video-action-btn"
-                    onClick={handleMoreAction}
+                    onClick={toggleMoreMenu}
+                    aria-expanded={isMoreMenuOpen}
+                    aria-haspopup="true"
                   >
                     <span className="video-action-icon">⋯</span>
                     <span>More</span>
                   </button>
+                  {isMoreMenuOpen ? (
+                    <div className="video-more-sheet" role="menu">
+                      <button
+                        type="button"
+                        className="video-more-option"
+                        onClick={handleMoreAction}
+                      >
+                        Share via apps
+                      </button>
+                      <button
+                        type="button"
+                        className="video-more-option"
+                        onClick={() => shareToWhatsApp(video)}
+                      >
+                        WhatsApp
+                      </button>
+                      <button
+                        type="button"
+                        className="video-more-option"
+                        onClick={handleFacebookShare}
+                      >
+                        Facebook
+                      </button>
+                      <button
+                        type="button"
+                        className="video-more-option"
+                        onClick={copyVideoLink}
+                      >
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        className="video-more-option"
+                        onClick={() => openRelatedNews(video.newsId)}
+                      >
+                        Read article
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="video-overlay video-overlay-bottom">

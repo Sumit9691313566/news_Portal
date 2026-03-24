@@ -89,7 +89,9 @@
 
 .video-icon-btn,
 .video-read-btn,
-.video-action-btn {
+.video-action-btn,
+.video-more-option,
+.video-more-backdrop {
   border: none;
   cursor: pointer;
 }
@@ -146,6 +148,47 @@
   backdrop-filter: blur(10px);
   font-size: 24px;
   font-weight: 900;
+}
+
+.video-more-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.video-more-sheet {
+  position: absolute;
+  right: 76px;
+  bottom: 0;
+  min-width: 176px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 20px;
+  background: rgba(10, 10, 12, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px);
+  z-index: 4;
+}
+
+.video-more-option {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.video-more-option:hover,
+.video-more-option:focus,
+.video-more-option:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
 }
 
 .video-chip {
@@ -242,6 +285,17 @@
     right: 10px;
     bottom: 126px;
     gap: 12px;
+  }
+
+  .video-more-sheet {
+    right: 62px;
+    min-width: 164px;
+    padding: 10px;
+  }
+
+  .video-more-option {
+    min-height: 40px;
+    font-size: 13px;
   }
 
   .video-overlay-bottom {

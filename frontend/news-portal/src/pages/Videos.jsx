@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
@@ -50,6 +50,26 @@ export default function Videos() {
   const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 768px)").matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const updateViewportState = (event) => {
+      setIsMobileView(event.matches);
+    };
+
+    setIsMobileView(mediaQuery.matches);
+    mediaQuery.addEventListener("change", updateViewportState);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewportState);
+    };
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -80,6 +100,7 @@ export default function Videos() {
 
   const openVideo = (video) => {
     navigate(`/videos/${video.id || video._id}`, {
+      replace: true,
       state: {
         videos,
         selectedVideoId: video.id || video._id,
@@ -92,6 +113,15 @@ export default function Videos() {
       },
     });
   };
+
+  useLayoutEffect(() => {
+    if (!isMobileView || loading || videos.length === 0) return;
+    openVideo(videos[0]);
+  }, [isMobileView, loading, videos]);
+
+  if (isMobileView) {
+    return null;
+  }
 
   return (
     <div className="layout">
