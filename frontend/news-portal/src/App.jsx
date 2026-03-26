@@ -16,6 +16,8 @@ import EPaper from "./pages/EPaper";
 import VideoPlayer from "./pages/VideoPlayer";
 import EPaperViewer from "./pages/EPaperViewer";
 import NotificationPanel from "./pages/NotificationPanel";
+import UserNewsSubmit from "./pages/UserNewsSubmit";
+import UserNewsInbox from "./pages/UserNewsInbox";
 
 function App() {
   useEffect(() => {
@@ -34,6 +36,7 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/epaper" element={<EPaper />} />
         <Route path="/epaper/:id" element={<EPaperViewer />} />
+        <Route path="/send-news" element={<UserNewsSubmit />} />
 
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
@@ -68,6 +71,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="main-admin">
               <NotificationPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/main-admin/users-news"
+          element={
+            <ProtectedRoute requiredRole="main-admin">
+              <UserNewsInbox />
             </ProtectedRoute>
           }
         />

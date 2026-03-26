@@ -317,6 +317,40 @@ body {
   color: var(--accent);
 }
 
+.menu li.menu-item-highlight {
+  margin-top: 8px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.menu li.menu-item-highlight:hover {
+  transform: translateX(2px);
+}
+
+.menu li.menu-item-highlight-news {
+  background: linear-gradient(135deg, #fff3de 0%, #ffe5be 100%);
+  border-color: #efc68b;
+  color: #692218;
+}
+
+.menu li.menu-item-highlight-news:hover {
+  background: linear-gradient(135deg, #ffe9c7 0%, #ffdca4 100%);
+  color: #692218;
+}
+
+.menu li.menu-item-highlight-trending {
+  background: linear-gradient(135deg, #c51b2f 0%, #9f1220 100%);
+  border-color: #a31322;
+  color: #ffffff;
+  box-shadow: 0 10px 18px rgba(159, 18, 32, 0.2);
+}
+
+.menu li.menu-item-highlight-trending:hover {
+  background: linear-gradient(135deg, #d32035 0%, #ae1423 100%);
+  color: #ffffff;
+}
+
 /* ===== SIDEBAR TRENDING ===== */
 .sidebar-box {
   margin-top: 30px;
@@ -469,13 +503,15 @@ body {
   background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 8px;
+  padding: 6px;
   box-shadow: 0 8px 18px rgba(20, 20, 20, 0.08);
+  flex-direction: column;
+  gap: 6px;
 }
 
 .mobile-nav-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -490,12 +526,13 @@ body {
   border: 1px solid #efd8c0;
   background: #fff7ef;
   color: #3b2b22;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  line-height: 1.1;
 }
 
 .mobile-nav-btn-active {

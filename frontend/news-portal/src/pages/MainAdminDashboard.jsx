@@ -379,6 +379,9 @@ export default function MainAdminDashboard() {
           </div>
         </div>
         <div className="admin-actions">
+          <button className="btn" onClick={() => navigate("/main-admin/users-news")}>
+            यूज़र न्यूज़
+          </button>
           <button className="btn" onClick={() => navigate("/admin-dashboard")}>
             Sub Admin Dashboard
           </button>

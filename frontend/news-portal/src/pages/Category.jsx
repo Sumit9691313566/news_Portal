@@ -2,6 +2,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaFacebookF, FaLink, FaShareAlt, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
+import "../styles/userNews.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { trackUniqueNewsView, trackVisit } from "../services/analytics";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
@@ -560,6 +561,7 @@ export default function Category() {
     { key: "video", label: "▶️ वीडियो", view: "video" },
     { key: "search", label: "🔍 सर्च", view: "search" },
     { key: "epaper", label: "🗞️ ई-पेपर", view: "epaper" },
+    { key: "user-news", label: "📨 खबर भेजें", view: "user-news" },
   ];
   const mobileActions = trendingAvailable
     ? [...mobileActionsBase, { key: "trending", label: "🔥 ट्रेंडिंग", view: "trending" }]
@@ -568,6 +570,11 @@ export default function Category() {
   const handleViewChange = (nextView) => {
     // don't allow navigating to trending if there's nothing worthy yet
     if (nextView === "trending" && !trendingAvailable) {
+      return;
+    }
+
+    if (nextView === "user-news") {
+      navigate("/send-news");
       return;
     }
 
@@ -742,18 +749,21 @@ export default function Category() {
           >
             🗞️ ई-पेपर
           </li>
-        </ul>
-
-        {trendingAvailable && (
-          <div
-            className="sidebar-box trending-box"
-            onClick={() => handleViewChange("trending")}
+          <li
+            className="menu-item-highlight menu-item-highlight-news"
+            onClick={() => handleViewChange("user-news")}
           >
-            <button type="button" className="trending-btn">
+            📨 खबर भेजें
+          </li>
+          {trendingAvailable && (
+            <li
+              className="menu-item-highlight menu-item-highlight-trending"
+              onClick={() => handleViewChange("trending")}
+            >
               🔥 ट्रेंडिंग
-            </button>
-          </div>
-        )}
+            </li>
+          )}
+        </ul>
         </aside>
 
         {/* ===== MAIN CONTENT ===== */}
