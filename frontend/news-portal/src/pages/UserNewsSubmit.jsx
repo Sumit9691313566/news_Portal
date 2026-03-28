@@ -19,6 +19,11 @@ export default function UserNewsSubmit() {
 
   const mediaKind = media?.type?.startsWith("video/") ? "video" : "image";
 
+  const handleMobileNumberChange = (event) => {
+    const digitsOnly = event.target.value.replace(/\D/g, "").slice(0, 10);
+    setMobileNumber(digitsOnly);
+  };
+
   useEffect(() => {
     if (!media) {
       setMediaPreviewUrl("");
@@ -38,6 +43,11 @@ export default function UserNewsSubmit() {
 
     if (!message.trim() && !media) {
       setFeedback("टेक्स्ट संदेश या फोटो/वीडियो में से कम से कम एक चीज भेजना जरूरी है।");
+      return;
+    }
+
+    if (mobileNumber.trim() && mobileNumber.trim().length !== 10) {
+      setFeedback("Mobile number sirf 10 digits ka hona chahiye.");
       return;
     }
 
@@ -124,10 +134,13 @@ export default function UserNewsSubmit() {
             <label>
               <span>मोबाइल नंबर</span>
               <input
-                type="text"
+                type="tel"
                 placeholder="मोबाइल नंबर लिखें (वैकल्पिक)"
                 value={mobileNumber}
-                onChange={(event) => setMobileNumber(event.target.value)}
+                onChange={handleMobileNumberChange}
+                inputMode="numeric"
+                maxLength={10}
+                pattern="[0-9]{10}"
               />
             </label>
 

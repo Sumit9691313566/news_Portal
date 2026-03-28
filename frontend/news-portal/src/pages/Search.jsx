@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
+import { searchNews } from "../utils/searchNews";
 
 const formatSearchDate = (value) => {
   if (!value) return "Latest";
@@ -16,6 +17,7 @@ const formatSearchDate = (value) => {
 
 export default function Search() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState("");
   const [allNews, setAllNews] = useState([]);
   const [results, setResults] = useState([]);
@@ -32,6 +34,7 @@ export default function Search() {
   }, [allNews]);
 
   const highlightedResults = useMemo(() => results.slice(0, 3), [results]);
+  const topSuggestions = useMemo(() => results.slice(0, 8), [results]);
 
   useEffect(() => {
     const load = async () => {
@@ -48,24 +51,45 @@ export default function Search() {
     load();
   }, []);
 
-  const handleSearch = () => {
-    const q = query.trim().toLowerCase();
-    setSearched(true);
-    if (!q) {
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextQuery = params.get("q") || "";
+    setQuery(nextQuery);
+  }, [allNews, location.search]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setSearched(false);
       setResults([]);
       return;
     }
-    const filtered = allNews.filter((n) => n.category?.toLowerCase() === q);
-    setResults(filtered);
+
+    setSearched(true);
+    setResults(searchNews(allNews, query));
+  }, [allNews, query]);
+
+  const handleSearch = (rawQuery = query) => {
+    const nextQuery = rawQuery.trim();
+    const params = new URLSearchParams(location.search);
+
+    if (!nextQuery) {
+      params.delete("q");
+    } else {
+      params.set("q", nextQuery);
+    }
+
+    navigate(
+      {
+        pathname: "/search",
+        search: params.toString(),
+      },
+      { replace: true }
+    );
   };
 
   const handleChipClick = (cat) => {
     setQuery(cat);
-    setSearched(true);
-    const filtered = allNews.filter(
-      (n) => n.category?.toLowerCase() === cat.toLowerCase()
-    );
-    setResults(filtered);
+    handleSearch(cat);
   };
 
   const openResult = (news) => {
@@ -93,7 +117,7 @@ export default function Search() {
             <p className="search-kicker">Discover</p>
             <h2>Search News</h2>
             <p className="search-subtitle">
-              Find stories by category and jump straight into the latest coverage.
+              Type any news name or keyword to instantly see matching stories from title, content, and category.
             </p>
           </div>
 
@@ -102,7 +126,7 @@ export default function Search() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search by category..."
+                placeholder="Search news by title, keyword, or category..."
                 value={query}
                 onChange={(e) => {
                   const next = e.target.value;
@@ -116,6 +140,23 @@ export default function Search() {
                   if (e.key === "Enter") handleSearch();
                 }}
               />
+              {query.trim() && topSuggestions.length > 0 && (
+                <div className="search-suggestions">
+                  {topSuggestions.map((news) => (
+                    <button
+                      key={`suggestion-${news._id || news.id}`}
+                      type="button"
+                      className="search-suggestion-item"
+                      onClick={() => openResult(news)}
+                    >
+                      <span className="search-suggestion-title">{news.title}</span>
+                      <span className="search-suggestion-meta">
+                        {news.category || "General"} • {formatSearchDate(news.createdAt)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {query && (
                 <button
                   type="button"
@@ -161,7 +202,7 @@ export default function Search() {
 
         {searched && !loading && results.length === 0 && (
           <div className="search-empty">
-            No matching news found. Try another category or pick one of the chips above.
+            No matching news found. Try a news title, topic keyword, category, or one of the chips above.
           </div>
         )}
 

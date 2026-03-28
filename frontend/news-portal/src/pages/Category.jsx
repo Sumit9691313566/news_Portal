@@ -6,6 +6,7 @@ import "../styles/userNews.css";
 import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { trackUniqueNewsView, trackVisit } from "../services/analytics";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
+import { searchNews } from "../utils/searchNews";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 const formatIssueDate = (value) => {
@@ -318,10 +319,7 @@ export default function Category() {
     createdAt: news.createdAt,
     newsId: news._id || news.id,
   }));
-  const searchResults = allNews.filter(
-    (n) =>
-      n.category?.toLowerCase() === searchTerm.trim().toLowerCase()
-  );
+  const searchResults = searchNews(allNews, searchTerm);
 
 
   // remove the old "most read" concept entirely; trending is driven by views
@@ -962,11 +960,12 @@ export default function Category() {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Search by category..."
+                  placeholder="Search by news title, keyword, or category..."
                   value={searchTerm}
                   onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setSearchSubmitted(false);
+                    const nextValue = e.target.value;
+                    setSearchTerm(nextValue);
+                    setSearchSubmitted(Boolean(nextValue.trim()));
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -984,7 +983,7 @@ export default function Category() {
                 <div className="news-list">
                   {!searchSubmitted && <div />}
                   {searchSubmitted && searchResults.length === 0 && (
-                    <p>No matching news found.</p>
+                    <p>No matching news found. Try any word from the news title or content.</p>
                   )}
                   {searchSubmitted &&
                     searchResults.map((news) => (
