@@ -56,6 +56,7 @@ export default function Category() {
   const [failedEpaperPreviewIds, setFailedEpaperPreviewIds] = useState({});
   const [subscribeMessage, setSubscribeMessage] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [fullscreenImage, setFullscreenImage] = useState("");
   const [isMobileView, setIsMobileView] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(max-width: 768px)").matches;
@@ -63,6 +64,15 @@ export default function Category() {
 
   const scrollToNewsStart = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const openFullscreenImage = (imageUrl) => {
+    if (!imageUrl) return;
+    setFullscreenImage(imageUrl);
+  };
+
+  const closeFullscreenImage = () => {
+    setFullscreenImage("");
   };
 
   /* ================= LOAD NEWS ================= */
@@ -151,6 +161,25 @@ export default function Category() {
       mediaQuery.removeEventListener("change", updateViewportState);
     };
   }, []);
+
+  useEffect(() => {
+    if (!fullscreenImage || typeof window === "undefined") return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeFullscreenImage();
+      }
+    };
+
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [fullscreenImage]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -800,7 +829,14 @@ export default function Category() {
                     onClick={() => openNews(featuredNews)}
                   >
                     {featuredNews.mediaUrl && (
-                      <img src={featuredNews.mediaUrl} alt="featured" />
+                      <img
+                        src={featuredNews.mediaUrl}
+                        alt={featuredNews.title || "featured"}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openNews(featuredNews);
+                        }}
+                      />
                     )}
                     {featuredNews.featured && (
                       <span className="badge featured featured-tag">
@@ -848,6 +884,10 @@ export default function Category() {
                                       src={news.mediaUrl}
                                       alt={news.title}
                                       className="news-thumb"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openNews(news);
+                                      }}
                                     />
                                   )}
                                   {news.mediaType === "video" && (
@@ -855,6 +895,10 @@ export default function Category() {
                                       src={news.mediaUrl}
                                       className="news-thumb"
                                       muted
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openNews(news);
+                                      }}
                                     />
                                   )}
                                 </>
@@ -1198,6 +1242,7 @@ export default function Category() {
                       src={selectedNews.mediaUrl}
                       alt={selectedNews.title}
                       className="news-lead-image"
+                      onClick={() => openFullscreenImage(selectedNews.mediaUrl)}
                     />
                   )}
 
@@ -1249,6 +1294,7 @@ export default function Category() {
                             src={b.url}
                             alt=""
                             className="full-image"
+                            onClick={() => openFullscreenImage(b.url)}
                           />
                         )}
                         {b.type === "video" && b.url && (
@@ -1381,6 +1427,30 @@ export default function Category() {
           )}
         </div>
       </main>
+
+      {fullscreenImage && (
+        <div
+          className="image-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Full screen image preview"
+          onClick={closeFullscreenImage}
+        >
+          <button
+            type="button"
+            className="image-lightbox-close"
+            onClick={closeFullscreenImage}
+          >
+            ×
+          </button>
+          <img
+            src={fullscreenImage}
+            alt="Full size news"
+            className="image-lightbox-media"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
       </div>
 
     </div>
