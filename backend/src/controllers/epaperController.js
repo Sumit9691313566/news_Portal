@@ -3,11 +3,12 @@ import mongoose from "mongoose";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
-const REMOTE_API_BASE = String(
-  process.env.DEV_REMOTE_API_BASE ||
-    "https://newsportal-production-164d.up.railway.app/api"
-).replace(/\/+$/, "");
+const REMOTE_API_BASE = String(process.env.DEV_REMOTE_API_BASE || "").replace(
+  /\/+$/,
+  ""
+);
 const canUseRemoteReadFallback = () =>
+  Boolean(REMOTE_API_BASE) &&
   process.env.NODE_ENV !== "production" &&
   (!mongoose.connection || mongoose.connection.readyState !== 1);
 

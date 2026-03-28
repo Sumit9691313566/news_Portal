@@ -10,14 +10,17 @@ self.addEventListener('push', function (event) {
   const title = payload.title || 'गरुड़ समाचार';
   const options = {
     body: payload.message || payload.body || '',
-    icon: payload.image || '/logo192.png',
-    badge: payload.image || '/logo192.png',
     data: {
       url: payload.url || '/',
       newsId: payload.newsId || null,
     },
     tag: payload.tag || undefined,
   };
+
+  if (payload.image) {
+    options.icon = payload.image;
+    options.badge = payload.image;
+  }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });

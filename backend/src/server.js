@@ -20,7 +20,7 @@ console.log("Cloudinary Env Check:", {
 
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "";
 const MONGO_DNS_SERVERS = String(
   process.env.MONGO_DNS_SERVERS || "8.8.8.8,1.1.1.1"
 )
@@ -43,13 +43,16 @@ app.use((req, res, next) => {
 
 const normalize = (u = "") => String(u).replace(/\/+$|\s+/g, "").replace(/:\/\/$/, "");
 const frontendUrl = normalize(process.env.FRONTEND_URL || "");
+const extraOrigins = String(process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => normalize(origin))
+  .filter(Boolean);
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:5000",
-  "https://newsportal-production-164d.up.railway.app",
-  "https://news-portal-chi-self.vercel.app",
   frontendUrl,
+  ...extraOrigins,
 ].filter(Boolean);
 
 app.use(
@@ -60,11 +63,6 @@ app.use(
 
       const cleanedOrigin = normalize(origin);
       if (allowedOrigins.includes(cleanedOrigin)) return callback(null, true);
-
-      if (cleanedOrigin.includes("vercel.app") || cleanedOrigin.includes("railway.app")) {
-        console.log("Allowed dynamic origin (vercel/railway):", cleanedOrigin);
-        return callback(null, true);
-      }
 
       console.warn("Blocked CORS origin:", origin, "(clean:", cleanedOrigin, ") allowed:", allowedOrigins);
       return callback(new Error("Not allowed by CORS"));
@@ -137,7 +135,7 @@ const startServer = async () => {
   });
 
   if (!MONGO_URI) {
-    console.warn("MONGO_URI is missing. Starting server without DB connection.");
+    console.warn("MONGO_URI/MONGODB_URI is missing. Starting server without DB connection.");
     return;
   }
 

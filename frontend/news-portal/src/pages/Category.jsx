@@ -36,6 +36,13 @@ const getCloudinaryPdfPreviewUrl = (epaper) => {
   return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,f_jpg,q_auto,w_1200/${rawPublicId}.jpg`;
 };
 
+const resolvePublicSiteUrl = () => {
+  if (typeof window === "undefined" || !window.location?.origin) {
+    return "http://localhost:5173";
+  }
+  return window.location.origin;
+};
+
 export default function Category() {
   const navigate = useNavigate();
   const location = useLocation();
