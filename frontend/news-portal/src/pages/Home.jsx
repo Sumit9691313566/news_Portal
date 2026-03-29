@@ -1,8 +1,15 @@
+import { Helmet } from "react-helmet-async";
 import MainLayout from "../layouts/MainLayout";
 import NewsCard from "../components/NewsCard";
 
 export default function Home() {
   return (
+    <>
+    <Helmet>
+      <title>Garud Samachar | Latest Hindi News & Breaking News</title>
+      <meta name="description" content="Garud Samachar (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on politics, business, tech, sports, and more." />
+      <meta name="keywords" content="Garud Samachar, गरुड़ समाचार, Hindi News, Latest News, Breaking News, Today News, E-Paper, Tech News, Politics News, Garud News" />
+    </Helmet>
     <MainLayout>
       <NewsCard
         id={1}
@@ -28,5 +35,6 @@ export default function Home() {
         category="Tech"
       />
     </MainLayout>
+    </>
   );
 }

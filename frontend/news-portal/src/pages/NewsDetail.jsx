@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import MainLayout from "../layouts/MainLayout";
 
 const NEWS_DATA = [
@@ -37,6 +38,18 @@ export default function NewsDetail() {
   if (!news) return <p>News not found</p>;
 
   return (
+    <>
+    <Helmet>
+      {/* Dynamic SEO for specific news */}
+      <title>{news.title} | Garud Samachar</title>
+      <meta name="description" content={news.content.substring(0, 160)} />
+      <meta name="keywords" content={`Garud Samachar, गरुड़ समाचार, ${news.meta}, ${news.title.split(' ').join(', ')}`} />
+      {/* Social Media & WhatsApp sharing tags (Open Graph) */}
+      <meta property="og:title" content={news.title} />
+      <meta property="og:description" content={news.content.substring(0, 160)} />
+      <meta property="og:image" content={news.image} />
+      <meta property="og:type" content="article" />
+    </Helmet>
     <MainLayout>
       <div className="news-detail">
         <button onClick={() => navigate(-1)} className="back-btn">
@@ -51,5 +64,6 @@ export default function NewsDetail() {
         <p className="detail-content">{news.content}</p>
       </div>
     </MainLayout>
+    </>
   );
 }
