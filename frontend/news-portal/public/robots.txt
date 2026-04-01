@@ -1,4 +1,12 @@
+# Allow all user agents
 User-agent: *
-Allow: /
 
+# Disallow admin and search pages
+Disallow: /admin
+Disallow: /main-admin
+Disallow: /reporter-dashboard
+Disallow: /login
+Disallow: /search
+
+# Point to the sitemap
 Sitemap: https://garudsamachar.garudstacks.tech/sitemap.xml

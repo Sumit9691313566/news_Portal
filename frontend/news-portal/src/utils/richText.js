@@ -21,6 +21,7 @@ const ALLOWED_TAGS = new Set([
   "i",
   "u",
   "s",
+  "strike",
   "span",
   "ul",
   "ol",
@@ -116,6 +117,14 @@ const normalizeNode = (node) => {
     span.innerHTML = node.innerHTML;
     node.replaceWith(span);
     normalizeNode(span);
+    return;
+  }
+
+  if (tag === "strike") {
+    const strikeReplacement = document.createElement("s");
+    strikeReplacement.innerHTML = node.innerHTML;
+    node.replaceWith(strikeReplacement);
+    normalizeNode(strikeReplacement);
     return;
   }
 

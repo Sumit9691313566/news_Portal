@@ -1637,6 +1637,13 @@ body {
   font-weight: 700;
 }
 
+.news-location {
+  margin: -2px 0 10px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .news-lead-image,
 .news-lead-video {
   width: 100%;
@@ -3697,7 +3704,7 @@ body {
     padding: 10px 12px 8px;
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 6px;
   }
 
   .nav-row {

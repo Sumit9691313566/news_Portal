@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { API_BASE_URL } from "../services/api";
+import { getPublicSiteUrl } from "../utils/siteUrl";
 
 export default function NotificationPanel() {
   const [title, setTitle] = useState("");
@@ -19,7 +20,7 @@ export default function NotificationPanel() {
       }
 
       // make absolute URL if relative
-      const frontendBase = window.location.origin;
+      const frontendBase = getPublicSiteUrl();
       const finalUrl = link && link.startsWith("/") ? `${frontendBase}${link}` : link || frontendBase;
 
       const headers = { "Content-Type": "application/json" };

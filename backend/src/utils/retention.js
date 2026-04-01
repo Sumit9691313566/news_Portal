@@ -24,7 +24,7 @@ const destroyCloudinary = async (publicId, resourceType) => {
 
 const cleanupNews = async (cutoff) => {
   const oldNews = await News.find({ createdAt: { $lt: cutoff } }).select(
-    "title content category mediaType mediaUrl status featured breaking author views createdAt mediaPublicId mediaResourceType blocks"
+    "title content location category mediaType mediaUrl status featured breaking author views createdAt mediaPublicId mediaResourceType blocks"
   );
 
   if (!oldNews.length) return 0;
@@ -47,6 +47,7 @@ const cleanupNews = async (cutoff) => {
       newsId: n._id,
       title: n.title,
       content: n.content || "",
+      location: n.location || "",
       category: n.category || "All",
       mediaType: n.mediaType || "text",
       mediaUrl: n.mediaUrl || null,

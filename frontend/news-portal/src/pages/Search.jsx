@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
 import { searchNews } from "../utils/searchNews";
@@ -101,6 +102,12 @@ export default function Search() {
 
   return (
     <div className="layout">
+      <Helmet>
+        <title>Search News - Garud Samachar</title>
+        <meta name="description" content="Search for the latest news articles on Garud Samachar. Find breaking news on politics, business, tech, sports, and more in Hindi." />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+
       <aside className="sidebar">
         <div className="sidebar-logo">News Portal</div>
         <ul className="menu">

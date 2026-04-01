@@ -1,14 +1,23 @@
 import { Helmet } from "react-helmet-async";
 import MainLayout from "../layouts/MainLayout";
 import NewsCard from "../components/NewsCard";
+import { getPublicSiteUrl } from "../utils/siteUrl";
+
+const siteUrl = getPublicSiteUrl();
 
 export default function Home() {
   return (
     <>
     <Helmet>
       <title>Garud Samachar | Latest Hindi News & Breaking News</title>
+      <link rel="canonical" href={siteUrl} />
       <meta name="description" content="Garud Samachar (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on politics, business, tech, sports, and more." />
-      <meta name="keywords" content="Garud Samachar, गरुड़ समाचार, Hindi News, Latest News, Breaking News, Today News, E-Paper, Tech News, Politics News, Garud News" />
+      <meta name="keywords" content="Garud Samachar, गरुड़ समाचार, Hindi News, Latest Hindi News, Breaking News, आज की ताजा खबर, हिंदी समाचार, Taza Khabar, E-Paper, Tech News, Politics News, Garud News, India News in Hindi" />
+      <meta property="og:title" content="Garud Samachar | Latest Hindi News & Breaking News" />
+      <meta property="og:description" content="Garud Samachar (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on politics, business, tech, sports, and more." />
+      <meta property="og:url" content={siteUrl} />
+      <meta property="og:type" content="website" />
+      <meta property="og:image" content={`${siteUrl}/logo.png`} />
     </Helmet>
     <MainLayout>
       <NewsCard

@@ -87,6 +87,7 @@ export default function AdminDashboard() {
   // form
   const [title, setTitle] = useState("");
   const [titleColor, setTitleColor] = useState("#1f2937");
+  const [location, setLocation] = useState("");
   const [category, setCategory] = useState("Tech");
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
@@ -138,6 +139,7 @@ export default function AdminDashboard() {
     const payload = {
       title,
       titleColor,
+      location,
       category,
       status,
       featured,
@@ -146,7 +148,7 @@ export default function AdminDashboard() {
     };
     localStorage.setItem("adminDraft", JSON.stringify(payload));
     setLastSaved(new Date());
-  }, [title, titleColor, category, status, featured, breaking, blocks]);
+  }, [title, titleColor, location, category, status, featured, breaking, blocks]);
 
   // Load draft once on mount
   useEffect(() => {
@@ -156,6 +158,7 @@ export default function AdminDashboard() {
       const saved = JSON.parse(raw);
       if (saved?.title) setTitle(saved.title);
       if (saved?.titleColor) setTitleColor(saved.titleColor);
+      if (saved?.location) setLocation(saved.location);
       if (saved?.category) setCategory(saved.category);
       if (saved?.status) {
         const draftStatus = String(saved.status).toLowerCase();
@@ -227,6 +230,7 @@ export default function AdminDashboard() {
     formData.append("title", title);
     formData.append("titleColor", titleColor);
     formData.append("content", derivedContent);
+    formData.append("location", location);
     formData.append("category", category);
     const safeStatus = "draft";
     formData.append("status", safeStatus);
@@ -278,6 +282,7 @@ export default function AdminDashboard() {
     setEditId(n._id);
     setTitle(n.title);
     setTitleColor(n.titleColor || "#1f2937");
+    setLocation(n.location || "");
     setCategory(n.category);
     setStatus("draft");
     setFeatured(!!n.featured);
@@ -312,6 +317,7 @@ export default function AdminDashboard() {
   const resetForm = () => {
     setTitle("");
     setTitleColor("#1f2937");
+    setLocation("");
     setCategory("Tech");
     setStatus("draft");
     setFeatured(false);
@@ -811,6 +817,17 @@ export default function AdminDashboard() {
               </span>
             </div>
 
+            <label className="field-label">Location</label>
+            <input
+              className="location-input"
+              placeholder="भिंड, मध्य प्रदेश |"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+            <div className="field-help">
+              Example: भिंड, मध्य प्रदेश |
+            </div>
+
             <label className="field-label">Content Blocks</label>
             <div className="blocks-editor" onPaste={handlePaste}>
               {blocks.map((block) => (
@@ -977,6 +994,9 @@ export default function AdminDashboard() {
                   {featured ? " | Featured" : ""}
                   {breaking ? " | Breaking" : ""}
                 </div>
+                {location.trim() && (
+                  <div className="preview-location">{location.trim()}</div>
+                )}
                 <div className="preview-content">
                   {previewBlocks.length === 0 && (
                     <div className="preview-empty">Add content blocks to preview.</div>

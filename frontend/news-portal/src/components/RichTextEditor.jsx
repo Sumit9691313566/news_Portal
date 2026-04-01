@@ -12,12 +12,48 @@ const SIZE_COMMANDS = {
 
 const SIZE_ORDER = ["small", "normal", "medium", "large", "xlarge", "xxlarge"];
 
+const CSS_COMMANDS = new Set([
+  "foreColor",
+  "hiliteColor",
+  "backColor",
+]);
+
 const isSafeLink = (url = "") =>
   /^(https?:\/\/|mailto:|tel:)/i.test(String(url).trim());
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const plainTextToHtml = (text = "") => {
+  const normalized = String(text || "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) return "<p></p>";
+
+  return normalized
+    .split(/\n{2,}/)
+    .map((paragraph) => {
+      const lineHtml = paragraph
+        .split("\n")
+        .map((line) => escapeHtml(line))
+        .join("<br>");
+      return `<p>${lineHtml}</p>`;
+    })
+    .join("");
+};
 
 export default function RichTextEditor({ value, onChange, placeholder = "" }) {
   const editorRef = useRef(null);
   const savedRangeRef = useRef(null);
+  const historyRef = useRef({
+    entries: [],
+    index: -1,
+    lastHtml: "",
+    isApplying: false,
+  });
   const [activeState, setActiveState] = useState({
     bold: false,
     italic: false,
@@ -34,11 +70,16 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     if (editorRef.current.innerHTML !== safe) {
       editorRef.current.innerHTML = safe;
     }
+    if (!historyRef.current.entries.length) {
+      historyRef.current.entries = [safe];
+      historyRef.current.index = 0;
+      historyRef.current.lastHtml = safe;
+    }
   }, [value]);
 
   useEffect(() => {
     try {
-      document.execCommand("styleWithCSS", false, true);
+      document.execCommand("styleWithCSS", false, false);
     } catch {
       // Browser compatibility fallback.
     }
@@ -59,6 +100,11 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     if (!saved) return;
     selection.removeAllRanges();
     selection.addRange(saved);
+  };
+
+  const preserveToolbarSelection = (event) => {
+    event.preventDefault();
+    saveSelection();
   };
 
   const refreshToolbarState = () => {
@@ -92,6 +138,57 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     }
   };
 
+  const syncEditorHtml = (html = "", options = {}) => {
+    if (!editorRef.current) return "";
+    const { updateDom = true } = options;
+    const sanitized = sanitizeRichTextHtml(html);
+    if (updateDom && editorRef.current.innerHTML !== sanitized) {
+      editorRef.current.innerHTML = sanitized;
+    }
+    saveSelection();
+    refreshToolbarState();
+    onChange(sanitized);
+    return sanitized;
+  };
+
+  const pushHistory = (html = "") => {
+    const sanitized = sanitizeRichTextHtml(html);
+    const history = historyRef.current;
+    if (history.isApplying) {
+      history.lastHtml = sanitized;
+      return;
+    }
+    if (sanitized === history.lastHtml) return;
+
+    const nextEntries = history.entries.slice(0, history.index + 1);
+    nextEntries.push(sanitized);
+    if (nextEntries.length > 150) {
+      nextEntries.shift();
+    }
+
+    history.entries = nextEntries;
+    history.index = nextEntries.length - 1;
+    history.lastHtml = sanitized;
+  };
+
+  const applyHistoryState = (nextIndex) => {
+    const history = historyRef.current;
+    if (nextIndex < 0 || nextIndex >= history.entries.length) return;
+    history.isApplying = true;
+    history.index = nextIndex;
+    history.lastHtml = history.entries[nextIndex];
+    syncEditorHtml(history.entries[nextIndex]);
+    history.isApplying = false;
+  };
+
+  const undoHistory = () => {
+    applyHistoryState(historyRef.current.index - 1);
+  };
+
+  const redoHistory = () => {
+    applyHistoryState(historyRef.current.index + 1);
+  };
+
   useEffect(() => {
     const handler = () => {
       saveSelection();
@@ -103,24 +200,41 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
 
   const applyCommand = (command, commandValue = null) => {
     if (!editorRef.current) return;
+    if (command === "undo") {
+      undoHistory();
+      return;
+    }
+    if (command === "redo") {
+      redoHistory();
+      return;
+    }
     restoreSelection();
     editorRef.current.focus();
+
+    try {
+      document.execCommand("styleWithCSS", false, CSS_COMMANDS.has(command));
+    } catch {
+      // Browser compatibility fallback.
+    }
 
     const ok = document.execCommand(command, false, commandValue);
     if (!ok && command === "hiliteColor") {
       document.execCommand("backColor", false, commandValue);
     }
 
-    const sanitized = sanitizeRichTextHtml(editorRef.current.innerHTML);
-    editorRef.current.innerHTML = sanitized;
-    saveSelection();
-    refreshToolbarState();
-    onChange(sanitized);
+    const nextHtml = syncEditorHtml(editorRef.current.innerHTML, {
+      updateDom: false,
+    });
+    pushHistory(nextHtml);
   };
 
   const applyFontSize = (nextSizeKey) => {
     setFontSizeKey(nextSizeKey);
     applyCommand("fontSize", SIZE_COMMANDS[nextSizeKey]);
+  };
+
+  const prepareColorCommand = () => {
+    saveSelection();
   };
 
   const stepFontSize = (direction) => {
@@ -133,6 +247,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
   };
 
   const insertLink = () => {
+    restoreSelection();
     const selectedText = window.getSelection()?.toString()?.trim();
     const raw = window.prompt("Enter URL (https://, mailto:, tel:)", "https://");
     if (!raw) return;
@@ -194,10 +309,10 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
 
   const blockOptions = useMemo(
     () => [
-      { label: "Normal", value: "p" },
-      { label: "Heading 2", value: "h2" },
-      { label: "Heading 3", value: "h3" },
-      { label: "Quote", value: "blockquote" },
+      { label: "Normal", value: "<p>" },
+      { label: "Heading 2", value: "<h2>" },
+      { label: "Heading 3", value: "<h3>" },
+      { label: "Quote", value: "<blockquote>" },
     ],
     []
   );
@@ -206,10 +321,20 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     <div className="rich-editor">
       <div className="rich-toolbar">
         <div className="toolbar-group">
-          <button type="button" onClick={() => applyCommand("undo")} title="Undo">
+          <button
+            type="button"
+            onMouseDown={preserveToolbarSelection}
+            onClick={() => applyCommand("undo")}
+            title="Undo"
+          >
             Undo
           </button>
-          <button type="button" onClick={() => applyCommand("redo")} title="Redo">
+          <button
+            type="button"
+            onMouseDown={preserveToolbarSelection}
+            onClick={() => applyCommand("redo")}
+            title="Redo"
+          >
             Redo
           </button>
         </div>
@@ -218,6 +343,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className={activeState.bold ? "is-active" : ""}
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("bold")}
             title="Bold"
           >
@@ -226,6 +352,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className={activeState.italic ? "is-active" : ""}
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("italic")}
             title="Italic"
           >
@@ -234,6 +361,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className={activeState.underline ? "is-active" : ""}
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("underline")}
             title="Underline"
           >
@@ -242,6 +370,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className={activeState.strikeThrough ? "is-active" : ""}
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("strikeThrough")}
             title="Strikethrough"
           >
@@ -251,7 +380,8 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
 
         <div className="toolbar-group">
           <select
-            defaultValue="p"
+            defaultValue="<p>"
+            onMouseDown={prepareColorCommand}
             onChange={(e) => applyCommand("formatBlock", e.target.value)}
             title="Block type"
           >
@@ -265,6 +395,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className="font-step-btn"
+            onMouseDown={preserveToolbarSelection}
             onClick={() => stepFontSize(-1)}
             title="Decrease text size"
           >
@@ -272,6 +403,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           </button>
           <select
             value={fontSizeKey}
+            onMouseDown={prepareColorCommand}
             onChange={(e) => applyFontSize(e.target.value)}
             title="Text size"
           >
@@ -285,6 +417,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className="font-step-btn"
+            onMouseDown={preserveToolbarSelection}
             onClick={() => stepFontSize(1)}
             title="Increase text size"
           >
@@ -297,6 +430,8 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
             Text
             <input
               type="color"
+              onClick={prepareColorCommand}
+              onMouseDown={prepareColorCommand}
               onChange={(e) => applyCommand("foreColor", e.target.value)}
             />
           </label>
@@ -305,6 +440,8 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
             Highlight
             <input
               type="color"
+              onClick={prepareColorCommand}
+              onMouseDown={prepareColorCommand}
               onChange={(e) => applyCommand("hiliteColor", e.target.value)}
             />
           </label>
@@ -314,6 +451,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className={activeState.insertUnorderedList ? "is-active" : ""}
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("insertUnorderedList")}
             title="Bulleted list"
           >
@@ -322,16 +460,23 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           <button
             type="button"
             className={activeState.insertOrderedList ? "is-active" : ""}
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("insertOrderedList")}
             title="Number list"
           >
             OL
           </button>
-          <button type="button" onClick={() => applyCommand("justifyLeft")} title="Align left">
+          <button
+            type="button"
+            onMouseDown={preserveToolbarSelection}
+            onClick={() => applyCommand("justifyLeft")}
+            title="Align left"
+          >
             Left
           </button>
           <button
             type="button"
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("justifyCenter")}
             title="Align center"
           >
@@ -339,6 +484,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           </button>
           <button
             type="button"
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("justifyRight")}
             title="Align right"
           >
@@ -347,17 +493,33 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
         </div>
 
         <div className="toolbar-group">
-          <button type="button" onClick={insertLink} title="Insert link">
+          <button
+            type="button"
+            onMouseDown={preserveToolbarSelection}
+            onClick={insertLink}
+            title="Insert link"
+          >
             Link
           </button>
-          <button type="button" onClick={insertTable} title="Insert table">
+          <button
+            type="button"
+            onMouseDown={preserveToolbarSelection}
+            onClick={insertTable}
+            title="Insert table"
+          >
             Table
           </button>
-          <button type="button" onClick={() => applyCommand("unlink")} title="Remove link">
+          <button
+            type="button"
+            onMouseDown={preserveToolbarSelection}
+            onClick={() => applyCommand("unlink")}
+            title="Remove link"
+          >
             Unlink
           </button>
           <button
             type="button"
+            onMouseDown={preserveToolbarSelection}
             onClick={() => applyCommand("removeFormat")}
             title="Clear formatting"
           >
@@ -375,13 +537,41 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
         onMouseUp={saveSelection}
         onKeyUp={saveSelection}
         onBlur={saveSelection}
+        onKeyDown={(e) => {
+          const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z";
+          const isRedo =
+            (e.ctrlKey || e.metaKey) &&
+            (e.key.toLowerCase() === "y" ||
+              (e.shiftKey && e.key.toLowerCase() === "z"));
+
+          if (isUndo) {
+            e.preventDefault();
+            undoHistory();
+            return;
+          }
+
+          if (isRedo) {
+            e.preventDefault();
+            redoHistory();
+          }
+        }}
         onPaste={(e) => {
           const html = e.clipboardData?.getData("text/html");
-          if (!html) return;
           e.preventDefault();
-          applyCommand("insertHTML", sanitizeRichTextHtml(html));
+          if (html) {
+            applyCommand("insertHTML", sanitizeRichTextHtml(html));
+            return;
+          }
+
+          const text = e.clipboardData?.getData("text/plain") || "";
+          applyCommand("insertHTML", plainTextToHtml(text));
         }}
-        onInput={(e) => onChange(sanitizeRichTextHtml(e.currentTarget.innerHTML))}
+        onInput={(e) => {
+          const nextHtml = syncEditorHtml(e.currentTarget.innerHTML, {
+            updateDom: false,
+          });
+          pushHistory(nextHtml);
+        }}
       />
 
       <div className="rich-footer">

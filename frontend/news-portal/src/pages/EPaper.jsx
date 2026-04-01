@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/category.css";
 import { fetchWithTimeout, buildApiUrl } from "../services/api";
+import { buildPublicUrl } from "../utils/siteUrl";
 
 const formatIssueDate = (value) => {
   const date = new Date(value);
@@ -99,7 +100,7 @@ export default function EPaper() {
   }, [epapers]);
 
   const shareEdition = async (epaperId, title) => {
-    const shareUrl = `${window.location.origin}/epaper/${epaperId}`;
+    const shareUrl = buildPublicUrl(`/epaper/${epaperId}`);
 
     try {
       if (navigator.share) {

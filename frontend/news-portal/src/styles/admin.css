@@ -214,6 +214,17 @@ body {
   color: var(--muted);
 }
 
+.location-input {
+  width: 100%;
+}
+
+.field-help {
+  margin-top: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -673,6 +684,26 @@ body {
   margin: 6px 0 10px;
 }
 
+.rich-output strong,
+.rich-output b {
+  font-weight: 800;
+}
+
+.rich-output em,
+.rich-output i {
+  font-style: italic;
+}
+
+.rich-output u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-output s,
+.rich-output strike {
+  text-decoration: line-through;
+}
+
 .block-media input {
   margin-bottom: 10px;
 }
@@ -929,6 +960,13 @@ body {
   margin-bottom: 12px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.preview-location {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .block-actions {

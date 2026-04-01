@@ -82,6 +82,7 @@ export default function ReporterDashboard() {
 
   const [title, setTitle] = useState("");
   const [titleColor, setTitleColor] = useState("#1f2937");
+  const [location, setLocation] = useState("");
   const [category, setCategory] = useState("Tech");
   const [status, setStatus] = useState("pending");
   const [editId, setEditId] = useState(null);
@@ -106,13 +107,14 @@ export default function ReporterDashboard() {
     const payload = {
       title,
       titleColor,
+      location,
       category,
       status,
       blocks,
     };
     localStorage.setItem("reporterDraft", JSON.stringify(payload));
     setLastSaved(new Date());
-  }, [title, titleColor, category, status, blocks]);
+  }, [title, titleColor, location, category, status, blocks]);
 
   useEffect(() => {
     try {
@@ -121,6 +123,7 @@ export default function ReporterDashboard() {
       const saved = JSON.parse(raw);
       if (saved?.title) setTitle(saved.title);
       if (saved?.titleColor) setTitleColor(saved.titleColor);
+      if (saved?.location) setLocation(saved.location);
       if (saved?.category) setCategory(saved.category);
       if (Array.isArray(saved?.blocks) && saved.blocks.length > 0) {
         setBlocks(
@@ -174,6 +177,7 @@ export default function ReporterDashboard() {
     formData.append("title", title);
     formData.append("titleColor", titleColor);
     formData.append("content", deriveContentFromBlocks(blocks) || "Media content");
+    formData.append("location", location);
     formData.append("category", category);
     formData.append("status", "pending");
 
@@ -215,6 +219,7 @@ export default function ReporterDashboard() {
     setEditId(n._id);
     setTitle(n.title);
     setTitleColor(n.titleColor || "#1f2937");
+    setLocation(n.location || "");
     setCategory(n.category);
     setStatus(n.status || "pending");
     setBlocks(
@@ -234,6 +239,7 @@ export default function ReporterDashboard() {
   const resetForm = () => {
     setTitle("");
     setTitleColor("#1f2937");
+    setLocation("");
     setCategory("Tech");
     setStatus("pending");
     setEditId(null);
@@ -579,6 +585,15 @@ export default function ReporterDashboard() {
               <span>{titleLength < 20 ? "Try a more descriptive headline" : "Headline looks strong"}</span>
             </div>
 
+            <label className="field-label">Location</label>
+            <input
+              className="location-input"
+              placeholder="भिंड, मध्य प्रदेश |"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+            <div className="field-help">Example: भिंड, मध्य प्रदेश |</div>
+
             <label className="field-label">Content Blocks</label>
             <div className="blocks-editor" onPaste={handlePaste}>
               {blocks.map((block) => (
@@ -711,6 +726,9 @@ export default function ReporterDashboard() {
                 <div className="preview-meta">
                   {category} | {status}
                 </div>
+                {location.trim() && (
+                  <div className="preview-location">{location.trim()}</div>
+                )}
                 <div className="preview-content">
                   {previewBlocks.length === 0 && (
                     <div className="preview-empty">Add content blocks to preview.</div>

@@ -5,6 +5,7 @@ const newsSchema = new mongoose.Schema(
     title: { type: String, required: true },
     titleColor: { type: String, default: "" },
     content: { type: String, required: true },
+    location: { type: String, default: "" },
     category: { type: String, default: "All" },
     mediaType: { type: String, enum: ["image", "video", "text"], default: "text" },
     mediaUrl: { type: String, default: null },

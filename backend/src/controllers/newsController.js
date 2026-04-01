@@ -94,6 +94,12 @@ const contentFromBlocks = (blocks) =>
     .filter(Boolean)
     .join("\n\n");
 
+const normalizeLocation = (value = "") => {
+  const cleaned = String(value || "").replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  return cleaned.endsWith("|") ? cleaned : `${cleaned} |`;
+};
+
 const buildFrontendNewsUrl = (newsId) => {
   const frontendBase = String(process.env.FRONTEND_URL || "").replace(/\/+$/, "");
   if (!frontendBase || !newsId) return "/";
@@ -160,6 +166,7 @@ export const createNews = async (req, res) => {
       title,
       titleColor,
       content,
+      location,
       category,
       mediaType,
       status,
@@ -233,6 +240,7 @@ export const createNews = async (req, res) => {
       title,
       titleColor: normalizeColor(titleColor),
       content: finalContent,
+      location: normalizeLocation(location),
       category,
       mediaType: blocks.length ? "text" : resolvedMediaType,
       mediaUrl,
@@ -295,6 +303,7 @@ export const updateNews = async (req, res) => {
       title,
       titleColor,
       content,
+      location,
       category,
       mediaType,
       status,
@@ -351,6 +360,7 @@ export const updateNews = async (req, res) => {
     if (title !== undefined) news.title = title;
     if (titleColor !== undefined) news.titleColor = normalizeColor(titleColor);
     if (content !== undefined) news.content = content;
+    if (location !== undefined) news.location = normalizeLocation(location);
     if (category !== undefined) news.category = category;
     if (status !== undefined) {
       news.status = resolveUpdateStatus(req, news.status, status);
@@ -448,6 +458,7 @@ export const deleteNews = async (req, res) => {
       newsId: news._id,
       title: news.title,
       content: news.content || "",
+      location: news.location || "",
       category: news.category || "All",
       mediaType: news.mediaType || "text",
       mediaUrl: news.mediaUrl || null,

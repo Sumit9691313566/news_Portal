@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import MainLayout from "../layouts/MainLayout";
+import { buildPublicUrl } from "../utils/siteUrl";
 
 const NEWS_DATA = [
   {
@@ -34,12 +35,14 @@ export default function NewsDetail() {
   const navigate = useNavigate();
 
   const news = NEWS_DATA.find((n) => n.id === id);
+  const newsUrl = news ? buildPublicUrl(`/news/${news.id}`) : '';
 
   if (!news) return <p>News not found</p>;
 
   return (
     <>
     <Helmet>
+      <link rel="canonical" href={newsUrl} />
       {/* Dynamic SEO for specific news */}
       <title>{news.title} | Garud Samachar</title>
       <meta name="description" content={news.content.substring(0, 160)} />
@@ -48,6 +51,7 @@ export default function NewsDetail() {
       <meta property="og:title" content={news.title} />
       <meta property="og:description" content={news.content.substring(0, 160)} />
       <meta property="og:image" content={news.image} />
+      <meta property="og:url" content={newsUrl} />
       <meta property="og:type" content="article" />
     </Helmet>
     <MainLayout>

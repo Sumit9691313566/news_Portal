@@ -5,6 +5,7 @@ const deletedNewsSchema = new mongoose.Schema(
     newsId: { type: mongoose.Schema.Types.ObjectId, required: true },
     title: { type: String, required: true },
     content: { type: String, default: "" },
+    location: { type: String, default: "" },
     category: { type: String, default: "All" },
     mediaType: { type: String, enum: ["image", "video", "text"], default: "text" },
     mediaUrl: { type: String, default: null },

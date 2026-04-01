@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fallbackVideos, normalizeVideosFromNews } from "../utils/videoFeed";
+import { buildPublicUrl } from "../utils/siteUrl";
 import "../styles/videoPlayer.css";
 
 const LOOP_REPEAT_COUNT = 3;
@@ -230,9 +231,9 @@ export default function VideoPlayer() {
   const activeVideo = videos[activeIndex];
 
   const shareUrl = useMemo(() => {
-    if (!activeVideo) return window.location.href;
+    if (!activeVideo) return buildPublicUrl(`/videos/${id || ""}`);
     const currentId = activeVideo.id || activeVideo._id || id;
-    return `${window.location.origin}/videos/${currentId}`;
+    return buildPublicUrl(`/videos/${currentId}`);
   }, [activeVideo, id]);
 
   const activeVideoCreatedAt = activeVideo?.createdAt

@@ -38,6 +38,7 @@ export default function MainAdminDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editTitleColor, setEditTitleColor] = useState("#1f2937");
+  const [editLocation, setEditLocation] = useState("");
   const [editCategory, setEditCategory] = useState("Tech");
   const [editContent, setEditContent] = useState("");
   const [editFeatured, setEditFeatured] = useState(false);
@@ -136,6 +137,7 @@ export default function MainAdminDashboard() {
     setEditMode(false);
     setEditTitle(news.title || "");
     setEditTitleColor(news.titleColor || "#1f2937");
+    setEditLocation(news.location || "");
     setEditCategory(news.category || "Tech");
     setEditContent(news.content || "");
     setEditFeatured(Boolean(news.featured));
@@ -197,6 +199,7 @@ export default function MainAdminDashboard() {
     const payload = {
       title: editTitle.trim(),
       titleColor: editTitleColor,
+      location: editLocation,
       category: editCategory,
       featured: editFeatured,
       breaking: editBreaking,
@@ -574,6 +577,9 @@ export default function MainAdminDashboard() {
               <div className="preview-title" style={{ color: selectedNews.titleColor || undefined }}>
                 {selectedNews.title}
               </div>
+              {selectedNews.location && (
+                <div className="preview-location">{selectedNews.location}</div>
+              )}
 
               {Array.isArray(selectedNews.blocks) && selectedNews.blocks.length > 0 ? (
                 <div className="preview-content">
@@ -622,6 +628,15 @@ export default function MainAdminDashboard() {
                     />
                   </label>
                 </div>
+
+                <label className="field-label">Location</label>
+                <input
+                  className="location-input"
+                  value={editLocation}
+                  onChange={(event) => setEditLocation(event.target.value)}
+                  placeholder="भिंड, मध्य प्रदेश |"
+                />
+                <div className="field-help">Example: भिंड, मध्य प्रदेश |</div>
 
                 {editBlocks.length > 0 ? (
                   <div className="blocks-editor">

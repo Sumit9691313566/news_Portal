@@ -1,5 +1,6 @@
-﻿import { useState, useEffect } from "react";
+﻿﻿import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { FaFacebookF, FaLink, FaShareAlt, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
 import "../styles/userNews.css";
@@ -7,6 +8,7 @@ import { buildApiUrl, fetchWithTimeout } from "../services/api";
 import { trackUniqueNewsView, trackVisit } from "../services/analytics";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 import { searchNews } from "../utils/searchNews";
+import { getPublicSiteUrl } from "../utils/siteUrl";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 const formatIssueDate = (value) => {
@@ -17,6 +19,10 @@ const formatIssueDate = (value) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
+};
+
+const resolvePublicSiteUrl = () => {
+  return getPublicSiteUrl();
 };
 
 const getCloudinaryPdfPreviewUrl = (epaper) => {
@@ -34,13 +40,6 @@ const getCloudinaryPdfPreviewUrl = (epaper) => {
   if (!rawPublicId) return "";
 
   return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,f_jpg,q_auto,w_1200/${rawPublicId}.jpg`;
-};
-
-const resolvePublicSiteUrl = () => {
-  if (typeof window === "undefined" || !window.location?.origin) {
-    return "http://localhost:5173";
-  }
-  return window.location.origin;
 };
 
 export default function Category() {
@@ -123,6 +122,7 @@ export default function Category() {
               _id: n._id,
               title: n.title,
               content: textContent,
+              location: n.location || "",
               category: n.category || "All",
               mediaType,
               mediaUrl,
@@ -411,7 +411,7 @@ export default function Category() {
     const newsId = news?._id || news?.id;
     if (!newsId || typeof window === "undefined") return "";
 
-    const shareUrl = new URL("/", window.location.origin);
+    const shareUrl = new URL("/", getPublicSiteUrl());
     shareUrl.searchParams.set("newsId", newsId);
     return shareUrl.toString();
   };
@@ -530,6 +530,12 @@ export default function Category() {
       </button>
     </div>
   );
+
+  const isNewsDetailView =
+    isMobileView &&
+    Boolean(selectedNews) &&
+    view !== "video" &&
+    view !== "epaper";
 
   useEffect(() => {
     const requestedId =
@@ -682,142 +688,185 @@ export default function Category() {
   const titleStyle = (news) =>
     news?.titleColor ? { color: news.titleColor } : undefined;
 
+  const renderHelmet = () => {
+    const siteName = "Garud Samachar";
+    const siteUrl = resolvePublicSiteUrl();
+
+    if (selectedNews) {
+      const newsUrl = getNewsShareUrl(selectedNews);
+      const description = stripHtml(selectedNews.content || "").substring(0, 160);
+      return (
+        <Helmet>
+          <title>{`${selectedNews.title} | ${siteName}`}</title>
+          <link rel="canonical" href={newsUrl} />
+          <meta name="description" content={description} />
+          <meta property="og:title" content={selectedNews.title} />
+          <meta property="og:description" content={description} />
+          <meta property="og:url" content={newsUrl} />
+          <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.png`} />
+          <meta property="og:type" content="article" />
+        </Helmet>
+      );
+    }
+
+    const pageTitle = activeCategory === "All" ? "Latest Hindi News & Breaking News" : `${activeCategory} News`;
+    const description = `${siteName} (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on politics, business, tech, sports, and more.`;
+    const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Latest Hindi News, Breaking News, आज की ताजा खबर, हिंदी समाचार, Taza Khabar, E-Paper, ${activeCategory} News, Garud News, India News in Hindi`;
+
+    return (
+      <Helmet>
+        <title>{`${siteName} | ${pageTitle}`}</title>
+        <link rel="canonical" href={siteUrl} />
+        <meta name="description" content={description} />
+        <meta name="keywords" content={keywords} />
+      </Helmet>
+    );
+  };
+
   return (
     <div className="layout-wrapper">
-      <header className="masthead">
-        <div className="top-strip">
-          <div className="top-left">
-            <span className="pill live">LIVE</span>
-            <span className="date">{todayLabel}</span>
-          </div>
-          <div className="top-right">
-            <span className="edition">Morning Edition</span>
-            <div style={{ position: "relative" }}>
-              <button
-                type="button"
-                className="subscribe-btn"
-                onClick={() => {
-                  setSubscribeMessage("Coming soon");
-                  window.setTimeout(() => setSubscribeMessage(""), 2200);
-                }}
-              >
-                Subscribe
-              </button>
-              {subscribeMessage && (
-                <div className="subscribe-toast">{subscribeMessage}</div>
-              )}
+      {!isNewsDetailView && (
+        <>
+          <header className="masthead">
+            <div className="top-strip">
+              <div className="top-left">
+                <span className="pill live">LIVE</span>
+                <span className="date">{todayLabel}</span>
+              </div>
+              <div className="top-right">
+                <span className="edition">Morning Edition</span>
+                <div style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    className="subscribe-btn"
+                    onClick={() => {
+                      setSubscribeMessage("Coming soon");
+                      window.setTimeout(() => setSubscribeMessage(""), 2200);
+                    }}
+                  >
+                    Subscribe
+                  </button>
+                  {subscribeMessage && (
+                    <div className="subscribe-toast">{subscribeMessage}</div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="brand-row">
-          <div className="brand">
-            <span className="brand-name">गरुड़ समाचार</span>
-          </div>
+            <div className="brand-row">
+              <div className="brand">
+                <span className="brand-name">गरुड़ समाचार</span>
+              </div>
 
-          <div className="nav-row nav-row-inline">
-            {navCategories.map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`nav-item ${
-                  activeCategory === item ? "nav-item-active" : ""
-                }`}
-              onClick={() => {
-                setSelectedNews(null);
-                setView("home");
-                setActiveCategory(item);
-                syncUrlState("home", item);
-              }}
-            >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
+              <div className="nav-row nav-row-inline">
+                {navCategories.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`nav-item ${
+                      activeCategory === item ? "nav-item-active" : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedNews(null);
+                      setView("home");
+                      setActiveCategory(item);
+                      syncUrlState("home", item);
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
 
-      </header>
-      {/* BREAKING BAR */}
-      {breakingNews.length > 0 && (
-        <div className="breaking-bar">
-          <span>BREAKING</span>
-          <div className="breaking-ticker">
-            <div className="breaking-track">
-              {breakingNews.map((n) => (
-                <button
-                  key={n._id || n.id}
-                  type="button"
-                  className="breaking-item"
-                  onClick={() => openNews(n)}
+          {breakingNews.length > 0 && (
+            <div className="breaking-bar">
+              <span>BREAKING</span>
+              <div className="breaking-ticker">
+                <div className="breaking-track">
+                  {breakingNews.map((n) => (
+                    <button
+                      key={n._id || n.id}
+                      type="button"
+                      className="breaking-item"
+                      onClick={() => openNews(n)}
+                    >
+                      {n.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="layout">
+        {/* SEO Meta Tags */}
+        {renderHelmet()}
+        {/* ===== SIDEBAR ===== */}
+        {!isNewsDetailView && (
+          <aside className="sidebar">
+            <ul className="menu">
+              <li
+                onClick={() => handleViewChange("home")}
+              >
+                🏠 होम
+              </li>
+              <li
+                onClick={() => handleViewChange("video")}
+              >
+                ▶️ वीडियो
+              </li>
+              <li
+                onClick={() => handleViewChange("search")}
+              >
+                🔍 सर्च
+              </li>
+              <li
+                onClick={() => handleViewChange("epaper")}
+              >
+                🗞️ ई-पेपर
+              </li>
+              <li
+                className="menu-item-highlight menu-item-highlight-news"
+                onClick={() => handleViewChange("user-news")}
+              >
+                📨 खबर भेजें
+              </li>
+              {trendingAvailable && (
+                <li
+                  className="menu-item-highlight menu-item-highlight-trending"
+                  onClick={() => handleViewChange("trending")}
                 >
-                  {n.title}
+                  🔥 ट्रेंडिंग
+                </li>
+              )}
+            </ul>
+          </aside>
+        )}
+
+        {/* ===== MAIN CONTENT ===== */}
+        <main className="content">
+        {!isNewsDetailView && (
+          <div className="mobile-header">
+            <div className="mobile-nav-row">
+              {mobileActions.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`mobile-nav-btn ${
+                    view === item.view ? "mobile-nav-btn-active" : ""
+                  }`}
+                  onClick={() => handleViewChange(item.view)}
+                >
+                  {item.label}
                 </button>
               ))}
             </div>
           </div>
-        </div>
-      )}
-
-      <div className="layout">
-        {/* ===== SIDEBAR ===== */}
-        <aside className="sidebar">
-
-        <ul className="menu">
-          <li
-            onClick={() => handleViewChange("home")}
-          >
-            🏠 होम
-          </li>
-          <li
-            onClick={() => handleViewChange("video")}
-          >
-            ▶️ वीडियो
-          </li>
-          <li
-            onClick={() => handleViewChange("search")}
-          >
-            🔍 सर्च
-          </li>
-          <li
-            onClick={() => handleViewChange("epaper")}
-          >
-            🗞️ ई-पेपर
-          </li>
-          <li
-            className="menu-item-highlight menu-item-highlight-news"
-            onClick={() => handleViewChange("user-news")}
-          >
-            📨 खबर भेजें
-          </li>
-          {trendingAvailable && (
-            <li
-              className="menu-item-highlight menu-item-highlight-trending"
-              onClick={() => handleViewChange("trending")}
-            >
-              🔥 ट्रेंडिंग
-            </li>
-          )}
-        </ul>
-        </aside>
-
-        {/* ===== MAIN CONTENT ===== */}
-        <main className="content">
-        <div className="mobile-header">
-          <div className="mobile-nav-row">
-            {mobileActions.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className={`mobile-nav-btn ${
-                  view === item.view ? "mobile-nav-btn-active" : ""
-                }`}
-                onClick={() => handleViewChange(item.view)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         <div
           className={`content-grid ${
@@ -1240,6 +1289,9 @@ export default function Category() {
                     selectedNews.createdAt
                   ).toLocaleString()}
                 </small>
+                {selectedNews.location && (
+                  <div className="news-location">{selectedNews.location}</div>
+                )}
                 {renderShareActions(selectedNews)}
 
                 {!hasLeadMediaInBlocks &&
