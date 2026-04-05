@@ -91,6 +91,10 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/debug", (req, res) => {
+  if (NODE_ENV === "production") {
+    return res.status(404).json({ message: "Not found" });
+  }
+
   const mongooseState = mongoose.connection ? mongoose.connection.readyState : "unknown";
   res.json({
     nodeEnv: NODE_ENV,

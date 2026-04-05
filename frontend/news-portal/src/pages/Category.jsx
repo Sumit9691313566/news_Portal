@@ -72,13 +72,67 @@ export default function Category() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const updateUrlState = (
+    { nextView = view, nextCategory = activeCategory, newsId = null, imageUrl = "" } = {},
+    options = {}
+  ) => {
+    const params = new URLSearchParams(location.search);
+
+    if (nextView && nextView !== "home") {
+      params.set("view", nextView);
+    } else {
+      params.delete("view");
+    }
+
+    if (nextCategory && nextCategory !== "All") {
+      params.set("cat", nextCategory);
+    } else {
+      params.delete("cat");
+    }
+
+    if (newsId) {
+      params.set("newsId", newsId);
+    } else {
+      params.delete("newsId");
+    }
+
+    if (imageUrl) {
+      params.set("image", imageUrl);
+    } else {
+      params.delete("image");
+    }
+
+    navigate(
+      { pathname: "/", search: params.toString() },
+      { replace: Boolean(options.replace), state: options.state }
+    );
+  };
+
   const openFullscreenImage = (imageUrl) => {
     if (!imageUrl) return;
     setFullscreenImage(imageUrl);
+    updateUrlState(
+      {
+        nextView: view,
+        nextCategory: activeCategory,
+        newsId: selectedNews?._id || selectedNews?.id || null,
+        imageUrl,
+      },
+      { replace: false }
+    );
   };
 
   const closeFullscreenImage = () => {
     setFullscreenImage("");
+    updateUrlState(
+      {
+        nextView: view,
+        nextCategory: activeCategory,
+        newsId: selectedNews?._id || selectedNews?.id || null,
+        imageUrl: "",
+      },
+      { replace: true }
+    );
   };
 
   /* ================= LOAD NEWS ================= */
@@ -132,6 +186,8 @@ export default function Category() {
               breaking: n.breaking || false,
               featured: n.featured || false,
               views: n.views || 0,
+              firstPublishedAt: n.firstPublishedAt || null,
+              updatedAt: n.updatedAt || n.createdAt,
             };
           })
         : [];
@@ -192,31 +248,30 @@ export default function Category() {
     const params = new URLSearchParams(location.search);
     const nextView = params.get("view") || "home";
     const nextCategory = params.get("cat") || "All";
+    const nextImage = params.get("image") || "";
     if (nextView === "video") {
       navigate("/videos", { replace: true });
       return;
     }
     setView(nextView);
     setActiveCategory(nextCategory);
-  }, [location.search]);
+    setFullscreenImage(nextImage);
+  }, [location.search, navigate]);
 
-  const syncUrlState = (nextView, nextCategory) => {
+  const syncUrlState = (nextView, nextCategory, options = {}) => {
     if (nextView === "video") {
       navigate("/videos");
       return;
     }
-    const params = new URLSearchParams(location.search);
-    if (nextView && nextView !== "home") {
-      params.set("view", nextView);
-    } else {
-      params.delete("view");
-    }
-    if (nextCategory && nextCategory !== "All") {
-      params.set("cat", nextCategory);
-    } else {
-      params.delete("cat");
-    }
-    navigate({ pathname: "/", search: params.toString() }, { replace: true });
+    updateUrlState(
+      {
+        nextView,
+        nextCategory,
+        newsId: options.newsId ?? null,
+        imageUrl: options.imageUrl ?? "",
+      },
+      { replace: Boolean(options.replace) }
+    );
   };
 
   const loadEpapers = async () => {
@@ -395,6 +450,12 @@ export default function Category() {
   const openNews = (news) => {
     setSelectedNews(news);
     scrollToNewsStart();
+    updateUrlState({
+      nextView: view,
+      nextCategory: activeCategory,
+      newsId: news?._id || news?.id || null,
+      imageUrl: "",
+    });
     if (!news?._id) return;
     trackVisit({ markAsReader: true }).catch(() => {});
     trackUniqueNewsView(news._id).then((result) => {
@@ -538,20 +599,25 @@ export default function Category() {
     view !== "epaper";
 
   useEffect(() => {
-    const requestedId =
-      location.state?.openNewsId ||
-      new URLSearchParams(location.search).get("newsId");
-    if (!requestedId || allNews.length === 0) return;
+    const params = new URLSearchParams(location.search);
+    const requestedId = location.state?.openNewsId || params.get("newsId");
+    if (!requestedId) {
+      setSelectedNews(null);
+      return;
+    }
+    if (allNews.length === 0) return;
 
     const matched = allNews.find(
       (n) => n._id === requestedId || n.id === requestedId
     );
-    if (!matched) return;
+    if (!matched) {
+      setSelectedNews(null);
+      return;
+    }
 
-    setView("home");
     setSelectedNews(matched);
     scrollToNewsStart();
-  }, [allNews, location.state]);
+  }, [allNews, location.search, location.state]);
 
   const categoryClass = (category) => {
     const key = (category || "").toLowerCase();
@@ -691,20 +757,57 @@ export default function Category() {
   const renderHelmet = () => {
     const siteName = "Garud Samachar";
     const siteUrl = resolvePublicSiteUrl();
+    const organizationSchema = {
+      "@context": "https://schema.org",
+      "@type": "NewsMediaOrganization",
+      name: siteName,
+      alternateName: "गरुड़ समाचार",
+      url: `${siteUrl}/`,
+      logo: `${siteUrl}/logo.jpg`,
+    };
 
     if (selectedNews) {
       const newsUrl = getNewsShareUrl(selectedNews);
       const description = stripHtml(selectedNews.content || "").substring(0, 160);
+      const articleSchema = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        headline: selectedNews.title,
+        description,
+        url: newsUrl,
+        mainEntityOfPage: newsUrl,
+        datePublished: selectedNews.firstPublishedAt || selectedNews.createdAt,
+        dateModified: selectedNews.updatedAt || selectedNews.createdAt,
+        author: {
+          "@type": "Person",
+          name: selectedNews.author || selectedNews.createdByName || "Garud Samachar",
+        },
+        publisher: {
+          "@type": "NewsMediaOrganization",
+          name: siteName,
+          url: `${siteUrl}/`,
+        },
+        image: selectedNews.mediaUrl
+          ? [selectedNews.mediaUrl]
+          : [`${siteUrl}/logo.jpg`],
+        articleSection: selectedNews.category || "News",
+        inLanguage: "hi-IN",
+      };
       return (
         <Helmet>
           <title>{`${selectedNews.title} | ${siteName}`}</title>
           <link rel="canonical" href={newsUrl} />
           <meta name="description" content={description} />
+          <meta name="robots" content="index, follow, max-image-preview:large" />
           <meta property="og:title" content={selectedNews.title} />
           <meta property="og:description" content={description} />
           <meta property="og:url" content={newsUrl} />
-          <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.png`} />
+          <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.jpg`} />
           <meta property="og:type" content="article" />
+          <meta property="article:published_time" content={selectedNews.firstPublishedAt || selectedNews.createdAt || ""} />
+          <meta property="article:modified_time" content={selectedNews.updatedAt || selectedNews.createdAt || ""} />
+          <script type="application/ld+json">{JSON.stringify(organizationSchema)}</script>
+          <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
         </Helmet>
       );
     }
@@ -712,13 +815,34 @@ export default function Category() {
     const pageTitle = activeCategory === "All" ? "Latest Hindi News & Breaking News" : `${activeCategory} News`;
     const description = `${siteName} (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on politics, business, tech, sports, and more.`;
     const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Latest Hindi News, Breaking News, आज की ताजा खबर, हिंदी समाचार, Taza Khabar, E-Paper, ${activeCategory} News, Garud News, India News in Hindi`;
+    const pageUrl =
+      activeCategory === "All"
+        ? `${siteUrl}/`
+        : `${siteUrl}/?cat=${encodeURIComponent(activeCategory)}`;
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      itemListElement: filteredNews.slice(0, 20).map((news, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: getNewsShareUrl(news),
+        name: news.title,
+      })),
+    };
 
     return (
       <Helmet>
         <title>{`${siteName} | ${pageTitle}`}</title>
-        <link rel="canonical" href={siteUrl} />
+        <link rel="canonical" href={pageUrl} />
         <meta name="description" content={description} />
         <meta name="keywords" content={keywords} />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta property="og:title" content={`${siteName} | ${pageTitle}`} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify(organizationSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(itemListSchema)}</script>
       </Helmet>
     );
   };
@@ -1273,7 +1397,7 @@ export default function Category() {
               <div className="news-full">
                 <button
                   className="back-btn"
-                  onClick={() => setSelectedNews(null)}
+                  onClick={() => syncUrlState(view, activeCategory)}
                 >
                   {"← वापस"}
                 </button>
@@ -1433,6 +1557,30 @@ export default function Category() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              width: "1px",
+              height: "1px",
+              padding: 0,
+              margin: "-1px",
+              overflow: "hidden",
+              clip: "rect(0, 0, 0, 0)",
+              whiteSpace: "nowrap",
+              border: 0,
+            }}
+          >
+            {allNews.slice(0, 100).map((news) => (
+              <a
+                key={`crawl-link-${news._id || news.id}`}
+                href={getNewsShareUrl(news)}
+              >
+                {news.title}
+              </a>
+            ))}
           </div>
 
           {/* ===== RIGHT RAIL ===== */}

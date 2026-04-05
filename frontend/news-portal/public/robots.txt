@@ -1,9 +1,12 @@
-# Allow all user agents
+﻿# Allow all user agents
 User-agent: *
 
 # Disallow admin and search pages
 Disallow: /admin
+Disallow: /admin-dashboard
 Disallow: /main-admin
+Disallow: /main-admin/notifications
+Disallow: /main-admin/users-news
 Disallow: /reporter-dashboard
 Disallow: /login
 Disallow: /search

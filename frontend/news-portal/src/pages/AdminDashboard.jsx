@@ -605,6 +605,7 @@ export default function AdminDashboard() {
         "epaper",
         {
           method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         },
         120000
@@ -632,6 +633,7 @@ export default function AdminDashboard() {
     try {
       let res = await fetchWithTimeout(`epaper/${id}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (
@@ -641,6 +643,7 @@ export default function AdminDashboard() {
       ) {
         res = await fetch(buildApiUrl(`epaper/${id}`, API_FALLBACK_URL), {
           method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
 

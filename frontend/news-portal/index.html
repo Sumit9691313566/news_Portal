@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
-    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta
+      http-equiv="Permissions-Policy"
+      content="geolocation=(), microphone=(), camera=()"
+    />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta
       name="description"
@@ -17,14 +21,21 @@
     <link rel="canonical" href="https://garudsamachar.garudstacks.tech/" />
     <meta property="og:site_name" content="Garud Samachar" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Garud Samachar | Latest Hindi News & Breaking News" />
+    <meta
+      property="og:title"
+      content="Garud Samachar | Latest Hindi News & Breaking News"
+    />
     <meta
       property="og:description"
       content="Garud Samachar (गरुड़ समाचार) par paaiye latest Hindi news, breaking news, politics, business, sports, technology, videos aur e-paper updates."
     />
     <meta property="og:url" content="https://garudsamachar.garudstacks.tech/" />
+    <meta property="og:locale" content="hi_IN" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Garud Samachar | Latest Hindi News & Breaking News" />
+    <meta
+      name="twitter:title"
+      content="Garud Samachar | Latest Hindi News & Breaking News"
+    />
     <meta
       name="twitter:description"
       content="Garud Samachar (गरुड़ समाचार) par paaiye latest Hindi news, breaking news, politics, business, sports, technology, videos aur e-paper updates."
@@ -53,12 +64,19 @@
         }
       }
     </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Garud Samachar",
+        "alternateName": "गरुड़ समाचार",
+        "url": "https://garudsamachar.garudstacks.tech/",
+        "logo": "https://garudsamachar.garudstacks.tech/logo.jpg"
+      }
+    </script>
   </head>
   <body>
-    <!-- React app yahin render hoti hai -->
     <div id="root"></div>
-
-    <!-- Vite entry point -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -96,7 +96,7 @@ export default function Search() {
   const openResult = (news) => {
     const nextCategory = news.category || "All";
     navigate(`/?cat=${encodeURIComponent(nextCategory)}`, {
-      state: { selectedNewsId: news._id || news.id },
+      state: { openNewsId: news._id || news.id },
     });
   };
 

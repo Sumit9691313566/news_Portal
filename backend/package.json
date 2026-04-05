@@ -5,12 +5,6 @@
 
   "main": "src/bootstrap.js",
 
-  "scripts": {
-    "dev": "nodemon src/bootstrap.js",
-    "start": "node src/bootstrap.js",
-    "build": "echo 'Backend build complete'"
-  },
-
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.9.0",
