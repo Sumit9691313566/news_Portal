@@ -13,9 +13,7 @@ const CATEGORY_LIST = [
   { value: "National", label: "राष्ट्रीय" },
   { value: "Business", label: "बिज़नेस" },
   { value: "Politics", label: "राजनीति" },
-  { value: "Sports", label: "खेल" },
-  { value: "Tech", label: "टेक" },
-  { value: "Entertainment", label: "मनोरंजन" },
+  { value: "Crime", label: "अपराध" },
   { value: "World", label: "दुनिया" },
   { value: "Article", label: "आर्टिकल" },
 ];
@@ -88,7 +86,7 @@ export default function AdminDashboard() {
   const [title, setTitle] = useState("");
   const [titleColor, setTitleColor] = useState("#1f2937");
   const [location, setLocation] = useState("");
-  const [category, setCategory] = useState("Tech");
+  const [category, setCategory] = useState("National");
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
   const [breaking, setBreaking] = useState(false);
@@ -318,7 +316,7 @@ export default function AdminDashboard() {
     setTitle("");
     setTitleColor("#1f2937");
     setLocation("");
-    setCategory("Tech");
+    setCategory("National");
     setStatus("draft");
     setFeatured(false);
     setBreaking(false);

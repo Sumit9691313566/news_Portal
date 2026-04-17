@@ -10,9 +10,7 @@ const CATEGORY_LIST = [
   { value: "National", label: "National" },
   { value: "Business", label: "Business" },
   { value: "Politics", label: "Politics" },
-  { value: "Sports", label: "Sports" },
-  { value: "Tech", label: "Tech" },
-  { value: "Entertainment", label: "Entertainment" },
+  { value: "Crime", label: "Crime" },
   { value: "World", label: "World" },
   { value: "Article", label: "Article" },
 ];

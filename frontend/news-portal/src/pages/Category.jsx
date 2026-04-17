@@ -380,9 +380,7 @@ export default function Category() {
     राष्ट्रीय: "National",
     बिज़नेस: "Business",
     राजनीति: "Politics",
-    खेल: "Sports",
-    टेक: "Tech",
-    मनोरंजन: "Entertainment",
+    अपराध: "Crime",
     दुनिया: "World",
     आर्टिकल: "Article",
   };
@@ -655,9 +653,7 @@ export default function Category() {
     "राष्ट्रीय",
     "बिज़नेस",
     "राजनीति",
-    "खेल",
-    "टेक",
-    "मनोरंजन",
+    "अपराध",
     "दुनिया",
     "आर्टिकल",
   ];
