@@ -32,6 +32,25 @@ const formatIssueDate = (value) => {
   return `${day}-${month}-${year}`;
 };
 
+const toIsoDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString();
+};
+
+const formatArticleDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleString("hi-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 const resolvePublicSiteUrl = () => {
   return getPublicSiteUrl();
 };
@@ -605,12 +624,18 @@ export default function Category() {
       name: siteName,
       alternateName: "गरुड़ समाचार",
       url: `${siteUrl}/`,
-      logo: `${siteUrl}/logo.jpg`,
+      logo: `${siteUrl}/logo.jpeg`,
     };
 
     if (selectedNews) {
       const newsUrl = getNewsShareUrl(selectedNews);
       const description = stripHtml(selectedNews.content || "").substring(0, 160);
+      const publishedIso = toIsoDate(
+        selectedNews.firstPublishedAt || selectedNews.createdAt
+      );
+      const modifiedIso = toIsoDate(
+        selectedNews.updatedAt || selectedNews.createdAt
+      );
       const articleSchema = {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
@@ -618,8 +643,8 @@ export default function Category() {
         description,
         url: newsUrl,
         mainEntityOfPage: newsUrl,
-        datePublished: selectedNews.firstPublishedAt || selectedNews.createdAt,
-        dateModified: selectedNews.updatedAt || selectedNews.createdAt,
+        datePublished: publishedIso,
+        dateModified: modifiedIso,
         author: {
           "@type": "Person",
           name: selectedNews.author || selectedNews.createdByName || "Garud Samachar",
@@ -631,7 +656,7 @@ export default function Category() {
         },
         image: selectedNews.mediaUrl
           ? [selectedNews.mediaUrl]
-          : [`${siteUrl}/logo.jpg`],
+          : [`${siteUrl}/logo.jpeg`],
         articleSection: selectedNews.category || "News",
         inLanguage: "hi-IN",
       };
@@ -644,10 +669,10 @@ export default function Category() {
           <meta property="og:title" content={getPlainTextTitle(selectedNews.title)} />
           <meta property="og:description" content={description} />
           <meta property="og:url" content={newsUrl} />
-          <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.jpg`} />
+          <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.jpeg`} />
           <meta property="og:type" content="article" />
-          <meta property="article:published_time" content={selectedNews.firstPublishedAt || selectedNews.createdAt || ""} />
-          <meta property="article:modified_time" content={selectedNews.updatedAt || selectedNews.createdAt || ""} />
+          <meta property="article:published_time" content={publishedIso} />
+          <meta property="article:modified_time" content={modifiedIso} />
           <script type="application/ld+json">{JSON.stringify(organizationSchema)}</script>
           <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
         </Helmet>
@@ -1205,11 +1230,32 @@ export default function Category() {
                     selectedNews.titleColor
                   )}
                 />
-                <small>
-                  {new Date(
-                    selectedNews.createdAt
-                  ).toLocaleString()}
-                </small>
+                <div className="news-dates">
+                  <small>
+                    प्रकाशित:{" "}
+                    <time
+                      dateTime={toIsoDate(
+                        selectedNews.firstPublishedAt || selectedNews.createdAt
+                      )}
+                    >
+                      {formatArticleDateTime(
+                        selectedNews.firstPublishedAt || selectedNews.createdAt
+                      )}
+                    </time>
+                  </small>
+                  <small>
+                    अपडेट:{" "}
+                    <time
+                      dateTime={toIsoDate(
+                        selectedNews.updatedAt || selectedNews.createdAt
+                      )}
+                    >
+                      {formatArticleDateTime(
+                        selectedNews.updatedAt || selectedNews.createdAt
+                      )}
+                    </time>
+                  </small>
+                </div>
                 {selectedNews.location && (
                   <div className="news-location">{selectedNews.location}</div>
                 )}

@@ -1655,6 +1655,17 @@ body {
   font-weight: 700;
 }
 
+.news-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+}
+
+.news-dates small {
+  margin-bottom: 0;
+}
+
 .news-location {
   margin: -2px 0 10px;
   color: #6b7280;
