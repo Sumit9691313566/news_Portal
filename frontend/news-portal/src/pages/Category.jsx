@@ -7,7 +7,12 @@ import "../styles/userNews.css";
 import { fetchWithTimeout } from "../services/api";
 import { registerAndSubscribe } from "../services/push";
 import { trackUniqueNewsView, trackVisit } from "../services/analytics";
-import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
+import {
+  buildStyledTitleHtml,
+  getPlainTextTitle,
+  sanitizeRichTextHtml,
+  stripHtml,
+} from "../utils/richText";
 import { searchNews } from "../utils/searchNews";
 import { getPublicSiteUrl } from "../utils/siteUrl";
 import {
@@ -587,8 +592,9 @@ export default function Category() {
     )
   );
 
-  const titleStyle = (news) =>
-    news?.titleColor ? { color: news.titleColor } : undefined;
+  const renderStyledTitle = (title, titleColor) => ({
+    __html: buildStyledTitleHtml(title, titleColor) || getPlainTextTitle(title),
+  });
 
   const renderHelmet = () => {
     const siteName = "Garud Samachar";
@@ -608,7 +614,7 @@ export default function Category() {
       const articleSchema = {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
-        headline: selectedNews.title,
+        headline: getPlainTextTitle(selectedNews.title),
         description,
         url: newsUrl,
         mainEntityOfPage: newsUrl,
@@ -631,11 +637,11 @@ export default function Category() {
       };
       return (
         <Helmet>
-          <title>{`${selectedNews.title} | ${siteName}`}</title>
+          <title>{`${getPlainTextTitle(selectedNews.title)} | ${siteName}`}</title>
           <link rel="canonical" href={newsUrl} />
           <meta name="description" content={description} />
           <meta name="robots" content="index, follow, max-image-preview:large" />
-          <meta property="og:title" content={selectedNews.title} />
+          <meta property="og:title" content={getPlainTextTitle(selectedNews.title)} />
           <meta property="og:description" content={description} />
           <meta property="og:url" content={newsUrl} />
           <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.jpg`} />
@@ -665,7 +671,7 @@ export default function Category() {
         "@type": "ListItem",
         position: index + 1,
         url: getNewsShareUrl(news),
-        name: news.title,
+        name: getPlainTextTitle(news.title),
       })),
     };
 
@@ -854,7 +860,7 @@ export default function Category() {
                     {featuredNews.mediaUrl && (
                       <img
                         src={featuredNews.mediaUrl}
-                        alt={featuredNews.title || "featured"}
+                        alt={getPlainTextTitle(featuredNews.title) || "featured"}
                         onClick={(event) => {
                           event.stopPropagation();
                           openNews(featuredNews);
@@ -868,12 +874,13 @@ export default function Category() {
                     )}
                     <div className="featured-info">
                       <span>{featuredNews.category}</span>
-                      <h1
+                      <div
                         className={categoryClass(featuredNews.category)}
-                        style={titleStyle(featuredNews)}
-                      >
-                        {featuredNews.title}
-                      </h1>
+                        dangerouslySetInnerHTML={renderStyledTitle(
+                          featuredNews.title,
+                          featuredNews.titleColor
+                        )}
+                      />
                     </div>
                   </div>
                 )}
@@ -905,7 +912,7 @@ export default function Category() {
                                   {news.mediaType === "image" && (
                                     <img
                                       src={news.mediaUrl}
-                                      alt={news.title}
+                                      alt={getPlainTextTitle(news.title)}
                                       className="news-thumb"
                                       onClick={(event) => {
                                         event.stopPropagation();
@@ -941,9 +948,13 @@ export default function Category() {
                                 )}
                               </div>
 
-                              <h2 className={categoryClass(news.category)}>
-                                {news.title}
-                              </h2>
+                              <div
+                                className={categoryClass(news.category)}
+                                dangerouslySetInnerHTML={renderStyledTitle(
+                                  news.title,
+                                  news.titleColor
+                                )}
+                              />
                               <p>
                                 {news.content?.slice(0, 120)}...
                               </p>
@@ -978,7 +989,7 @@ export default function Category() {
                         navigate(`/videos/${news._id || news.id}`, {
                           state: {
                             url: news.mediaUrl,
-                            title: news.title,
+                            title: getPlainTextTitle(news.title),
                             summary: news.content || "",
                             category: getCategoryLabel(news.category),
                             createdAt: news.createdAt,
@@ -1004,7 +1015,12 @@ export default function Category() {
                                 news.category
                               )}`}
                             >
-                              {news.title}
+                              <span
+                                dangerouslySetInnerHTML={renderStyledTitle(
+                                  news.title,
+                                  news.titleColor
+                                )}
+                              />
                             </h3>
                             <p className="video-story-summary">
                               {news.content || "वीडियो समाचार"}
@@ -1064,7 +1080,7 @@ export default function Category() {
                             {news.mediaType === "image" && (
                               <img
                                 src={news.mediaUrl}
-                                alt={news.title}
+                                alt={getPlainTextTitle(news.title)}
                                 className="news-thumb"
                               />
                             )}
@@ -1078,9 +1094,13 @@ export default function Category() {
                           </>
                         )}
                         <div className="news-info">
-                          <h2 className={categoryClass(news.category)}>
-                            {news.title}
-                          </h2>
+                          <div
+                            className={categoryClass(news.category)}
+                            dangerouslySetInnerHTML={renderStyledTitle(
+                              news.title,
+                              news.titleColor
+                            )}
+                          />
                           <p>{news.content?.slice(0, 120)}...</p>
                           {renderShareActions(news)}
                         </div>
@@ -1131,7 +1151,7 @@ export default function Category() {
                             {news.mediaType === "image" && (
                               <img
                                 src={news.mediaUrl}
-                                alt={news.title}
+                                alt={getPlainTextTitle(news.title)}
                                 className="news-thumb"
                               />
                             )}
@@ -1145,9 +1165,13 @@ export default function Category() {
                           </>
                         )}
                         <div className="news-info">
-                          <h2 className={categoryClass(news.category)}>
-                            {news.title}
-                          </h2>
+                          <div
+                            className={categoryClass(news.category)}
+                            dangerouslySetInnerHTML={renderStyledTitle(
+                              news.title,
+                              news.titleColor
+                            )}
+                          />
                           <p>{news.content?.slice(0, 120)}...</p>
                           <small className="views-count">
                             {news.views || 0} views
@@ -1174,12 +1198,13 @@ export default function Category() {
                   {"← वापस"}
                 </button>
 
-                <h1
+                <div
                   className={categoryClass(selectedNews.category)}
-                  style={titleStyle(selectedNews)}
-                >
-                  {selectedNews.title}
-                </h1>
+                  dangerouslySetInnerHTML={renderStyledTitle(
+                    selectedNews.title,
+                    selectedNews.titleColor
+                  )}
+                />
                 <small>
                   {new Date(
                     selectedNews.createdAt
@@ -1195,7 +1220,7 @@ export default function Category() {
                   selectedNews.mediaType === "image" && (
                     <img
                       src={selectedNews.mediaUrl}
-                      alt={selectedNews.title}
+                      alt={getPlainTextTitle(selectedNews.title)}
                       className="news-lead-image"
                       onClick={() => openFullscreenImage(selectedNews.mediaUrl)}
                     />
@@ -1210,7 +1235,7 @@ export default function Category() {
                         navigate(`/videos/${selectedNews._id || selectedNews.id}`, {
                           state: {
                             url: selectedNews.mediaUrl,
-                            title: selectedNews.title,
+                            title: getPlainTextTitle(selectedNews.title),
                             summary: selectedNews.content || "",
                             category: getCategoryLabel(selectedNews.category),
                             createdAt: selectedNews.createdAt,
@@ -1259,7 +1284,7 @@ export default function Category() {
                               navigate(`/videos/${selectedNews._id || selectedNews.id}`, {
                                 state: {
                                   url: b.url,
-                                  title: selectedNews.title,
+                                  title: getPlainTextTitle(selectedNews.title),
                                   summary: selectedNews.content || "",
                                   category: getCategoryLabel(selectedNews.category),
                                   createdAt: selectedNews.createdAt,
@@ -1305,7 +1330,7 @@ export default function Category() {
                             {news.mediaType === "image" && (
                               <img
                                 src={news.mediaUrl}
-                                alt={news.title}
+                                alt={getPlainTextTitle(news.title)}
                               />
                             )}
                             {news.mediaType === "video" && (
@@ -1317,9 +1342,13 @@ export default function Category() {
                           </>
                         )}
                         <div className="more-news-info">
-                          <h4 className={categoryClass(news.category)}>
-                            {news.title}
-                          </h4>
+                          <div
+                            className={categoryClass(news.category)}
+                            dangerouslySetInnerHTML={renderStyledTitle(
+                              news.title,
+                              news.titleColor
+                            )}
+                          />
                           <p>{news.content?.slice(0, 90)}...</p>
                           {renderShareActions(news)}
                         </div>
@@ -1350,7 +1379,7 @@ export default function Category() {
                 key={`crawl-link-${news._id || news.id}`}
                 href={getNewsShareUrl(news)}
               >
-                {news.title}
+                {getPlainTextTitle(news.title)}
               </a>
             ))}
           </div>

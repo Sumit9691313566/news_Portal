@@ -3,7 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fetchVisitorSummary } from "../services/analytics";
 import RichTextEditor from "../components/RichTextEditor";
-import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
+import {
+  buildStyledTitleHtml,
+  getPlainTextTitle,
+  sanitizeRichTextHtml,
+  sanitizeTitleHtml,
+  stripHtml,
+} from "../utils/richText";
 import "../styles/admin.css";
 import {
   CATEGORY_LIST as SHARED_CATEGORY_LIST,
@@ -128,7 +134,7 @@ export default function MainAdminDashboard() {
 
     return byTab.filter((news) => {
       if (!normalizedSearch) return true;
-      return String(news.title || "").toLowerCase().includes(normalizedSearch);
+      return getPlainTextTitle(news.title || "").toLowerCase().includes(normalizedSearch);
     });
   }, [activeTab, newsList, search]);
 
@@ -195,13 +201,13 @@ export default function MainAdminDashboard() {
 
   const saveEdits = async () => {
     if (!selectedNews?._id) return;
-    if (!editTitle.trim()) {
+    if (!getPlainTextTitle(editTitle).trim()) {
       alert("Title required hai");
       return;
     }
 
     const payload = {
-      title: editTitle.trim(),
+      title: sanitizeTitleHtml(editTitle),
       titleColor: editTitleColor,
       location: editLocation,
       category: editCategory,
@@ -503,7 +509,7 @@ export default function MainAdminDashboard() {
               style={{ cursor: "pointer" }}
             >
               <div>
-                <h3>{news.title}</h3>
+                <h3>{getPlainTextTitle(news.title) || "Untitled"}</h3>
                 <small>
                   {getCategoryLabel(news.category)} | {news.author || news.createdByName || "Admin"} |{" "}
                   {news.createdByRole || "unknown"} | {new Date(news.createdAt).toLocaleString()}
@@ -578,9 +584,16 @@ export default function MainAdminDashboard() {
 
           {!editMode && (
             <div className="preview-body">
-              <div className="preview-title" style={{ color: selectedNews.titleColor || undefined }}>
-                {selectedNews.title}
-              </div>
+              <div
+                className="preview-title title-rich-output"
+                dangerouslySetInnerHTML={{
+                  __html:
+                    buildStyledTitleHtml(
+                      selectedNews.title,
+                      selectedNews.titleColor
+                    ) || "News Title Preview",
+                }}
+              />
               {selectedNews.location && (
                 <div className="preview-location">{selectedNews.location}</div>
               )}
@@ -618,19 +631,11 @@ export default function MainAdminDashboard() {
               <div className="form-left">
                 <label className="field-label">Title</label>
                 <div className="title-editor-row">
-                  <input
+                  <RichTextEditor
                     value={editTitle}
-                    onChange={(event) => setEditTitle(event.target.value)}
+                    onChange={setEditTitle}
                     placeholder="News Title"
                   />
-                  <label className="title-color-control" title="Title color">
-                    <span>Color</span>
-                    <input
-                      type="color"
-                      value={editTitleColor}
-                      onChange={(event) => setEditTitleColor(event.target.value)}
-                    />
-                  </label>
                 </div>
 
                 <label className="field-label">Location</label>

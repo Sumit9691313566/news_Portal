@@ -1,6 +1,7 @@
 const BLOCK_BREAK_TAGS = /<\/(p|div|li|h1|h2|h3|h4|h5|h6|blockquote)>/gi;
 const BR_TAGS = /<br\s*\/?>/gi;
 const ALL_TAGS = /<[^>]*>/g;
+const TITLE_BLOCK_TAGS = /<\/?(p|div|h1|h2|h3|h4|h5|h6|blockquote|li|ul|ol)>/gi;
 
 const FONT_SIZE_MAP = {
   "1": "10px",
@@ -181,6 +182,23 @@ const sanitizeWithDom = (html = "") => {
 
 export const sanitizeRichTextHtml = (html = "") => sanitizeWithDom(html);
 
+const escapeHtml = (value = "") =>
+  String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+export const sanitizeTitleHtml = (html = "") => {
+  const sanitized = sanitizeRichTextHtml(html || "");
+  return sanitized
+    .replace(BR_TAGS, " ")
+    .replace(TITLE_BLOCK_TAGS, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 export const stripHtml = (html = "") =>
   (html || "")
     .replace(BR_TAGS, "\n")
@@ -192,6 +210,23 @@ export const stripHtml = (html = "") =>
     .replace(/&gt;/gi, ">")
     .replace(/\s+/g, " ")
     .trim();
+
+export const getPlainTextTitle = (html = "") => stripHtml(sanitizeTitleHtml(html));
+
+const isSafeColor = (value = "") =>
+  /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(value || "").trim());
+
+export const buildStyledTitleHtml = (html = "", titleColor = "") => {
+  const safeTitleHtml = sanitizeTitleHtml(html);
+  const fallbackText = escapeHtml(getPlainTextTitle(html));
+  const safeColor = isSafeColor(titleColor) ? String(titleColor).trim() : "";
+  const content = safeTitleHtml || fallbackText;
+
+  if (!content) return "";
+  if (!safeColor) return content;
+
+  return `<span style="color: ${safeColor};">${content}</span>`;
+};
 
 export const countWordsFromHtml = (html = "") => {
   const text = stripHtml(html);

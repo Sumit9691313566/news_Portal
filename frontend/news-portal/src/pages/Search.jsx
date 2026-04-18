@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
-import { searchNews } from "../utils/searchNews";
+import { getNewsSearchSnippet, searchNews } from "../utils/searchNews";
+import { getPlainTextTitle } from "../utils/richText";
 import {
   CATEGORY_LIST,
   getCategoryLabel,
@@ -41,6 +42,7 @@ export default function Search() {
 
   const highlightedResults = useMemo(() => results.slice(0, 3), [results]);
   const topSuggestions = useMemo(() => results.slice(0, 8), [results]);
+  const searchedNewsCount = allNews.length;
 
   useEffect(() => {
     const load = async () => {
@@ -132,7 +134,8 @@ export default function Search() {
             <h2>Search News</h2>
             <p className="search-subtitle">
               Type any news name or keyword to instantly see matching stories
-              from title, content, and category.
+              from this news portal only. Agar news portal par news hogi tabhi
+              result aayega, warna result nahi aayega.
             </p>
           </div>
 
@@ -164,7 +167,7 @@ export default function Search() {
                       className="search-suggestion-item"
                       onClick={() => openResult(news)}
                     >
-                      <span className="search-suggestion-title">{news.title}</span>
+                      <span className="search-suggestion-title">{getPlainTextTitle(news.title)}</span>
                       <span className="search-suggestion-meta">
                         {getCategoryLabel(news.category)} •{" "}
                         {formatSearchDate(news.createdAt)}
@@ -218,8 +221,8 @@ export default function Search() {
 
         {searched && !loading && results.length === 0 && (
           <div className="search-empty">
-            No matching news found. Try a news title, topic keyword, category,
-            or one of the chips above.
+            Is keyword ki koi news portal par available nahi mili. Sirf portal
+            par maujood published news hi search result mein dikhayi jaati hai.
           </div>
         )}
 
@@ -230,7 +233,9 @@ export default function Search() {
                 <span className="search-summary-label">Results</span>
                 <strong>{results.length} stories found</strong>
               </div>
-              <span className="search-summary-query">for "{query}"</span>
+              <span className="search-summary-query">
+                "{query}" in {searchedNewsCount} portal stories
+              </span>
             </div>
 
             <div className="search-results-grid">
@@ -245,7 +250,7 @@ export default function Search() {
                     <img
                       className="search-feature-thumb"
                       src={n.mediaUrl}
-                      alt={n.title}
+                      alt={getPlainTextTitle(n.title)}
                     />
                   ) : (
                     <div className="search-feature-fallback">
@@ -254,7 +259,8 @@ export default function Search() {
                   )}
                   <div className="search-feature-copy">
                     <span>{getCategoryLabel(n.category)}</span>
-                    <h3>{n.title}</h3>
+                    <h3>{getPlainTextTitle(n.title)}</h3>
+                    <p>{getNewsSearchSnippet(n, query)}</p>
                     <small>{formatSearchDate(n.createdAt)}</small>
                   </div>
                 </button>
@@ -270,10 +276,13 @@ export default function Search() {
                   onClick={() => openResult(n)}
                 >
                   <div>
-                    <div className="search-title">{n.title}</div>
+                    <div className="search-title">{getPlainTextTitle(n.title)}</div>
                     <div className="search-meta">
                       {getCategoryLabel(n.category)} •{" "}
                       {formatSearchDate(n.createdAt)}
+                    </div>
+                    <div className="search-snippet">
+                      {getNewsSearchSnippet(n, query)}
                     </div>
                   </div>
                 </button>

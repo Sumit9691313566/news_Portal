@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 import RichTextEditor from "../components/RichTextEditor";
 import {
+  buildStyledTitleHtml,
   countWordsFromHtml,
+  getPlainTextTitle,
   sanitizeRichTextHtml,
+  sanitizeTitleHtml,
   stripHtml,
 } from "../utils/richText";
 import { fetchWithTimeout } from "../services/api";
@@ -170,7 +173,7 @@ export default function ReporterDashboard() {
       (b) => (b.type === "image" || b.type === "video") && !b.file && !b.url
     );
 
-    if (!title || !hasContent) {
+    if (!getPlainTextTitle(title).trim() || !hasContent) {
       alert("Title aur content required hai");
       return;
     }
@@ -181,7 +184,7 @@ export default function ReporterDashboard() {
     }
 
     const formData = new FormData();
-    formData.append("title", title);
+    formData.append("title", sanitizeTitleHtml(title));
     formData.append("titleColor", titleColor);
     formData.append("content", deriveContentFromBlocks(blocks) || "Media content");
     formData.append("location", location);
@@ -421,7 +424,7 @@ export default function ReporterDashboard() {
       .reduce((sum, b) => sum + countWordsFromHtml(b.text || ""), 0);
   }, [blocks]);
 
-  const titleLength = title.trim().length;
+  const titleLength = getPlainTextTitle(title).trim().length;
   const mediaCount = useMemo(
     () => blocks.filter((b) => b.type === "image" || b.type === "video").length,
     [blocks]
@@ -579,19 +582,11 @@ export default function ReporterDashboard() {
           <div className="form-left">
             <label className="field-label">Title</label>
             <div className="title-editor-row">
-              <input
-                placeholder="News Title"
+              <RichTextEditor
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={setTitle}
+                placeholder="News Title"
               />
-              <label className="title-color-control" title="Title color">
-                <span>Color</span>
-                <input
-                  type="color"
-                  value={titleColor}
-                  onChange={(e) => setTitleColor(e.target.value)}
-                />
-              </label>
             </div>
             <div className="title-help">
               <span>{titleLength}/120 chars</span>
@@ -733,9 +728,14 @@ export default function ReporterDashboard() {
             <div className="preview-card">
               <div className="preview-head">Live Preview</div>
               <div className="preview-body">
-                <div className="preview-title" style={{ color: titleColor || undefined }}>
-                  {title || "News Title Preview"}
-                </div>
+                <div
+                  className="preview-title title-rich-output"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      buildStyledTitleHtml(title, titleColor) ||
+                      "News Title Preview",
+                  }}
+                />
                 <div className="preview-meta">
                   {getCategoryLabel(category)} | {status}
                 </div>
@@ -774,7 +774,7 @@ export default function ReporterDashboard() {
           {filteredNews.map((n) => (
             <div className="news-card" key={n._id}>
               <div>
-                <h3>{n.title}</h3>
+                <h3>{getPlainTextTitle(n.title) || "Untitled"}</h3>
                 <small>
                   {getCategoryLabel(n.category)} • {new Date(n.createdAt).toLocaleString()}
                 </small>
