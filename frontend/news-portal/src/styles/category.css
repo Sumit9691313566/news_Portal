@@ -279,6 +279,24 @@ body {
   box-shadow: 0 8px 16px rgba(179, 18, 36, 0.25);
 }
 
+.nav-item-priority {
+  background: linear-gradient(135deg, #fff3da 0%, #ffe2b5 100%);
+  border: 1px solid rgba(179, 18, 36, 0.14);
+  color: #7b1f14;
+  box-shadow: 0 10px 18px rgba(120, 45, 16, 0.08);
+}
+
+.nav-item-priority:hover {
+  color: #7b1f14;
+  background: linear-gradient(135deg, #ffe8c3 0%, #ffd8a0 100%);
+}
+
+.nav-item-priority.nav-item-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #b31224 0%, #8f0f1c 100%);
+}
+
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 230px;

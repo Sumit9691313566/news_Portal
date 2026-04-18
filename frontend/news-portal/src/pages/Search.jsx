@@ -4,6 +4,11 @@ import { Helmet } from "react-helmet-async";
 import "../styles/category.css";
 import { fetchWithTimeout } from "../services/api";
 import { searchNews } from "../utils/searchNews";
+import {
+  CATEGORY_LIST,
+  getCategoryLabel,
+  normalizeCategoryValue,
+} from "../utils/categories";
 
 const formatSearchDate = (value) => {
   if (!value) return "Latest";
@@ -29,7 +34,7 @@ export default function Search() {
     const list = allNews
       .map((n) => n.category)
       .filter(Boolean)
-      .map((c) => c.trim())
+      .map((c) => normalizeCategoryValue(c).trim())
       .filter(Boolean);
     return Array.from(new Set(list));
   }, [allNews]);
@@ -94,7 +99,7 @@ export default function Search() {
   };
 
   const openResult = (news) => {
-    const nextCategory = news.category || "All";
+    const nextCategory = normalizeCategoryValue(news.category || "All");
     navigate(`/?cat=${encodeURIComponent(nextCategory)}`, {
       state: { openNewsId: news._id || news.id },
     });
@@ -104,7 +109,10 @@ export default function Search() {
     <div className="layout">
       <Helmet>
         <title>Search News - Garud Samachar</title>
-        <meta name="description" content="Search for the latest news articles on Garud Samachar. Find breaking news on politics, business, tech, sports, and more in Hindi." />
+        <meta
+          name="description"
+          content="Search for the latest news articles on Garud Samachar. Find breaking news in Hindi across featured categories."
+        />
         <meta name="robots" content="noindex, follow" />
       </Helmet>
 
@@ -114,7 +122,6 @@ export default function Search() {
           <li onClick={() => navigate("/")}>Home</li>
           <li onClick={() => navigate("/videos")}>Videos</li>
           <li onClick={() => navigate("/search")}>Search</li>
-          <li onClick={() => navigate("/epaper")}>E-Paper</li>
         </ul>
       </aside>
 
@@ -124,7 +131,8 @@ export default function Search() {
             <p className="search-kicker">Discover</p>
             <h2>Search News</h2>
             <p className="search-subtitle">
-              Type any news name or keyword to instantly see matching stories from title, content, and category.
+              Type any news name or keyword to instantly see matching stories
+              from title, content, and category.
             </p>
           </div>
 
@@ -158,7 +166,8 @@ export default function Search() {
                     >
                       <span className="search-suggestion-title">{news.title}</span>
                       <span className="search-suggestion-meta">
-                        {news.category || "General"} • {formatSearchDate(news.createdAt)}
+                        {getCategoryLabel(news.category)} •{" "}
+                        {formatSearchDate(news.createdAt)}
                       </span>
                     </button>
                   ))}
@@ -188,7 +197,7 @@ export default function Search() {
                 <div className="trend-row">
                   {(categories.length > 0
                     ? categories
-                    : ["Tech", "Sports", "Politics", "Business", "Entertainment", "Article"]
+                    : CATEGORY_LIST.map((item) => item.label)
                   ).map((cat) => (
                     <button
                       key={cat}
@@ -209,7 +218,8 @@ export default function Search() {
 
         {searched && !loading && results.length === 0 && (
           <div className="search-empty">
-            No matching news found. Try a news title, topic keyword, category, or one of the chips above.
+            No matching news found. Try a news title, topic keyword, category,
+            or one of the chips above.
           </div>
         )}
 
@@ -232,12 +242,18 @@ export default function Search() {
                   onClick={() => openResult(n)}
                 >
                   {n.mediaUrl ? (
-                    <img className="search-feature-thumb" src={n.mediaUrl} alt={n.title} />
+                    <img
+                      className="search-feature-thumb"
+                      src={n.mediaUrl}
+                      alt={n.title}
+                    />
                   ) : (
-                    <div className="search-feature-fallback">{n.category || "News"}</div>
+                    <div className="search-feature-fallback">
+                      {getCategoryLabel(n.category)}
+                    </div>
                   )}
                   <div className="search-feature-copy">
-                    <span>{n.category || "General"}</span>
+                    <span>{getCategoryLabel(n.category)}</span>
                     <h3>{n.title}</h3>
                     <small>{formatSearchDate(n.createdAt)}</small>
                   </div>
@@ -256,16 +272,10 @@ export default function Search() {
                   <div>
                     <div className="search-title">{n.title}</div>
                     <div className="search-meta">
-                      {(n.category || "General")} • {formatSearchDate(n.createdAt)}
+                      {getCategoryLabel(n.category)} •{" "}
+                      {formatSearchDate(n.createdAt)}
                     </div>
                   </div>
-                  {n.mediaUrl ? (
-                    <img className="search-thumb" src={n.mediaUrl} alt={n.title} />
-                  ) : (
-                    <div className="search-thumb search-thumb-fallback">
-                      {n.category || "News"}
-                    </div>
-                  )}
                 </button>
               ))}
             </div>

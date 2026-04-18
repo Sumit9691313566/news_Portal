@@ -7,21 +7,19 @@ import MainAdminDashboard from "./pages/MainAdminDashboard";
 import ReporterDashboard from "./pages/ReporterDashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { useEffect } from "react";
-import { promptForSubscription } from "./services/push";
+import { restoreExistingPushSubscription } from "./services/push";
 
 // 👇 NEW PAGES
 import Videos from "./pages/Videos";
 import Search from "./pages/Search";
-import EPaper from "./pages/EPaper";
 import VideoPlayer from "./pages/VideoPlayer";
-import EPaperViewer from "./pages/EPaperViewer";
 import NotificationPanel from "./pages/NotificationPanel";
 import UserNewsSubmit from "./pages/UserNewsSubmit";
 import UserNewsInbox from "./pages/UserNewsInbox";
 
 function App() {
   useEffect(() => {
-    promptForSubscription().catch(() => {});
+    restoreExistingPushSubscription().catch(() => {});
   }, []);
 
   return (
@@ -34,8 +32,6 @@ function App() {
         <Route path="/videos" element={<Videos />} />
         <Route path="/videos/:id" element={<VideoPlayer />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/epaper" element={<EPaper />} />
-        <Route path="/epaper/:id" element={<EPaperViewer />} />
         <Route path="/send-news" element={<UserNewsSubmit />} />
 
         {/* AUTH */}

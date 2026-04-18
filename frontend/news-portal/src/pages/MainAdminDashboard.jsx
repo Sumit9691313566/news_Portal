@@ -5,6 +5,12 @@ import { fetchVisitorSummary } from "../services/analytics";
 import RichTextEditor from "../components/RichTextEditor";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 import "../styles/admin.css";
+import {
+  CATEGORY_LIST as SHARED_CATEGORY_LIST,
+  DEFAULT_CATEGORY,
+  getCategoryLabel,
+  normalizeCategoryValue,
+} from "../utils/categories";
 
 const CATEGORY_LIST = [
   { value: "National", label: "National" },
@@ -37,7 +43,7 @@ export default function MainAdminDashboard() {
   const [editTitle, setEditTitle] = useState("");
   const [editTitleColor, setEditTitleColor] = useState("#1f2937");
   const [editLocation, setEditLocation] = useState("");
-  const [editCategory, setEditCategory] = useState("Tech");
+  const [editCategory, setEditCategory] = useState(DEFAULT_CATEGORY);
   const [editContent, setEditContent] = useState("");
   const [editFeatured, setEditFeatured] = useState(false);
   const [editBreaking, setEditBreaking] = useState(false);
@@ -136,7 +142,7 @@ export default function MainAdminDashboard() {
     setEditTitle(news.title || "");
     setEditTitleColor(news.titleColor || "#1f2937");
     setEditLocation(news.location || "");
-    setEditCategory(news.category || "Tech");
+    setEditCategory(normalizeCategoryValue(news.category || DEFAULT_CATEGORY));
     setEditContent(news.content || "");
     setEditFeatured(Boolean(news.featured));
     setEditBreaking(Boolean(news.breaking));
@@ -499,7 +505,7 @@ export default function MainAdminDashboard() {
               <div>
                 <h3>{news.title}</h3>
                 <small>
-                  {news.category || "All"} | {news.author || news.createdByName || "Admin"} |{" "}
+                  {getCategoryLabel(news.category)} | {news.author || news.createdByName || "Admin"} |{" "}
                   {news.createdByRole || "unknown"} | {new Date(news.createdAt).toLocaleString()}
                 </small>
                 <div className="badges">
@@ -682,7 +688,7 @@ export default function MainAdminDashboard() {
               <div className="form-right">
                 <label className="field-label">Category</label>
                 <select value={editCategory} onChange={(event) => setEditCategory(event.target.value)}>
-                  {CATEGORY_LIST.map((category) => (
+                  {SHARED_CATEGORY_LIST.map((category) => (
                     <option key={category.value} value={category.value}>
                       {category.label}
                     </option>

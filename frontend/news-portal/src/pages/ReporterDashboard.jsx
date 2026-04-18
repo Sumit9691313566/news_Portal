@@ -8,6 +8,12 @@ import {
   stripHtml,
 } from "../utils/richText";
 import { fetchWithTimeout } from "../services/api";
+import {
+  CATEGORY_LIST as SHARED_CATEGORY_LIST,
+  DEFAULT_CATEGORY,
+  getCategoryLabel,
+  normalizeCategoryValue,
+} from "../utils/categories";
 
 const CATEGORY_LIST = [
   { value: "National", label: "राष्ट्रीय" },
@@ -81,7 +87,7 @@ export default function ReporterDashboard() {
   const [title, setTitle] = useState("");
   const [titleColor, setTitleColor] = useState("#1f2937");
   const [location, setLocation] = useState("");
-  const [category, setCategory] = useState("Tech");
+  const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const [status, setStatus] = useState("pending");
   const [editId, setEditId] = useState(null);
   const [blocks, setBlocks] = useState([{ id: Date.now(), type: "text", text: "" }]);
@@ -122,7 +128,7 @@ export default function ReporterDashboard() {
       if (saved?.title) setTitle(saved.title);
       if (saved?.titleColor) setTitleColor(saved.titleColor);
       if (saved?.location) setLocation(saved.location);
-      if (saved?.category) setCategory(saved.category);
+      if (saved?.category) setCategory(normalizeCategoryValue(saved.category));
       if (Array.isArray(saved?.blocks) && saved.blocks.length > 0) {
         setBlocks(
           saved.blocks.map((b) => ({
@@ -144,7 +150,10 @@ export default function ReporterDashboard() {
     return newsList.filter((n) => {
       if (statusTab !== "all" && n.status !== statusTab) return false;
       if (search && !n.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filterCategory !== "All" && n.category !== filterCategory) return false;
+      if (
+        filterCategory !== "All" &&
+        normalizeCategoryValue(n.category) !== filterCategory
+      ) return false;
       if (todayOnly && !isToday(n.createdAt)) return false;
       return true;
     });
@@ -218,7 +227,7 @@ export default function ReporterDashboard() {
     setTitle(n.title);
     setTitleColor(n.titleColor || "#1f2937");
     setLocation(n.location || "");
-    setCategory(n.category);
+    setCategory(normalizeCategoryValue(n.category));
     setStatus(n.status || "pending");
     setBlocks(
       Array.isArray(n.blocks) && n.blocks.length > 0
@@ -238,7 +247,7 @@ export default function ReporterDashboard() {
     setTitle("");
     setTitleColor("#1f2937");
     setLocation("");
-    setCategory("Tech");
+    setCategory(DEFAULT_CATEGORY);
     setStatus("pending");
     setEditId(null);
     setBlocks([{ id: Date.now(), type: "text", text: "" }]);
@@ -484,10 +493,16 @@ export default function ReporterDashboard() {
           <p>{newsList.length}</p>
 
           <div className="category-breakdown">
-            {CATEGORY_LIST.map((c) => (
+            {SHARED_CATEGORY_LIST.map((c) => (
               <div className="cat-row" key={c.value}>
                 <span>{c.label}</span>
-                <strong>{newsList.filter((n) => n.category === c.value).length}</strong>
+                <strong>
+                  {
+                    newsList.filter(
+                      (n) => normalizeCategoryValue(n.category) === c.value
+                    ).length
+                  }
+                </strong>
               </div>
             ))}
           </div>
@@ -532,7 +547,7 @@ export default function ReporterDashboard() {
 
         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
           <option value="All">All</option>
-          {CATEGORY_LIST.map((c) => (
+          {SHARED_CATEGORY_LIST.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
@@ -693,7 +708,7 @@ export default function ReporterDashboard() {
           <div className="form-right">
             <label className="field-label">Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATEGORY_LIST.map((c) => (
+              {SHARED_CATEGORY_LIST.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
@@ -722,7 +737,7 @@ export default function ReporterDashboard() {
                   {title || "News Title Preview"}
                 </div>
                 <div className="preview-meta">
-                  {category} | {status}
+                  {getCategoryLabel(category)} | {status}
                 </div>
                 {location.trim() && (
                   <div className="preview-location">{location.trim()}</div>
@@ -761,7 +776,7 @@ export default function ReporterDashboard() {
               <div>
                 <h3>{n.title}</h3>
                 <small>
-                  {n.category} • {new Date(n.createdAt).toLocaleString()}
+                  {getCategoryLabel(n.category)} • {new Date(n.createdAt).toLocaleString()}
                 </small>
 
                 <div className="badges">

@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
-import { API_FALLBACK_URL, buildApiUrl, fetchWithTimeout } from "../services/api";
+import { fetchWithTimeout } from "../services/api";
 import RichTextEditor from "../components/RichTextEditor";
 import {
   countWordsFromHtml,
   sanitizeRichTextHtml,
   stripHtml,
 } from "../utils/richText";
+import {
+  CATEGORY_LIST as SHARED_CATEGORY_LIST,
+  DEFAULT_CATEGORY,
+  getCategoryLabel,
+  normalizeCategoryValue,
+} from "../utils/categories";
 
 const CATEGORY_LIST = [
   { value: "National", label: "राष्ट्रीय" },
@@ -86,7 +92,7 @@ export default function AdminDashboard() {
   const [title, setTitle] = useState("");
   const [titleColor, setTitleColor] = useState("#1f2937");
   const [location, setLocation] = useState("");
-  const [category, setCategory] = useState("National");
+  const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
   const [breaking, setBreaking] = useState(false);
@@ -95,9 +101,6 @@ export default function AdminDashboard() {
     { id: Date.now(), type: "text", text: "" },
   ]);
   const [showAddMenu, setShowAddMenu] = useState(false);
-  const [epaperTitle, setEpaperTitle] = useState("");
-  const [epaperFile, setEpaperFile] = useState(null);
-  const [epaperList, setEpaperList] = useState([]);
   const [lastSaved, setLastSaved] = useState(null);
   const addArticleRef = useRef(null);
 
@@ -128,7 +131,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadNews();
-    loadEpaper();
     loadDeletedNews();
   }, []);
 
@@ -157,7 +159,7 @@ export default function AdminDashboard() {
       if (saved?.title) setTitle(saved.title);
       if (saved?.titleColor) setTitleColor(saved.titleColor);
       if (saved?.location) setLocation(saved.location);
-      if (saved?.category) setCategory(saved.category);
+      if (saved?.category) setCategory(normalizeCategoryValue(saved.category));
       if (saved?.status) {
         const draftStatus = String(saved.status).toLowerCase();
         setStatus("draft");
@@ -192,7 +194,10 @@ export default function AdminDashboard() {
       if (statusTab !== "all" && n.status !== statusTab) return false;
       if (search && !n.title.toLowerCase().includes(search.toLowerCase()))
         return false;
-      if (filterCategory !== "All" && n.category !== filterCategory)
+      if (
+        filterCategory !== "All" &&
+        normalizeCategoryValue(n.category) !== filterCategory
+      )
         return false;
       if (todayOnly && !isToday(n.createdAt)) return false;
       return true;
@@ -281,7 +286,7 @@ export default function AdminDashboard() {
     setTitle(n.title);
     setTitleColor(n.titleColor || "#1f2937");
     setLocation(n.location || "");
-    setCategory(n.category);
+    setCategory(normalizeCategoryValue(n.category));
     setStatus("draft");
     setFeatured(!!n.featured);
     setBreaking(!!n.breaking);
@@ -316,7 +321,7 @@ export default function AdminDashboard() {
     setTitle("");
     setTitleColor("#1f2937");
     setLocation("");
-    setCategory("National");
+    setCategory(DEFAULT_CATEGORY);
     setStatus("draft");
     setFeatured(false);
     setBreaking(false);
@@ -582,84 +587,6 @@ export default function AdminDashboard() {
     loadDeletedNews();
   };
 
-  const loadEpaper = async () => {
-    const res = await fetchWithTimeout("epaper", {}, 20000);
-    const data = await res.json();
-    setEpaperList(Array.isArray(data) ? data : []);
-  };
-
-  const uploadEpaper = async () => {
-    if (!epaperTitle || !epaperFile) {
-      alert("Title aur file required hai");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("title", epaperTitle);
-    formData.append("file", epaperFile);
-
-    try {
-      const res = await fetchWithTimeout(
-        "epaper",
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        },
-        120000
-      );
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `Upload failed: ${res.status} ${res.statusText}`
-        );
-      }
-
-      setEpaperTitle("");
-      setEpaperFile(null);
-      await loadEpaper();
-      alert("E-paper uploaded successfully");
-    } catch (error) {
-      console.error("EPAPER UPLOAD ERROR:", error);
-      alert(`E-paper upload failed: ${error.message}`);
-    }
-  };
-
-  const deleteEpaper = async (id) => {
-    if (!window.confirm("Delete this e-paper?")) return;
-    try {
-      let res = await fetchWithTimeout(`epaper/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (
-        !res.ok &&
-        API_FALLBACK_URL &&
-        !String(API_FALLBACK_URL).includes("localhost")
-      ) {
-        res = await fetch(buildApiUrl(`epaper/${id}`, API_FALLBACK_URL), {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `Delete failed: ${res.status} ${res.statusText}`
-        );
-      }
-
-      await loadEpaper();
-      alert("E-paper deleted successfully");
-    } catch (error) {
-      console.error("EPAPER DELETE ERROR:", error);
-      alert(`E-paper delete failed: ${error.message}`);
-    }
-  };
-
   /* ================= QUICK TOGGLE ================= */
   return (
     <div className="admin-wrapper">
@@ -704,11 +631,15 @@ export default function AdminDashboard() {
           <p>{newsList.length}</p>
 
           <div className="category-breakdown">
-            {CATEGORY_LIST.map((c) => (
+            {SHARED_CATEGORY_LIST.map((c) => (
               <div className="cat-row" key={c.value}>
                 <span>{c.label}</span>
                 <strong>
-                  {newsList.filter((n) => n.category === c.value).length}
+                  {
+                    newsList.filter(
+                      (n) => normalizeCategoryValue(n.category) === c.value
+                    ).length
+                  }
                 </strong>
               </div>
             ))}
@@ -759,7 +690,7 @@ export default function AdminDashboard() {
           onChange={(e) => setFilterCategory(e.target.value)}
         >
           <option value="All">All</option>
-          {CATEGORY_LIST.map((c) => (
+          {SHARED_CATEGORY_LIST.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
@@ -939,7 +870,7 @@ export default function AdminDashboard() {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
-              {CATEGORY_LIST.map((c) => (
+              {SHARED_CATEGORY_LIST.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
@@ -1037,7 +968,7 @@ export default function AdminDashboard() {
               <div>
                 <h3>{n.title}</h3>
                 <small>
-                  {n.category} â€¢ {new Date(n.createdAt).toLocaleString()}
+                  {getCategoryLabel(n.category)} â€¢ {new Date(n.createdAt).toLocaleString()}
                 </small>
 
                 <div className="badges">
@@ -1115,7 +1046,7 @@ export default function AdminDashboard() {
                 <div>
                   <h3>{n.title}</h3>
                   <small>
-                    {n.category} •{" "}
+                    {getCategoryLabel(n.category)} •{" "}
                     {n.deletedAt
                       ? new Date(n.deletedAt).toLocaleString()
                       : "Deleted"}
@@ -1153,58 +1084,6 @@ export default function AdminDashboard() {
             ))}
             </div>
           </>
-        )}
-      </div>
-
-      {/* ===== EPAPER UPLOAD ===== */}
-      <div className="card">
-        <h2>E-Paper Upload</h2>
-
-        <div className="epaper-upload">
-          <input
-            placeholder="E-Paper Title"
-            value={epaperTitle}
-            onChange={(e) => setEpaperTitle(e.target.value)}
-          />
-          <input
-            type="file"
-            accept=".pdf,image/*"
-            onChange={(e) => setEpaperFile(e.target.files[0])}
-          />
-          <button className="btn primary" onClick={uploadEpaper}>
-            Upload E-Paper
-          </button>
-        </div>
-
-        {epaperList.length === 0 ? (
-          <p className="muted">No e-papers uploaded yet.</p>
-        ) : (
-          <div className="epaper-list">
-            {epaperList.map((e) => (
-              <div key={e._id} className="epaper-item">
-                <div>
-                  <strong>{e.title}</strong>
-                  <div className="muted">{e.fileType?.toUpperCase()}</div>
-                </div>
-                <div className="actions">
-                  <a
-                    href={e.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn small"
-                  >
-                    View
-                  </a>
-                  <button
-                    className="btn danger small"
-                    onClick={() => deleteEpaper(e._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         )}
       </div>
 

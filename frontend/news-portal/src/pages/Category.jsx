@@ -1,15 +1,21 @@
 ﻿﻿import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { FaFacebookF, FaLink, FaShareAlt, FaWhatsapp } from "react-icons/fa";
+import { FaFacebookF, FaLink, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
 import "../styles/userNews.css";
-import { buildApiUrl, fetchWithTimeout } from "../services/api";
+import { fetchWithTimeout } from "../services/api";
+import { registerAndSubscribe } from "../services/push";
 import { trackUniqueNewsView, trackVisit } from "../services/analytics";
 import { sanitizeRichTextHtml, stripHtml } from "../utils/richText";
 import { searchNews } from "../utils/searchNews";
 import { getPublicSiteUrl } from "../utils/siteUrl";
-import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
+import {
+  CATEGORY_LIST,
+  getCategoryLabel,
+  isHighlightedCategory,
+  normalizeCategoryValue,
+} from "../utils/categories";
 
 const formatIssueDate = (value) => {
   const date = new Date(value);
@@ -23,23 +29,6 @@ const formatIssueDate = (value) => {
 
 const resolvePublicSiteUrl = () => {
   return getPublicSiteUrl();
-};
-
-const getCloudinaryPdfPreviewUrl = (epaper) => {
-  if (epaper?.previewImageUrl) return epaper.previewImageUrl;
-  if (!epaper?.fileUrl || epaper.fileType !== "pdf") return "";
-
-  const cloudMatch = epaper.fileUrl.match(/res\.cloudinary\.com\/([^/]+)/i);
-  const cloudName = cloudMatch?.[1];
-  if (!cloudName) return "";
-
-  const rawPublicId = (epaper.publicId || "")
-    .replace(/\.[a-z0-9]+$/i, "")
-    .replace(/^\/+/, "");
-
-  if (!rawPublicId) return "";
-
-  return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1,f_jpg,q_auto,w_1200/${rawPublicId}.jpg`;
 };
 
 export default function Category() {
@@ -57,9 +46,6 @@ export default function Category() {
   /* extra states */
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(5);
-  const [epapers, setEpapers] = useState([]);
-  const [renderedPdfPreviewUrls, setRenderedPdfPreviewUrls] = useState({});
-  const [failedEpaperPreviewIds, setFailedEpaperPreviewIds] = useState({});
   const [subscribeMessage, setSubscribeMessage] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [fullscreenImage, setFullscreenImage] = useState("");
@@ -177,7 +163,7 @@ export default function Category() {
               title: n.title,
               content: textContent,
               location: n.location || "",
-              category: n.category || "All",
+              category: normalizeCategoryValue(n.category || "All"),
               mediaType,
               mediaUrl,
               blocks,
@@ -205,7 +191,6 @@ export default function Category() {
 
   useEffect(() => {
     loadNews();
-    loadEpapers();
     trackVisit().catch(() => {});
   }, []);
 
@@ -274,127 +259,17 @@ export default function Category() {
     );
   };
 
-  const loadEpapers = async () => {
-    try {
-      const res = await fetchWithTimeout("epaper", {}, 20000);
-      const data = await res.json();
-      setEpapers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      try {
-        const retryRes = await fetchWithTimeout("epaper", {}, 30000);
-        const retryData = await retryRes.json();
-        setEpapers(Array.isArray(retryData) ? retryData : []);
-      } catch (retryErr) {
-        console.error("Failed to load epapers", retryErr || err);
-        setEpapers([]);
-      }
-    }
-  };
-
-  const markEpaperPreviewFailed = (epaperId) => {
-    if (!epaperId) return;
-    setFailedEpaperPreviewIds((prev) => {
-      if (prev[epaperId]) return prev;
-      return { ...prev, [epaperId]: true };
-    });
-  };
-
-  useEffect(() => {
-    const pdfEpapers = epapers.filter(
-      (epaper) => epaper.fileType === "pdf" && epaper._id
-    );
-
-    if (pdfEpapers.length === 0) {
-      setRenderedPdfPreviewUrls({});
-      return undefined;
-    }
-
-    let active = true;
-
-    const renderPdfPreviews = async () => {
-      try {
-        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-
-        const entries = await Promise.all(
-          pdfEpapers.map(async (epaper) => {
-            const candidateUrls = [
-              buildApiUrl(`epaper/${epaper._id}/file`),
-              epaper.fileUrl,
-            ].filter(Boolean);
-
-            for (const url of candidateUrls) {
-              try {
-                const response = await fetch(url, { mode: "cors" });
-                if (!response.ok) continue;
-
-                const pdfData = new Uint8Array(await response.arrayBuffer());
-                const loadingTask = pdfjs.getDocument({ data: pdfData });
-                const pdf = await loadingTask.promise;
-                const page = await pdf.getPage(1);
-                const baseViewport = page.getViewport({ scale: 1 });
-                const viewport = page.getViewport({
-                  scale: 760 / baseViewport.width,
-                });
-
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d", { alpha: false });
-                canvas.width = Math.ceil(viewport.width);
-                canvas.height = Math.ceil(viewport.height);
-
-                await page.render({
-                  canvasContext: context,
-                  viewport,
-                }).promise;
-
-                return [epaper._id, canvas.toDataURL("image/jpeg", 0.92)];
-              } catch {
-                // Try next candidate URL.
-              }
-            }
-
-            return [epaper._id, ""];
-          })
-        );
-
-        if (active) {
-          setRenderedPdfPreviewUrls(Object.fromEntries(entries));
-        }
-      } catch (error) {
-        console.error("Failed to render PDF previews", error);
-        if (active) {
-          setRenderedPdfPreviewUrls({});
-        }
-      }
-    };
-
-    renderPdfPreviews();
-
-    return () => {
-      active = false;
-    };
-  }, [epapers]);
-
   /* ================= FILTER ================= */
-  const categoryAlias = {
-    राष्ट्रीय: "National",
-    बिज़नेस: "Business",
-    राजनीति: "Politics",
-    अपराध: "Crime",
-    दुनिया: "World",
-    आर्टिकल: "Article",
-  };
-
-  const normalizedActiveCategory =
-    categoryAlias[activeCategory] || activeCategory;
+  const normalizedActiveCategory = normalizeCategoryValue(activeCategory);
 
   const filteredNews =
     normalizedActiveCategory === "All"
       ? allNews
       : allNews.filter(
           (n) =>
-            n.category &&
-            n.category.toLowerCase() === normalizedActiveCategory.toLowerCase()
+            normalizeCategoryValue(n.category) &&
+            normalizeCategoryValue(n.category).toLowerCase() ===
+              normalizedActiveCategory.toLowerCase()
         );
 
   const videoNews = allNews.filter((n) => n.mediaType === "video");
@@ -404,7 +279,7 @@ export default function Category() {
     mediaUrl: news.mediaUrl,
     title: news.title,
     summary: news.content || "",
-    category: news.category || "Article",
+    category: getCategoryLabel(news.category),
     createdAt: news.createdAt,
     newsId: news._id || news.id,
   }));
@@ -523,32 +398,6 @@ export default function Category() {
     window.open(facebookUrl, "_blank", "noopener,noreferrer");
   };
 
-  const shareEpaper = async (epaper) => {
-    const epaperId = epaper?._id;
-    if (!epaperId || typeof window === "undefined") return;
-
-    const shareUrl = new URL(`/epaper/${epaperId}`, resolvePublicSiteUrl()).toString();
-    const shareTitle = epaper?.title || "E-Paper";
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: shareTitle,
-          text: shareTitle,
-          url: shareUrl,
-        });
-        showShareMessage("E-paper shared");
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-        showShareMessage("E-paper link copied");
-      } else {
-        showShareMessage("Share unavailable");
-      }
-    } catch {
-      showShareMessage("Share cancelled");
-    }
-  };
-
   const renderShareActions = (news) => (
     <div className="share-actions share-actions-card">
       <button
@@ -593,8 +442,7 @@ export default function Category() {
   const isNewsDetailView =
     isMobileView &&
     Boolean(selectedNews) &&
-    view !== "video" &&
-    view !== "epaper";
+    view !== "video";
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -649,20 +497,12 @@ export default function Category() {
     const days = Math.floor(hours / 24);
     return `${days} दिन पहले`;
   };
-  const navCategories = [
-    "राष्ट्रीय",
-    "बिज़नेस",
-    "राजनीति",
-    "अपराध",
-    "दुनिया",
-    "आर्टिकल",
-  ];
+  const navCategories = CATEGORY_LIST.map((item) => item.label);
 
   const mobileActionsBase = [
     { key: "home", label: "🏠 होम", view: "home" },
     { key: "video", label: "▶️ वीडियो", view: "video" },
     { key: "search", label: "🔍 सर्च", view: "search" },
-    { key: "epaper", label: "🗞️ ई-पेपर", view: "epaper" },
     { key: "user-news", label: "📨 खबर भेजें", view: "user-news" },
   ];
   const mobileActions = trendingAvailable
@@ -694,7 +534,7 @@ export default function Category() {
           url: firstVideo.mediaUrl,
           title: firstVideo.title,
           summary: firstVideo.summary || "",
-          category: firstVideo.category || "Article",
+          category: getCategoryLabel(firstVideo.category),
           createdAt: firstVideo.createdAt,
           newsId: firstVideo.newsId,
         },
@@ -808,9 +648,12 @@ export default function Category() {
       );
     }
 
-    const pageTitle = activeCategory === "All" ? "Latest Hindi News & Breaking News" : `${activeCategory} News`;
-    const description = `${siteName} (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on politics, business, tech, sports, and more.`;
-    const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Latest Hindi News, Breaking News, आज की ताजा खबर, हिंदी समाचार, Taza Khabar, E-Paper, ${activeCategory} News, Garud News, India News in Hindi`;
+      const pageTitle =
+        activeCategory === "All"
+          ? "Latest Hindi News & Breaking News"
+          : `${getCategoryLabel(activeCategory)} News`;
+    const description = `${siteName} (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on crime, struggle stories, corruption, desh-videsh, and more.`;
+    const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Latest Hindi News, Breaking News, आज की ताजा खबर, हिंदी समाचार, Taza Khabar, ${getCategoryLabel(activeCategory)} News, Garud News, India News in Hindi`;
     const pageUrl =
       activeCategory === "All"
         ? `${siteUrl}/`
@@ -859,9 +702,16 @@ export default function Category() {
                   <button
                     type="button"
                     className="subscribe-btn"
-                    onClick={() => {
-                      setSubscribeMessage("Coming soon");
-                      window.setTimeout(() => setSubscribeMessage(""), 2200);
+                    onClick={async () => {
+                      try {
+                        await registerAndSubscribe();
+                        setSubscribeMessage("Notifications enabled");
+                      } catch (error) {
+                        setSubscribeMessage(
+                          error?.message || "Notification enable nahi ho paaya"
+                        );
+                      }
+                      window.setTimeout(() => setSubscribeMessage(""), 2600);
                     }}
                   >
                     Subscribe
@@ -885,6 +735,8 @@ export default function Category() {
                     type="button"
                     className={`nav-item ${
                       activeCategory === item ? "nav-item-active" : ""
+                    } ${
+                      isHighlightedCategory(item) ? "nav-item-priority" : ""
                     }`}
                     onClick={() => {
                       setSelectedNews(null);
@@ -945,11 +797,6 @@ export default function Category() {
                 🔍 सर्च
               </li>
               <li
-                onClick={() => handleViewChange("epaper")}
-              >
-                🗞️ ई-पेपर
-              </li>
-              <li
                 className="menu-item-highlight menu-item-highlight-news"
                 onClick={() => handleViewChange("user-news")}
               >
@@ -990,7 +837,7 @@ export default function Category() {
 
         <div
           className={`content-grid ${
-            view === "video" || view === "epaper" || view === "search"
+            view === "video" || view === "search"
               ? "content-grid-reading"
               : ""
           }`}
@@ -1133,7 +980,7 @@ export default function Category() {
                             url: news.mediaUrl,
                             title: news.title,
                             summary: news.content || "",
-                            category: news.category || "Article",
+                            category: getCategoryLabel(news.category),
                             createdAt: news.createdAt,
                             newsId: news._id || news.id,
                           },
@@ -1243,77 +1090,6 @@ export default function Category() {
               </>
             )}
 
-            {view === "epaper" && (
-              <>
-                {epapers.length === 0 && <p>No e-paper uploaded yet.</p>}
-                <div className="epaper-preview-grid">
-                  {epapers.map((e) => {
-                    const openEpaper = () =>
-                      navigate(`/epaper/${e._id}`, {
-                        state: { epaper: e },
-                      });
-
-                    return (
-                    <article
-                      key={e._id}
-                      className="epaper-preview-card"
-                      onClick={openEpaper}
-                      onDoubleClick={openEpaper}
-                    >
-                      <div className="epaper-preview-body">
-                        <h3>{e.title}</h3>
-                      </div>
-                      <div className="epaper-preview-thumb">
-                        {e.fileType === "image" &&
-                        !failedEpaperPreviewIds[e._id] ? (
-                          <img
-                            src={e.previewImageUrl || e.fileUrl}
-                            alt={e.title}
-                            onError={() => markEpaperPreviewFailed(e._id)}
-                          />
-                        ) : renderedPdfPreviewUrls[e._id] ? (
-                          <img
-                            src={renderedPdfPreviewUrls[e._id]}
-                            alt={`${e.title} preview`}
-                          />
-                        ) : getCloudinaryPdfPreviewUrl(e) &&
-                          !failedEpaperPreviewIds[e._id] ? (
-                          <img
-                            src={getCloudinaryPdfPreviewUrl(e)}
-                            alt={`${e.title} preview`}
-                            onError={() => markEpaperPreviewFailed(e._id)}
-                          />
-                        ) : (
-                          <div className="epaper-preview-fallback">
-                            <span className="epaper-fallback-badge">E-PAPER</span>
-                            <strong>{e.title}</strong>
-                            <small>
-                              {formatIssueDate(e.createdAt) || "Latest edition"}
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                      <div className="epaper-preview-meta">
-                        <span>{formatIssueDate(e.createdAt) || "Latest edition"}</span>
-                        <button
-                          type="button"
-                          className="epaper-preview-share"
-                          aria-label={`Share ${e.title}`}
-                          title="Share e-paper"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            shareEpaper(e);
-                          }}
-                        >
-                          <FaShareAlt />
-                        </button>
-                      </div>
-                    </article>
-                  )})}
-                </div>
-              </>
-            )}
-
             {view === "trending" && !selectedNews && (
               <>
                 <div className="trend-head">
@@ -1389,7 +1165,7 @@ export default function Category() {
               </>
             )}
 
-            {view !== "video" && view !== "epaper" && selectedNews && (
+            {view !== "video" && selectedNews && (
               <div className="news-full">
                 <button
                   className="back-btn"
@@ -1436,7 +1212,7 @@ export default function Category() {
                             url: selectedNews.mediaUrl,
                             title: selectedNews.title,
                             summary: selectedNews.content || "",
-                            category: selectedNews.category || "Article",
+                            category: getCategoryLabel(selectedNews.category),
                             createdAt: selectedNews.createdAt,
                             newsId: selectedNews._id || selectedNews.id,
                           },
@@ -1485,7 +1261,7 @@ export default function Category() {
                                   url: b.url,
                                   title: selectedNews.title,
                                   summary: selectedNews.content || "",
-                                  category: selectedNews.category || "Article",
+                                  category: getCategoryLabel(selectedNews.category),
                                   createdAt: selectedNews.createdAt,
                                   newsId: selectedNews._id || selectedNews.id,
                                 },
@@ -1581,7 +1357,6 @@ export default function Category() {
 
           {/* ===== RIGHT RAIL ===== */}
           {view !== "video" &&
-            view !== "epaper" &&
             view !== "search" && (
             <aside className="right-rail">
               <div className="suggest-card">
