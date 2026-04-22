@@ -80,12 +80,18 @@ const parseBlocks = (rawBlocks) => {
 
 const stripHtml = (html = "") =>
   (html || "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|li|h1|h2|h3|h4|h5|h6|blockquote)>/gi, "\n")
     .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/gi, " ")
+    .replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+const toPlainTitle = (value = "") => stripHtml(value).replace(/\s+/g, " ").trim();
 
 const contentFromBlocks = (blocks) =>
   blocks
@@ -120,7 +126,7 @@ const sendPublishedNewsNotification = async (news) => {
 
   const payload = {
     title: "Garud Samachar",
-    message: news.title || "Nayi news publish hui hai",
+    message: toPlainTitle(news.title) || "Nayi news publish hui hai",
     image: getNotificationImage(news),
     url: buildFrontendNewsUrl(news._id),
     tag: `news-${news._id}`,
@@ -248,6 +254,7 @@ export const createNews = async (req, res) => {
       mediaResourceType,
       status: resolveCreateStatus(req, status),
       firstPublishedAt: null,
+      contentUpdatedAt: null,
       featured: toBoolean(featured),
       breaking: toBoolean(breaking),
       notify: toBoolean(notify),
@@ -405,6 +412,7 @@ export const updateNews = async (req, res) => {
       news,
       wasPublishedBefore
     );
+    news.contentUpdatedAt = new Date();
 
     await news.save();
 
@@ -570,7 +578,7 @@ export const incrementViews = async (req, res) => {
     const newsId = req.params.id;
     const visitorId = String(req.body?.visitorId || "").trim();
 
-    const news = await News.findById(newsId);
+    const news = await News.findById(newsId).lean();
     if (!news) {
       return res.status(404).json({ message: "News not found" });
     }
@@ -590,10 +598,14 @@ export const incrementViews = async (req, res) => {
       viewedAt: new Date(),
     });
 
-    news.views = (news.views || 0) + 1;
-    await news.save();
+    const nextViews = (news.views || 0) + 1;
+    await News.updateOne(
+      { _id: newsId },
+      { $set: { views: nextViews } },
+      { timestamps: false }
+    );
 
-    res.json({ views: news.views, unique: true });
+    res.json({ views: nextViews, unique: true });
   } catch (error) {
     console.error("INCREMENT VIEWS ERROR:", error);
     res.status(500).json({ message: "Server error" });

@@ -1,17 +1,29 @@
 /* Service Worker for handling push events */
-self.addEventListener('push', function (event) {
+const stripHtml = (value) =>
+  String(value || "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+self.addEventListener("push", function (event) {
   let payload = {};
   try {
     payload = event.data ? event.data.json() : {};
   } catch (e) {
-    payload = { title: 'गरुड़ समाचार', message: 'नया समाचार', url: '/' };
+    payload = { title: "Garud Samachar", message: "Naya samachar", url: "/" };
   }
 
-  const title = payload.title || 'गरुड़ समाचार';
+  const title = stripHtml(payload.title || "Garud Samachar");
   const options = {
-    body: payload.message || payload.body || '',
+    body: stripHtml(payload.message || payload.body || ""),
     data: {
-      url: payload.url || '/',
+      url: payload.url || "/",
       newsId: payload.newsId || null,
     },
     tag: payload.tag || undefined,
@@ -25,16 +37,16 @@ self.addEventListener('push', function (event) {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   const data = event.notification.data || {};
-  const url = data.url || '/';
+  const url = data.url || "/";
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (clientList) {
       for (const client of clientList) {
-        if ('focus' in client) {
+        if ("focus" in client) {
           client.focus();
-          if ('navigate' in client) {
+          if ("navigate" in client) {
             return client.navigate(url);
           }
           return client;

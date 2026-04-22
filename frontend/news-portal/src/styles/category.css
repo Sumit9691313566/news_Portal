@@ -1659,6 +1659,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 16px;
+  margin-top: 6px;
   margin-bottom: 8px;
 }
 
@@ -1748,7 +1749,7 @@ body {
 }
 
 .full-content p {
-  margin: 0 0 16px;
+  margin: 0 0 10px;
   text-align: justify;
   text-justify: inter-word;
   word-break: normal;
@@ -1756,7 +1757,7 @@ body {
 }
 
 .rich-output p {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   text-align: justify;
   text-justify: inter-word;
   word-break: normal;

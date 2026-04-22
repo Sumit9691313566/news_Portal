@@ -42,13 +42,29 @@ const formatArticleDateTime = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  return date.toLocaleString("hi-IN", {
+  const datePart = date.toLocaleDateString("hi-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
+  });
+  const timePart = date.toLocaleTimeString("hi-IN", {
     hour: "numeric",
     minute: "2-digit",
+    hour12: false,
   });
+
+  return `${datePart}, ${timePart} बजे`;
+};
+
+const shouldShowUpdatedAt = (publishedValue, updatedValue) => {
+  const published = new Date(publishedValue);
+  const updated = new Date(updatedValue);
+
+  if (Number.isNaN(published.getTime()) || Number.isNaN(updated.getTime())) {
+    return false;
+  }
+
+  return updated.getTime() - published.getTime() > 60 * 1000;
 };
 
 const resolvePublicSiteUrl = () => {
@@ -197,7 +213,7 @@ export default function Category() {
               featured: n.featured || false,
               views: n.views || 0,
               firstPublishedAt: n.firstPublishedAt || null,
-              updatedAt: n.updatedAt || n.createdAt,
+              updatedAt: n.contentUpdatedAt || null,
             };
           })
         : [];
@@ -1243,18 +1259,23 @@ export default function Category() {
                       )}
                     </time>
                   </small>
-                  <small>
-                    अपडेट:{" "}
-                    <time
-                      dateTime={toIsoDate(
-                        selectedNews.updatedAt || selectedNews.createdAt
-                      )}
-                    >
-                      {formatArticleDateTime(
-                        selectedNews.updatedAt || selectedNews.createdAt
-                      )}
-                    </time>
-                  </small>
+                  {shouldShowUpdatedAt(
+                    selectedNews.firstPublishedAt || selectedNews.createdAt,
+                    selectedNews.updatedAt || selectedNews.createdAt
+                  ) && (
+                    <small>
+                      अपडेट:{" "}
+                      <time
+                        dateTime={toIsoDate(
+                          selectedNews.updatedAt || selectedNews.createdAt
+                        )}
+                      >
+                        {formatArticleDateTime(
+                          selectedNews.updatedAt || selectedNews.createdAt
+                        )}
+                      </time>
+                    </small>
+                  )}
                 </div>
                 {selectedNews.location && (
                   <div className="news-location">{selectedNews.location}</div>

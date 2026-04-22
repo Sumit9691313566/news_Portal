@@ -201,13 +201,14 @@ export const sanitizeTitleHtml = (html = "") => {
 
 export const stripHtml = (html = "") =>
   (html || "")
-    .replace(BR_TAGS, "\n")
-    .replace(BLOCK_BREAK_TAGS, "\n")
-    .replace(ALL_TAGS, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
+    .replace(BR_TAGS, "\n")
+    .replace(BLOCK_BREAK_TAGS, "\n")
+    .replace(ALL_TAGS, " ")
+    .replace(ALL_TAGS, " ")
     .replace(/\s+/g, " ")
     .trim();
 

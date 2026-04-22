@@ -553,6 +553,16 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
           if (isRedo) {
             e.preventDefault();
             redoHistory();
+            return;
+          }
+
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (e.shiftKey) {
+              applyCommand("insertLineBreak");
+            } else {
+              applyCommand("insertParagraph");
+            }
           }
         }}
         onPaste={(e) => {
