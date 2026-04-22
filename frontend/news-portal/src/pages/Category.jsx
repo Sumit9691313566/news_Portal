@@ -56,17 +56,6 @@ const formatArticleDateTime = (value) => {
   return `${datePart}, ${timePart} बजे`;
 };
 
-const shouldShowUpdatedAt = (publishedValue, updatedValue) => {
-  const published = new Date(publishedValue);
-  const updated = new Date(updatedValue);
-
-  if (Number.isNaN(published.getTime()) || Number.isNaN(updated.getTime())) {
-    return false;
-  }
-
-  return updated.getTime() - published.getTime() > 60 * 1000;
-};
-
 const resolvePublicSiteUrl = () => {
   return getPublicSiteUrl();
 };
@@ -1259,23 +1248,6 @@ export default function Category() {
                       )}
                     </time>
                   </small>
-                  {shouldShowUpdatedAt(
-                    selectedNews.firstPublishedAt || selectedNews.createdAt,
-                    selectedNews.updatedAt || selectedNews.createdAt
-                  ) && (
-                    <small>
-                      अपडेट:{" "}
-                      <time
-                        dateTime={toIsoDate(
-                          selectedNews.updatedAt || selectedNews.createdAt
-                        )}
-                      >
-                        {formatArticleDateTime(
-                          selectedNews.updatedAt || selectedNews.createdAt
-                        )}
-                      </time>
-                    </small>
-                  )}
                 </div>
                 {selectedNews.location && (
                   <div className="news-location">{selectedNews.location}</div>
