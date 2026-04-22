@@ -1,4 +1,4 @@
-# VPS Beginner Guide For `garudsamachar.garudstacks.tech`
+# VPS Beginner Guide For `garudsamachar.in`
 
 This project can run fully on your KVM4 VPS without Railway or Vercel.
 
@@ -10,7 +10,7 @@ This project can run fully on your KVM4 VPS without Railway or Vercel.
 
 ## Final architecture
 
-- Domain: `garudsamachar.garudstacks.tech`
+- Domain: `garudsamachar.in`
 - Frontend: static Vite build served by Nginx
 - Backend: Node.js app on port `3001`
 - Process manager: PM2
@@ -41,7 +41,7 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 JWT_SECRET=replace_with_a_long_random_secret
-FRONTEND_URL=https://garudsamachar.garudstacks.tech
+FRONTEND_URL=https://garudsamachar.in
 MONGO_DNS_SERVERS=8.8.8.8,1.1.1.1
 ```
 

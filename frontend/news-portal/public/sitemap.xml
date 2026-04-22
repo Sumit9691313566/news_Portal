@@ -1,22 +1,22 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://garudsamachar.garudstacks.tech/</loc>
+    <loc>https://garudsamachar.in/</loc>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://garudsamachar.garudstacks.tech/videos</loc>
+    <loc>https://garudsamachar.in/videos</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://garudsamachar.garudstacks.tech/epaper</loc>
+    <loc>https://garudsamachar.in/epaper</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://garudsamachar.garudstacks.tech/send-news</loc>
+    <loc>https://garudsamachar.in/send-news</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

@@ -14,4 +14,4 @@ Disallow: /login
 Allow: /search
 
 # Point to the sitemap
-Sitemap: https://garudsamachar.garudstacks.tech/sitemap.xml
+Sitemap: https://garudsamachar.in/sitemap.xml

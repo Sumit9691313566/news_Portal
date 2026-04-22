@@ -24,5 +24,5 @@ PORT=3001
 NODE_ENV=production
 MONGO_URI=your_mongodb_uri
 MONGODB_URI=your_mongodb_uri
-FRONTEND_URL=https://garudsamachar.garudstacks.tech
+FRONTEND_URL=https://garudsamachar.in
 ```
