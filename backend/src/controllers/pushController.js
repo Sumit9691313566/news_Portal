@@ -1,14 +1,51 @@
 import { getVapidPublicKey, saveSubscription, sendNotificationToAll } from "../utils/push.js";
 
+const decodeHtmlEntities = (value = "") => {
+  let decoded = String(value || "");
+  const entityMap = {
+    nbsp: " ",
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    "#39": "'",
+  };
+
+  for (let i = 0; i < 3; i += 1) {
+    const next = decoded.replace(
+      /&(#x?[0-9a-f]+|[a-z]+);/gi,
+      (match, entity) => {
+        const key = String(entity || "").toLowerCase();
+        if (entityMap[key] !== undefined) return entityMap[key];
+        if (key.startsWith("#x")) {
+          const code = Number.parseInt(key.slice(2), 16);
+          return Number.isFinite(code) ? String.fromCharCode(code) : match;
+        }
+        if (key.startsWith("#")) {
+          const code = Number.parseInt(key.slice(1), 10);
+          return Number.isFinite(code) ? String.fromCharCode(code) : match;
+        }
+        return match;
+      }
+    );
+
+    if (next === decoded) break;
+    decoded = next;
+  }
+
+  return decoded;
+};
+
 const stripHtml = (value = "") =>
-  String(value || "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
+  decodeHtmlEntities(value)
     .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/(p|div|li|h1|h2|h3|h4|h5|h6|blockquote|span)>/gi, " ")
     .replace(/<[^>]*>/g, " ")
-    .replace(/<[^>]*>/g, " ")
+    .replace(/style\s*=\s*"[^"]*"/gi, " ")
+    .replace(/style\s*=\s*'[^']*'/gi, " ")
+    .replace(/<\/?span[^>]*$/gi, " ")
+    .replace(/<[^>]*$/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 

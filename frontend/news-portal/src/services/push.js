@@ -19,7 +19,10 @@ const getServiceWorkerRegistration = async () => {
     throw new Error("Push notifications are not supported on this device.");
   }
 
-  await navigator.serviceWorker.register("/sw.js");
+  const registration = await navigator.serviceWorker.register("/sw.js", {
+    updateViaCache: "none",
+  });
+  await registration.update().catch(() => {});
   return navigator.serviceWorker.ready;
 };
 
@@ -106,4 +109,3 @@ export const promptForSubscription = async () => {
 
   return restoreExistingPushSubscription();
 };
-

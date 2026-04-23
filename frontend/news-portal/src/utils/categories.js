@@ -19,16 +19,16 @@ const LEGACY_CATEGORY_MAP = {
   सभी: "All",
   Crime: "अपराध",
   crime: "अपराध",
-  National: "राष्ट्रीय",
-  national: "राष्ट्रीय",
-  Business: "बिज़नेस",
-  business: "बिज़नेस",
-  Politics: "राजनीति",
-  politics: "राजनीति",
-  World: "दुनिया",
-  world: "दुनिया",
-  Article: "आर्टिकल",
-  article: "आर्टिकल",
+  National: "देश / विदेश",
+  national: "देश / विदेश",
+  Business: "गरुड़ विशेष",
+  business: "गरुड़ विशेष",
+  Politics: "देश / विदेश",
+  politics: "देश / विदेश",
+  World: "देश / विदेश",
+  world: "देश / विदेश",
+  Article: "गरुड़ विशेष",
+  article: "गरुड़ विशेष",
 };
 
 const ALL_KNOWN_CATEGORY_MAP = {
@@ -46,6 +46,177 @@ const ALL_KNOWN_CATEGORY_MAP = {
   "आत्म वाणी": "आत्म वाणी",
 };
 
+const CATEGORY_TITLE_COLOR_MAP = {
+  अपराध: "#d32f2f",
+  "संघर्ष से शिखर": "#e87722",
+  भ्रष्टाचार: "#c41c3b",
+  "देश / विदेश": "#1976d2",
+  "रियल हीरो": "#7b1fa2",
+  "गरुड़ विशेष": "#d84315",
+  सतर्क: "#f57c00",
+  ज्योतिषी: "#6f42c1",
+  "आत्म वाणी": "#0688b8",
+  All: "#212121",
+};
+
+const CATEGORY_INFERENCE_RULES = [
+  {
+    category: "अपराध",
+    keywords: [
+      "हत्या",
+      "लूट",
+      "डकैती",
+      "गिरफ्तार",
+      "आरोपी",
+      "अपराध",
+      "चोरी",
+      "हमला",
+      "मारपीट",
+      "बलात्कार",
+      "हत्याकांड",
+      "गोलीकांड",
+      "एफआईआर",
+      "थाना",
+      "पुलिस ने पकड़ा",
+    ],
+  },
+  {
+    category: "भ्रष्टाचार",
+    keywords: [
+      "भ्रष्टाचार",
+      "घोटाला",
+      "वेयरहाउस",
+      "रिश्वत",
+      "गड़बड़ी",
+      "अनियमितता",
+      "भ्रष्ट",
+      "सवाल",
+      "जांच",
+      "घपला",
+      "कमीशन",
+      "आरोप",
+    ],
+  },
+  {
+    category: "सतर्क",
+    keywords: [
+      "सतर्क",
+      "चेतावनी",
+      "अलर्ट",
+      "सुरक्षा",
+      "चूक",
+      "खतरा",
+      "बचाव",
+      "सावधान",
+      "रोक",
+      "प्रतिबंध",
+      "निलंबित",
+      "सस्पेंड",
+    ],
+  },
+  {
+    category: "रियल हीरो",
+    keywords: [
+      "सम्मानित",
+      "मदद",
+      "बचाई",
+      "बचाया",
+      "सेवा",
+      "हीरो",
+      "उदाहरण",
+      "प्रेरणा",
+      "सराहनीय",
+      "बहादुरी",
+      "उपलब्धि",
+    ],
+  },
+  {
+    category: "गरुड़ विशेष",
+    keywords: [
+      "बाल संसद",
+      "विद्यालय",
+      "स्कूल",
+      "छात्र",
+      "छात्रा",
+      "बच्चे",
+      "बेटी",
+      "संकल्प",
+      "प्रतियोगिता",
+      "सफलता",
+      "मेहनत",
+      "संघर्ष",
+      "कहानी",
+      "युवा",
+      "विशेष",
+      "खुलासा",
+      "रिपोर्ट",
+      "विश्लेषण",
+      "गहराई",
+      "मुद्दा",
+      "एक्सक्लूसिव",
+      "पड़ताल",
+    ],
+  },
+  {
+    category: "ज्योतिषी",
+    keywords: [
+      "राशिफल",
+      "ज्योतिष",
+      "ग्रह",
+      "नक्षत्र",
+      "कुंडली",
+      "मेष",
+      "वृषभ",
+      "मिथुन",
+      "कर्क",
+      "सिंह",
+      "कन्या",
+      "तुला",
+      "वृश्चिक",
+      "धनु",
+      "मकर",
+      "कुंभ",
+      "मीन",
+    ],
+  },
+  {
+    category: "आत्म वाणी",
+    keywords: [
+      "आध्यात्म",
+      "प्रवचन",
+      "धर्म",
+      "मंदिर",
+      "पूजा",
+      "भक्ति",
+      "साधु",
+      "संत",
+      "महात्मा",
+      "कथा",
+      "आरती",
+    ],
+  },
+  {
+    category: "देश / विदेश",
+    keywords: [
+      "मुख्यमंत्री",
+      "प्रधानमंत्री",
+      "मंत्री",
+      "सरकार",
+      "हाईकोर्ट",
+      "अदालत",
+      "देश",
+      "विदेश",
+      "भारत",
+      "राजनीति",
+      "आदेश",
+      "नियुक्ति",
+      "विधानसभा",
+      "लोकसभा",
+      "कलेक्टर",
+    ],
+  },
+];
+
 export const normalizeCategoryValue = (value) => {
   const cleaned = String(value || "").trim();
   return ALL_KNOWN_CATEGORY_MAP[cleaned] || cleaned;
@@ -57,7 +228,36 @@ export const getCategoryLabel = (value) => {
   return normalized || "समाचार";
 };
 
+export const getCategoryTitleColor = (value) => {
+  const normalized = normalizeCategoryValue(value);
+  return CATEGORY_TITLE_COLOR_MAP[normalized] || "#7f1d1d";
+};
+
+export const inferCategoryFromNews = ({ title = "", content = "" } = {}) => {
+  const haystack = `${String(title || "")} ${String(content || "")}`.toLowerCase();
+  if (!haystack.trim()) return "";
+
+  for (const rule of CATEGORY_INFERENCE_RULES) {
+    if (rule.keywords.some((keyword) => haystack.includes(keyword.toLowerCase()))) {
+      return rule.category;
+    }
+  }
+
+  return "";
+};
+
+export const resolveNewsCategory = ({ title = "", content = "", category = "" } = {}) => {
+  const inferred = inferCategoryFromNews({ title, content });
+  if (inferred) return inferred;
+
+  const normalized = normalizeCategoryValue(category);
+  if (normalized === "संघर्ष से शिखर") return "गरुड़ विशेष";
+  if (normalized && normalized !== "All") return normalized;
+
+  return "गरुड़ विशेष";
+};
+
 export const isHighlightedCategory = (value) => {
   const normalized = normalizeCategoryValue(value);
-  return normalized === "अपराध" || normalized === "संघर्ष से शिखर";
+  return normalized === "अपराध" || normalized === "गरुड़ विशेष";
 };

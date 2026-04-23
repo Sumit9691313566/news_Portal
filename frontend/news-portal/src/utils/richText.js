@@ -253,16 +253,37 @@ export const getPlainTextTitle = (html = "") => stripHtml(sanitizeTitleHtml(html
 const isSafeColor = (value = "") =>
   /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(value || "").trim());
 
-export const buildStyledTitleHtml = (html = "", titleColor = "") => {
-  const safeTitleHtml = sanitizeTitleHtml(html);
-  const fallbackText = escapeHtml(getPlainTextTitle(html));
-  const safeColor = isSafeColor(titleColor) ? String(titleColor).trim() : "";
-  const content = safeTitleHtml || fallbackText;
+const NEUTRAL_TITLE_COLORS = new Set(["#1f2937", "#111827"]);
+
+export const buildStyledTitleHtml = (
+  html = "",
+  titleColor = "",
+  fallbackColor = ""
+) => {
+  const safeTitleText = getPlainTextTitle(html);
+  const fallbackText = escapeHtml(safeTitleText);
+  const manualColor = isSafeColor(titleColor) ? String(titleColor).trim() : "";
+  const categoryColor = isSafeColor(fallbackColor) ? String(fallbackColor).trim() : "";
+  const safeColor =
+    manualColor && !NEUTRAL_TITLE_COLORS.has(manualColor.toLowerCase())
+      ? manualColor
+      : categoryColor;
+  const content = fallbackText;
 
   if (!content) return "";
   if (!safeColor) return content;
 
-  return `<span style="color: ${safeColor};">${content}</span>`;
+  const colonIndex = safeTitleText.indexOf(":");
+  if (colonIndex >= 0) {
+    const beforeColon = escapeHtml(safeTitleText.slice(0, colonIndex + 1).trim());
+    const afterColon = escapeHtml(safeTitleText.slice(colonIndex + 1).trim());
+
+    if (afterColon) {
+      return `<span style="color: ${safeColor}; font-weight: 900;">${beforeColon}</span> <span style="color: #111111; font-weight: 900;">${afterColon}</span>`;
+    }
+  }
+
+  return `<span style="color: ${safeColor}; font-weight: 900;">${content}</span>`;
 };
 
 export const countWordsFromHtml = (html = "") => {

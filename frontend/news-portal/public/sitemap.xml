@@ -11,6 +11,51 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%B8%E0%A4%AD%E0%A5%80</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%85%E0%A4%AA%E0%A4%B0%E0%A4%BE%E0%A4%A7</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%AD%E0%A5%8D%E0%A4%B0%E0%A4%B7%E0%A5%8D%E0%A4%9F%E0%A4%BE%E0%A4%9A%E0%A4%BE%E0%A4%B0</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%A6%E0%A5%87%E0%A4%B6%20%2F%20%E0%A4%B5%E0%A4%BF%E0%A4%A6%E0%A5%87%E0%A4%B6</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%B0%E0%A4%BF%E0%A4%AF%E0%A4%B2%20%E0%A4%B9%E0%A5%80%E0%A4%B0%E0%A5%8B</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%97%E0%A4%B0%E0%A5%81%E0%A4%A1%E0%A4%BC%20%E0%A4%B5%E0%A4%BF%E0%A4%B6%E0%A5%87%E0%A4%B7</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%B8%E0%A4%A4%E0%A4%B0%E0%A5%8D%E0%A4%95</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%9C%E0%A5%8D%E0%A4%AF%E0%A5%8B%E0%A4%A4%E0%A4%BF%E0%A4%B7%E0%A5%80</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://garudsamachar.in/?cat=%E0%A4%86%E0%A4%A4%E0%A5%8D%E0%A4%AE%20%E0%A4%B5%E0%A4%BE%E0%A4%A3%E0%A5%80</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://garudsamachar.in/epaper</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

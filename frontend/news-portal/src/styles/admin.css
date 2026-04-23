@@ -854,6 +854,65 @@ body {
   color: #777;
 }
 
+/* ===== Title Color Picker ===== */
+.title-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.color-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.color-preview:hover {
+  transform: scale(1.05);
+}
+
+.color-input {
+  width: 50px;
+  height: 44px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.color-value {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  min-width: 80px;
+}
+
+.color-reset {
+  padding: 8px 12px;
+  background: #e8f1ff;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.color-reset:hover {
+  background: #1976d2;
+  color: #fff;
+}
+
 @media (max-width: 1000px) {
   .summary-grid {
     grid-template-columns: 1fr;

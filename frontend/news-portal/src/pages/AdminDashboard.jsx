@@ -12,6 +12,7 @@ import {
   stripHtml,
 } from "../utils/richText";
 import {
+  getCategoryTitleColor,
   CATEGORY_LIST as SHARED_CATEGORY_LIST,
   DEFAULT_CATEGORY,
   getCategoryLabel,
@@ -93,7 +94,7 @@ export default function AdminDashboard() {
 
   // form
   const [title, setTitle] = useState("");
-  const [titleColor, setTitleColor] = useState("#1f2937");
+  const [titleColor, setTitleColor] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const [status, setStatus] = useState("draft");
@@ -137,6 +138,14 @@ export default function AdminDashboard() {
     loadDeletedNews();
   }, []);
 
+  // Auto-set default title color when category changes
+  useEffect(() => {
+    if (!titleColor || titleColor.trim() === "") {
+      const defaultColor = getCategoryTitleColor(category);
+      setTitleColor(defaultColor);
+    }
+  }, [category]);
+
   // Auto-save draft to localStorage (editor safety)
   useEffect(() => {
     const payload = {
@@ -160,7 +169,7 @@ export default function AdminDashboard() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (saved?.title) setTitle(saved.title);
-      if (saved?.titleColor) setTitleColor(saved.titleColor);
+      if (saved?.titleColor !== undefined) setTitleColor(saved.titleColor);
       if (saved?.location) setLocation(saved.location);
       if (saved?.category) setCategory(normalizeCategoryValue(saved.category));
       if (saved?.status) {
@@ -287,7 +296,7 @@ export default function AdminDashboard() {
   const editNews = (n) => {
     setEditId(n._id);
     setTitle(n.title);
-    setTitleColor(n.titleColor || "#1f2937");
+    setTitleColor(n.titleColor || "");
     setLocation(n.location || "");
     setCategory(normalizeCategoryValue(n.category));
     setStatus("draft");
@@ -322,7 +331,7 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setTitle("");
-    setTitleColor("#1f2937");
+    setTitleColor("");
     setLocation("");
     setCategory(DEFAULT_CATEGORY);
     setStatus("draft");
@@ -744,6 +753,27 @@ export default function AdminDashboard() {
               </span>
             </div>
 
+            <label className="field-label">Title Color</label>
+            <div className="title-color-picker">
+              <div className="color-preview" style={{ backgroundColor: titleColor }}></div>
+              <input
+                type="color"
+                value={titleColor || "#000000"}
+                onChange={(e) => setTitleColor(e.target.value)}
+                className="color-input"
+                title="Change title color - category default will auto-apply if empty"
+              />
+              <span className="color-value">{titleColor}</span>
+              <button
+                type="button"
+                className="color-reset"
+                onClick={() => setTitleColor(getCategoryTitleColor(category))}
+                title="Reset to category default"
+              >
+                Reset to Category Default
+              </button>
+            </div>
+
             <label className="field-label">Location</label>
             <input
               className="location-input"
@@ -917,7 +947,11 @@ export default function AdminDashboard() {
                   className="preview-title title-rich-output"
                   dangerouslySetInnerHTML={{
                     __html:
-                      buildStyledTitleHtml(title, titleColor) ||
+                      buildStyledTitleHtml(
+                        title,
+                        titleColor,
+                        getCategoryTitleColor(category)
+                      ) ||
                       "News Title Preview",
                   }}
                 />

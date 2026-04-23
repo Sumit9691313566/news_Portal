@@ -1099,6 +1099,7 @@ body {
   color: var(--ink);
   font-family: var(--font-head);
   line-height: 1.35;
+  font-weight: 900;
 }
 
 /* ===== CATEGORY TITLE COLORS ===== */
@@ -1138,6 +1139,42 @@ body {
   color: #00796b;
 }
 
+.cat-apraadh {
+  color: #8f1111;
+}
+
+.cat-sangharsh {
+  color: #7a3413;
+}
+
+.cat-bhrashtachar {
+  color: #0f766e;
+}
+
+.cat-desh-videsh {
+  color: #1d4ed8;
+}
+
+.cat-real-hero {
+  color: #6d28d9;
+}
+
+.cat-garud-vishesh {
+  color: #9a3412;
+}
+
+.cat-satark {
+  color: #b45309;
+}
+
+.cat-jyotishi {
+  color: #7c2d12;
+}
+
+.cat-aatm-vani {
+  color: #14532d;
+}
+
 /* Ensure category colors apply across all title placements */
 .news-info h2.cat-politics,
 .news-full h1.cat-politics,
@@ -1145,6 +1182,7 @@ body {
 .more-news-info h4.cat-politics,
 .suggest-item p.cat-politics {
   color: #c62828;
+  font-weight: 900;
 }
 
 .news-info h2.cat-national,
@@ -1153,6 +1191,7 @@ body {
 .more-news-info h4.cat-national,
 .suggest-item p.cat-national {
   color: #ad1457;
+  font-weight: 900;
 }
 
 .news-info h2.cat-sports,
@@ -1161,6 +1200,7 @@ body {
 .more-news-info h4.cat-sports,
 .suggest-item p.cat-sports {
   color: #2e7d32;
+  font-weight: 900;
 }
 
 .news-info h2.cat-tech,
@@ -1169,6 +1209,7 @@ body {
 .more-news-info h4.cat-tech,
 .suggest-item p.cat-tech {
   color: #1565c0;
+  font-weight: 900;
 }
 
 .news-info h2.cat-business,
@@ -1177,6 +1218,7 @@ body {
 .more-news-info h4.cat-business,
 .suggest-item p.cat-business {
   color: #6a1b9a;
+  font-weight: 900;
 }
 
 .news-info h2.cat-entertainment,
@@ -1185,6 +1227,7 @@ body {
 .more-news-info h4.cat-entertainment,
 .suggest-item p.cat-entertainment {
   color: #ef6c00;
+  font-weight: 900;
 }
 
 .news-info h2.cat-world,
@@ -1193,6 +1236,7 @@ body {
 .more-news-info h4.cat-world,
 .suggest-item p.cat-world {
   color: #00838f;
+  font-weight: 900;
 }
 .news-info h2.cat-article,
 .news-full h1.cat-article,
@@ -1200,6 +1244,7 @@ body {
 .more-news-info h4.cat-article,
 .suggest-item p.cat-article {
   color: #00796b;
+  font-weight: 900;
 }
 
 .news-info h2.cat-default,
@@ -1208,6 +1253,88 @@ body {
 .more-news-info h4.cat-default,
 .suggest-item p.cat-default {
   color: #111827;
+  font-weight: 900;
+}
+
+.news-info h2.cat-apraadh,
+.news-full h1.cat-apraadh,
+.featured-info h1.cat-apraadh,
+.more-news-info h4.cat-apraadh,
+.suggest-item p.cat-apraadh {
+  color: #8f1111;
+  font-weight: 900;
+}
+
+.news-info h2.cat-sangharsh,
+.news-full h1.cat-sangharsh,
+.featured-info h1.cat-sangharsh,
+.more-news-info h4.cat-sangharsh,
+.suggest-item p.cat-sangharsh {
+  color: #7a3413;
+  font-weight: 900;
+}
+
+.news-info h2.cat-bhrashtachar,
+.news-full h1.cat-bhrashtachar,
+.featured-info h1.cat-bhrashtachar,
+.more-news-info h4.cat-bhrashtachar,
+.suggest-item p.cat-bhrashtachar {
+  color: #0f766e;
+  font-weight: 900;
+}
+
+.news-info h2.cat-desh-videsh,
+.news-full h1.cat-desh-videsh,
+.featured-info h1.cat-desh-videsh,
+.more-news-info h4.cat-desh-videsh,
+.suggest-item p.cat-desh-videsh {
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.news-info h2.cat-real-hero,
+.news-full h1.cat-real-hero,
+.featured-info h1.cat-real-hero,
+.more-news-info h4.cat-real-hero,
+.suggest-item p.cat-real-hero {
+  color: #6d28d9;
+  font-weight: 900;
+}
+
+.news-info h2.cat-garud-vishesh,
+.news-full h1.cat-garud-vishesh,
+.featured-info h1.cat-garud-vishesh,
+.more-news-info h4.cat-garud-vishesh,
+.suggest-item p.cat-garud-vishesh {
+  color: #9a3412;
+  font-weight: 900;
+}
+
+.news-info h2.cat-satark,
+.news-full h1.cat-satark,
+.featured-info h1.cat-satark,
+.more-news-info h4.cat-satark,
+.suggest-item p.cat-satark {
+  color: #b45309;
+  font-weight: 900;
+}
+
+.news-info h2.cat-jyotishi,
+.news-full h1.cat-jyotishi,
+.featured-info h1.cat-jyotishi,
+.more-news-info h4.cat-jyotishi,
+.suggest-item p.cat-jyotishi {
+  color: #7c2d12;
+  font-weight: 900;
+}
+
+.news-info h2.cat-aatm-vani,
+.news-full h1.cat-aatm-vani,
+.featured-info h1.cat-aatm-vani,
+.more-news-info h4.cat-aatm-vani,
+.suggest-item p.cat-aatm-vani {
+  color: #14532d;
+  font-weight: 900;
 }
 
 .news-info p {

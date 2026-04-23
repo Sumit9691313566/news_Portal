@@ -12,6 +12,7 @@ import {
 } from "../utils/richText";
 import { fetchWithTimeout } from "../services/api";
 import {
+  getCategoryTitleColor,
   CATEGORY_LIST as SHARED_CATEGORY_LIST,
   DEFAULT_CATEGORY,
   getCategoryLabel,
@@ -88,7 +89,7 @@ export default function ReporterDashboard() {
   const [statusTab, setStatusTab] = useState("all");
 
   const [title, setTitle] = useState("");
-  const [titleColor, setTitleColor] = useState("#1f2937");
+  const [titleColor, setTitleColor] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const [status, setStatus] = useState("pending");
@@ -129,7 +130,7 @@ export default function ReporterDashboard() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (saved?.title) setTitle(saved.title);
-      if (saved?.titleColor) setTitleColor(saved.titleColor);
+      if (saved?.titleColor !== undefined) setTitleColor(saved.titleColor);
       if (saved?.location) setLocation(saved.location);
       if (saved?.category) setCategory(normalizeCategoryValue(saved.category));
       if (Array.isArray(saved?.blocks) && saved.blocks.length > 0) {
@@ -228,7 +229,7 @@ export default function ReporterDashboard() {
   const editNews = (n) => {
     setEditId(n._id);
     setTitle(n.title);
-    setTitleColor(n.titleColor || "#1f2937");
+    setTitleColor(n.titleColor || "");
     setLocation(n.location || "");
     setCategory(normalizeCategoryValue(n.category));
     setStatus(n.status || "pending");
@@ -248,7 +249,7 @@ export default function ReporterDashboard() {
 
   const resetForm = () => {
     setTitle("");
-    setTitleColor("#1f2937");
+    setTitleColor("");
     setLocation("");
     setCategory(DEFAULT_CATEGORY);
     setStatus("pending");
@@ -732,7 +733,11 @@ export default function ReporterDashboard() {
                   className="preview-title title-rich-output"
                   dangerouslySetInnerHTML={{
                     __html:
-                      buildStyledTitleHtml(title, titleColor) ||
+                      buildStyledTitleHtml(
+                        title,
+                        titleColor,
+                        getCategoryTitleColor(category)
+                      ) ||
                       "News Title Preview",
                   }}
                 />

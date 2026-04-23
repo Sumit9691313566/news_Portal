@@ -12,6 +12,7 @@ import {
 } from "../utils/richText";
 import "../styles/admin.css";
 import {
+  getCategoryTitleColor,
   CATEGORY_LIST as SHARED_CATEGORY_LIST,
   DEFAULT_CATEGORY,
   getCategoryLabel,
@@ -47,7 +48,7 @@ export default function MainAdminDashboard() {
   const [selectedNews, setSelectedNews] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
-  const [editTitleColor, setEditTitleColor] = useState("#1f2937");
+  const [editTitleColor, setEditTitleColor] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editCategory, setEditCategory] = useState(DEFAULT_CATEGORY);
   const [editContent, setEditContent] = useState("");
@@ -146,7 +147,7 @@ export default function MainAdminDashboard() {
     setSelectedNews(news);
     setEditMode(false);
     setEditTitle(news.title || "");
-    setEditTitleColor(news.titleColor || "#1f2937");
+    setEditTitleColor(news.titleColor || "");
     setEditLocation(news.location || "");
     setEditCategory(normalizeCategoryValue(news.category || DEFAULT_CATEGORY));
     setEditContent(news.content || "");
@@ -590,7 +591,8 @@ export default function MainAdminDashboard() {
                   __html:
                     buildStyledTitleHtml(
                       selectedNews.title,
-                      selectedNews.titleColor
+                      selectedNews.titleColor,
+                      selectedNews.category
                     ) || "News Title Preview",
                 }}
               />

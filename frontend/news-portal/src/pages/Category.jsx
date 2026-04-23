@@ -18,8 +18,10 @@ import { getPublicSiteUrl } from "../utils/siteUrl";
 import {
   CATEGORY_LIST,
   getCategoryLabel,
+  getCategoryTitleColor,
   isHighlightedCategory,
   normalizeCategoryValue,
+  resolveNewsCategory,
 } from "../utils/categories";
 
 const formatIssueDate = (value) => {
@@ -192,7 +194,11 @@ export default function Category() {
               title: n.title,
               content: textContent,
               location: n.location || "",
-              category: normalizeCategoryValue(n.category || "All"),
+              category: resolveNewsCategory({
+                title: n.title,
+                content: textContent,
+                category: n.category || "All",
+              }),
               mediaType,
               mediaUrl,
               blocks,
@@ -495,15 +501,16 @@ export default function Category() {
   }, [allNews, location.search, location.state]);
 
   const categoryClass = (category) => {
-    const key = (category || "").toLowerCase();
-    if (key === "national") return "cat-national";
-    if (key === "politics") return "cat-politics";
-    if (key === "sports") return "cat-sports";
-    if (key === "tech") return "cat-tech";
-    if (key === "business") return "cat-business";
-    if (key === "entertainment") return "cat-entertainment";
-    if (key === "world") return "cat-world";
-    if (key === "article") return "cat-article";
+    const key = normalizeCategoryValue(category || "");
+    if (key === "अपराध") return "cat-apraadh";
+    if (key === "संघर्ष से शिखर") return "cat-sangharsh";
+    if (key === "भ्रष्टाचार") return "cat-bhrashtachar";
+    if (key === "देश / विदेश") return "cat-desh-videsh";
+    if (key === "रियल हीरो") return "cat-real-hero";
+    if (key === "गरुड़ विशेष") return "cat-garud-vishesh";
+    if (key === "सतर्क") return "cat-satark";
+    if (key === "ज्योतिषी") return "cat-jyotishi";
+    if (key === "आत्म वाणी") return "cat-aatm-vani";
     return "cat-default";
   };
   const breakingNews = allNews.filter((n) => n.breaking);
@@ -616,8 +623,13 @@ export default function Category() {
     )
   );
 
-  const renderStyledTitle = (title, titleColor) => ({
-    __html: buildStyledTitleHtml(title, titleColor) || getPlainTextTitle(title),
+  const renderStyledTitle = (title, titleColor, category = "All") => ({
+    __html:
+      buildStyledTitleHtml(
+        title,
+        titleColor,
+        getCategoryTitleColor(category)
+      ) || getPlainTextTitle(title),
   });
 
   const renderHelmet = () => {
@@ -685,11 +697,14 @@ export default function Category() {
     }
 
       const pageTitle =
-        activeCategory === "All"
-          ? "Latest Hindi News & Breaking News"
-          : `${getCategoryLabel(activeCategory)} News`;
-    const description = `${siteName} (गरुड़ समाचार) is your trusted source for the latest news in Hindi. Get breaking news on crime, struggle stories, corruption, desh-videsh, and more.`;
-    const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Latest Hindi News, Breaking News, आज की ताजा खबर, हिंदी समाचार, Taza Khabar, ${getCategoryLabel(activeCategory)} News, Garud News, India News in Hindi`;
+          activeCategory === "All"
+            ? "Hindi News, Hindi Samachar & Breaking News"
+            : `${getCategoryLabel(activeCategory)} News | Hindi Samachar`;
+    const description =
+      activeCategory === "All"
+        ? `${siteName} (गरुड़ समाचार) par padhiye Hindi News, Hindi Samachar, breaking news, आज की ताजा खबर, crime news, desh videsh aur taaza Hindi khabrein.`
+        : `${siteName} par ${getCategoryLabel(activeCategory)} se judi Hindi News, Hindi Samachar, breaking updates aur taaza khabrein padhiye.`;
+    const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Hindi Samachar, हिंदी समाचार, हिंदी न्यूज़, हिंदी न्यूज, Latest Hindi News, Breaking News, आज की ताजा खबर, Taza Khabar, ${getCategoryLabel(activeCategory)} News, ${getCategoryLabel(activeCategory)} Hindi News, India News in Hindi`;
     const pageUrl =
       activeCategory === "All"
         ? `${siteUrl}/`
@@ -908,7 +923,8 @@ export default function Category() {
                         className={categoryClass(featuredNews.category)}
                         dangerouslySetInnerHTML={renderStyledTitle(
                           featuredNews.title,
-                          featuredNews.titleColor
+                          featuredNews.titleColor,
+                          featuredNews.category
                         )}
                       />
                     </div>
@@ -982,7 +998,8 @@ export default function Category() {
                                 className={categoryClass(news.category)}
                                 dangerouslySetInnerHTML={renderStyledTitle(
                                   news.title,
-                                  news.titleColor
+                                  news.titleColor,
+                                  news.category
                                 )}
                               />
                               <p>
@@ -1048,7 +1065,8 @@ export default function Category() {
                               <span
                                 dangerouslySetInnerHTML={renderStyledTitle(
                                   news.title,
-                                  news.titleColor
+                                  news.titleColor,
+                                  news.category
                                 )}
                               />
                             </h3>
@@ -1128,7 +1146,8 @@ export default function Category() {
                             className={categoryClass(news.category)}
                             dangerouslySetInnerHTML={renderStyledTitle(
                               news.title,
-                              news.titleColor
+                              news.titleColor,
+                              news.category
                             )}
                           />
                           <p>{news.content?.slice(0, 120)}...</p>
@@ -1199,7 +1218,8 @@ export default function Category() {
                             className={categoryClass(news.category)}
                             dangerouslySetInnerHTML={renderStyledTitle(
                               news.title,
-                              news.titleColor
+                              news.titleColor,
+                              news.category
                             )}
                           />
                           <p>{news.content?.slice(0, 120)}...</p>
@@ -1232,7 +1252,8 @@ export default function Category() {
                   className={categoryClass(selectedNews.category)}
                   dangerouslySetInnerHTML={renderStyledTitle(
                     selectedNews.title,
-                    selectedNews.titleColor
+                    selectedNews.titleColor,
+                    selectedNews.category
                   )}
                 />
                 <div className="news-dates">
@@ -1385,7 +1406,8 @@ export default function Category() {
                             className={categoryClass(news.category)}
                             dangerouslySetInnerHTML={renderStyledTitle(
                               news.title,
-                              news.titleColor
+                              news.titleColor,
+                              news.category
                             )}
                           />
                           <p>{news.content?.slice(0, 90)}...</p>
@@ -1468,7 +1490,8 @@ export default function Category() {
                         className={categoryClass(n.category)}
                         dangerouslySetInnerHTML={renderStyledTitle(
                           n.title,
-                          n.titleColor
+                          n.titleColor,
+                          n.category
                         )}
                       />
                     </div>
