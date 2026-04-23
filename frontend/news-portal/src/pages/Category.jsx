@@ -1443,7 +1443,7 @@ export default function Category() {
                     {n.mediaUrl ? (
                       <img
                         src={n.mediaUrl}
-                        alt={n.title}
+                        alt={getPlainTextTitle(n.title)}
                         className="suggest-thumb"
                       />
                     ) : (
@@ -1464,7 +1464,13 @@ export default function Category() {
                         )}
                       </div>
 
-                      <p className={categoryClass(n.category)}>{n.title}</p>
+                      <p
+                        className={categoryClass(n.category)}
+                        dangerouslySetInnerHTML={renderStyledTitle(
+                          n.title,
+                          n.titleColor
+                        )}
+                      />
                     </div>
                   </div>
                 ))}

@@ -1,4 +1,5 @@
 export const CATEGORY_LIST = [
+  { value: "All", label: "सभी" },
   { value: "अपराध", label: "अपराध", highlight: true },
   { value: "संघर्ष से शिखर", label: "संघर्ष से शिखर", highlight: true },
   { value: "भ्रष्टाचार", label: "भ्रष्टाचार" },
@@ -10,9 +11,12 @@ export const CATEGORY_LIST = [
   { value: "आत्म वाणी", label: "आत्म वाणी" },
 ];
 
-export const DEFAULT_CATEGORY = CATEGORY_LIST[0].value;
+export const DEFAULT_CATEGORY = CATEGORY_LIST[1].value;
 
 const LEGACY_CATEGORY_MAP = {
+  All: "All",
+  all: "All",
+  सभी: "All",
   Crime: "अपराध",
   crime: "अपराध",
   National: "राष्ट्रीय",
@@ -49,6 +53,7 @@ export const normalizeCategoryValue = (value) => {
 
 export const getCategoryLabel = (value) => {
   const normalized = normalizeCategoryValue(value);
+  if (normalized === "All") return "सभी";
   return normalized || "समाचार";
 };
 

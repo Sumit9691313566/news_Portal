@@ -182,6 +182,41 @@ const sanitizeWithDom = (html = "") => {
 
 export const sanitizeRichTextHtml = (html = "") => sanitizeWithDom(html);
 
+const stripTitleSizeStyles = (html = "") => {
+  if (typeof window === "undefined" || !window.document) {
+    return String(html || "").replace(
+      /style\s*=\s*"([^"]*)"/gi,
+      (_match, styleValue) => {
+        const cleaned = String(styleValue || "")
+          .split(";")
+          .map((rule) => rule.trim())
+          .filter(Boolean)
+          .filter((rule) => {
+            const key = rule.split(":")[0]?.trim()?.toLowerCase();
+            return key && key !== "font-size" && key !== "line-height";
+          })
+          .join("; ");
+
+        return cleaned ? `style="${cleaned}"` : "";
+      }
+    );
+  }
+
+  const container = document.createElement("div");
+  container.innerHTML = html || "";
+
+  container.querySelectorAll("*").forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+    node.style.removeProperty("font-size");
+    node.style.removeProperty("line-height");
+    if (!node.getAttribute("style")?.trim()) {
+      node.removeAttribute("style");
+    }
+  });
+
+  return container.innerHTML.trim();
+};
+
 const escapeHtml = (value = "") =>
   String(value || "")
     .replace(/&/g, "&amp;")
@@ -192,7 +227,8 @@ const escapeHtml = (value = "") =>
 
 export const sanitizeTitleHtml = (html = "") => {
   const sanitized = sanitizeRichTextHtml(html || "");
-  return sanitized
+  const normalizedTitle = stripTitleSizeStyles(sanitized);
+  return normalizedTitle
     .replace(BR_TAGS, " ")
     .replace(TITLE_BLOCK_TAGS, " ")
     .replace(/\s+/g, " ")
