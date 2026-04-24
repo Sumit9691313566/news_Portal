@@ -138,11 +138,11 @@ body {
 
 
 .brand-row {
-  padding: 14px 56px 10px;
+  padding: 8px 56px 6px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 22px;
+  gap: 18px;
 }
 
 .brand {
@@ -193,6 +193,31 @@ body {
   object-fit: contain;
   display: block;
   margin-top: -12px;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  max-width: min(100%, 240px);
+  height: 64px;
+  object-fit: contain;
+}
+
+.brand-title-hindi {
+  margin-top: 2px;
+  margin-left: 0;
+  width: 100%;
+  max-width: 132px;
+  display: block;
+  text-align: center;
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.1px;
+  color: #7a1620;
+  text-shadow: 0 1px 4px rgba(122, 22, 32, 0.12);
+  padding: 1px 2px 0;
 }
 
 .brand-name {
@@ -3826,7 +3851,7 @@ body {
   .brand-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
   }
 
   .nav-row {
@@ -3850,18 +3875,62 @@ body {
   }
 
   .top-strip {
-    padding: 7px 12px;
+    padding: 5px 10px;
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .top-left,
+  .top-right {
     gap: 8px;
   }
 
+  .pill {
+    padding: 3px 8px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .edition {
+    font-size: 11px;
+  }
+
+  .subscribe-btn {
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+
   .brand-row {
-    padding: 10px 12px 8px;
+    padding: 4px 12px 6px;
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
+  }
+
+  .brand {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .brand-logo {
+    height: 44px;
+    max-width: 44px;
+    flex: 0 0 44px;
+  }
+
+  .brand-title-hindi {
+    margin-top: 1px;
+    margin-left: -6px;
+    max-width: 108px;
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
   }
 
   .nav-row {
@@ -3977,6 +4046,17 @@ body {
     font-size: 30px;
     padding: 6px 12px 9px;
     border-radius: 10px;
+  }
+
+  .brand-logo {
+    height: 54px;
+    max-width: min(100%, 220px);
+  }
+
+  .brand-title-hindi {
+    max-width: 112px;
+    font-size: 13px;
+    padding: 1px 2px 0;
   }
 
   .brand-wordmark {
@@ -4157,9 +4237,9 @@ body {
   min-width: 0;
 }
 
-.brand {
-  flex: 0 0 auto;
-}
+  .brand {
+    flex: 0 0 auto;
+  }
 
 .nav-row {
   width: 100%;

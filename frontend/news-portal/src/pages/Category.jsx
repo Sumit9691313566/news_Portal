@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { FaFacebookF, FaLink, FaWhatsapp } from "react-icons/fa";
 import "../styles/category.css";
 import "../styles/userNews.css";
+import brandLogo from "../../logo.png";
 import { fetchWithTimeout } from "../services/api";
 import { registerAndSubscribe } from "../services/push";
 import { trackUniqueNewsView, trackVisit } from "../services/analytics";
@@ -776,7 +777,8 @@ export default function Category() {
 
             <div className="brand-row">
               <div className="brand">
-                <span className="brand-name">गरुड़ समाचार</span>
+                <img className="brand-logo" src={brandLogo} alt="Garud Samachar logo" />
+                <span className="brand-title-hindi">गरुड़ समाचार</span>
               </div>
 
               <div className="nav-row nav-row-inline">
