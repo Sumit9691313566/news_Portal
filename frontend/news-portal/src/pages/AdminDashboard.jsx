@@ -138,14 +138,6 @@ export default function AdminDashboard() {
     loadDeletedNews();
   }, []);
 
-  // Auto-set default title color when category changes
-  useEffect(() => {
-    if (!titleColor || titleColor.trim() === "") {
-      const defaultColor = getCategoryTitleColor(category);
-      setTitleColor(defaultColor);
-    }
-  }, [category]);
-
   // Auto-save draft to localStorage (editor safety)
   useEffect(() => {
     const payload = {
@@ -751,27 +743,6 @@ export default function AdminDashboard() {
                   ? "Try a more descriptive headline"
                   : "Headline looks strong"}
               </span>
-            </div>
-
-            <label className="field-label">Title Color</label>
-            <div className="title-color-picker">
-              <div className="color-preview" style={{ backgroundColor: titleColor }}></div>
-              <input
-                type="color"
-                value={titleColor || "#000000"}
-                onChange={(e) => setTitleColor(e.target.value)}
-                className="color-input"
-                title="Change title color - category default will auto-apply if empty"
-              />
-              <span className="color-value">{titleColor}</span>
-              <button
-                type="button"
-                className="color-reset"
-                onClick={() => setTitleColor(getCategoryTitleColor(category))}
-                title="Reset to category default"
-              >
-                Reset to Category Default
-              </button>
             </div>
 
             <label className="field-label">Location</label>

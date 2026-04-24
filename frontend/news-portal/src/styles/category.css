@@ -3871,7 +3871,7 @@ body {
   }
 
   .masthead {
-    position: static;
+    position: relative;
   }
 
   .top-strip {
@@ -3888,6 +3888,26 @@ body {
     gap: 8px;
   }
 
+  .top-left {
+    position: absolute;
+    right: 12px;
+    top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+  }
+
+  .top-right {
+    position: absolute;
+    right: 12px;
+    top: 52px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+  }
+
   .pill {
     padding: 3px 8px;
     font-size: 10px;
@@ -3896,6 +3916,7 @@ body {
 
   .edition {
     font-size: 11px;
+    white-space: nowrap;
   }
 
   .subscribe-btn {
@@ -3904,7 +3925,7 @@ body {
   }
 
   .brand-row {
-    padding: 4px 12px 6px;
+    padding: 12px 12px 6px;
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
