@@ -1500,6 +1500,20 @@ export default function Category() {
                   </div>
                 ))}
               </div>
+
+              <div className="right-rail-footer-links">
+                <button
+                  type="button"
+                  className="right-rail-terms-link"
+                  onClick={() => navigate("/terms-and-conditions")}
+                >
+                  Terms and Conditions
+                </button>
+                <span>About Us</span>
+                <span>Contact Us</span>
+                <span>Privacy Policy</span>
+                <span>Disclaimer</span>
+              </div>
             </aside>
           )}
         </div>

@@ -1,0 +1,146 @@
+.terms-wrapper {
+  padding-top: 92px;
+}
+
+.terms-masthead {
+  min-height: 92px;
+}
+
+.terms-brand-row {
+  justify-content: space-between;
+  padding: 14px 56px 12px;
+}
+
+.terms-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.terms-home-btn {
+  border: 1px solid var(--line);
+  background: #fff7ef;
+  color: var(--ink);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.terms-home-btn:hover {
+  color: var(--accent);
+  border-color: rgba(179, 18, 36, 0.32);
+}
+
+.terms-page {
+  width: min(100%, 1060px);
+  margin: 0 auto;
+  padding: 28px 18px 48px;
+}
+
+.terms-article {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: var(--shadow-soft);
+  padding: 38px 44px;
+}
+
+.terms-kicker {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.terms-article h1 {
+  font-family: var(--font-head);
+  font-size: 40px;
+  line-height: 1.15;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+
+.terms-updated {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.terms-intro {
+  color: #374151;
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 28px;
+  padding: 16px 18px;
+  background: #fff8ef;
+  border-left: 4px solid var(--accent);
+}
+
+.terms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.terms-section {
+  padding: 18px 0;
+  border-top: 1px solid #efe5d9;
+}
+
+.terms-section h2 {
+  color: #111827;
+  font-size: 17px;
+  margin-bottom: 8px;
+  font-weight: 900;
+}
+
+.terms-section p {
+  color: #4b5563;
+  font-size: 15px;
+  line-height: 1.85;
+  text-align: justify;
+  text-align-last: left;
+}
+
+@media (max-width: 768px) {
+  .terms-wrapper {
+    padding-top: 0;
+  }
+
+  .terms-masthead {
+    position: relative;
+    min-height: auto;
+  }
+
+  .terms-brand-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .terms-page {
+    padding: 16px 10px 34px;
+  }
+
+  .terms-article {
+    border-radius: 4px;
+    padding: 22px 16px;
+  }
+
+  .terms-article h1 {
+    font-size: 28px;
+  }
+
+  .terms-intro,
+  .terms-section p {
+    font-size: 14px;
+  }
+}

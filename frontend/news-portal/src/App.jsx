@@ -16,6 +16,7 @@ import VideoPlayer from "./pages/VideoPlayer";
 import NotificationPanel from "./pages/NotificationPanel";
 import UserNewsSubmit from "./pages/UserNewsSubmit";
 import UserNewsInbox from "./pages/UserNewsInbox";
+import TermsConditions from "./pages/TermsConditions";
 
 function App() {
   useEffect(() => {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/videos/:id" element={<VideoPlayer />} />
         <Route path="/search" element={<Search />} />
         <Route path="/send-news" element={<UserNewsSubmit />} />
+        <Route path="/terms-and-conditions" element={<TermsConditions />} />
 
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
