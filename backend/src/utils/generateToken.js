@@ -1,11 +1,7 @@
-import jwt from "jsonwebtoken";
+import { signAdminToken } from "./jwt.js";
 
 const generateToken = () => {
-  return jwt.sign(
-    { role: "admin" },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  );
+  return signAdminToken({ role: "sub-admin", adminId: "admin", name: "Admin" });
 };
 
 export default generateToken;

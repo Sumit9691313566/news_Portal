@@ -9,12 +9,14 @@ import {
 } from "../controllers/epaperController.js";
 import adminAuth from "../middleware/adminAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { epaperFileFilter } from "../middleware/security.js";
 
 const router = express.Router();
 
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
+  fileFilter: epaperFileFilter,
   limits: {
     fileSize: 500 * 1024 * 1024, // 500MB
     fields: 20,

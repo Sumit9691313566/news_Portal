@@ -10,6 +10,7 @@ import {
   FaUserCheck,
 } from "react-icons/fa";
 import SiteFooter from "../components/SiteFooter";
+import useCopyProtection from "../hooks/useCopyProtection";
 import "../styles/category.css";
 import "../styles/terms.css";
 import brandLogo from "../../logo.png";
@@ -91,6 +92,7 @@ const responsibleTips = [
 
 export default function PrivacyPolicy() {
   const navigate = useNavigate();
+  const { noticeVisible: copyNoticeVisible, shieldVisible } = useCopyProtection();
 
   const scrollToPolicyDetails = () => {
     document.getElementById("privacy-policy-details")?.scrollIntoView({
@@ -101,6 +103,17 @@ export default function PrivacyPolicy() {
 
   return (
     <div className="layout-wrapper terms-wrapper about-wrapper">
+      {shieldVisible && (
+        <div className="copy-protection-shield" aria-hidden="true">
+          <div>
+            <strong>Protected Page</strong>
+            <span>Screen capture and background preview are restricted on this page.</span>
+          </div>
+        </div>
+      )}
+      {copyNoticeVisible && (
+        <div className="copy-protection-notice">Copy and screenshot actions are restricted.</div>
+      )}
       <Helmet>
         <title>Privacy Policy | Garud Samachar</title>
         <meta

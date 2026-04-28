@@ -1465,6 +1465,7 @@ export default function Category() {
                       <div
                         key={`${n._id || n.id}-${index}`}
                         className="suggest-item"
+                        aria-hidden={index >= rightRailSuggestions.length ? "true" : undefined}
                         onClick={() => openNews(n)}
                       >
                         {n.mediaUrl ? (

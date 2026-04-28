@@ -2,6 +2,123 @@
   padding-top: 92px;
 }
 
+.copy-protection-active .terms-wrapper,
+.copy-protection-active .about-wrapper,
+.copy-protection-active .about-page,
+.copy-protection-active .terms-page {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.copy-protection-active img,
+.copy-protection-active video {
+  -webkit-user-drag: none;
+  pointer-events: auto;
+}
+
+.copy-protection-notice {
+  position: fixed;
+  top: 106px;
+  left: 50%;
+  z-index: 9999;
+  padding: 11px 16px;
+  border: 1px solid rgba(179, 18, 36, 0.22);
+  border-radius: 999px;
+  background: rgba(50, 27, 23, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+  box-shadow: 0 14px 30px rgba(20, 20, 20, 0.18);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.copy-protection-watermark {
+  position: fixed;
+  inset: 92px 0 0;
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    repeating-linear-gradient(
+      -24deg,
+      transparent 0 120px,
+      rgba(122, 22, 32, 0.18) 120px 122px,
+      transparent 122px 240px
+    );
+}
+
+.copy-protection-watermark::before {
+  content: "Garud Samachar Confidential Garud Samachar Protected Content Garud Samachar";
+  position: absolute;
+  inset: 0;
+  color: #7a1620;
+  font-family: var(--font-head);
+  font-size: clamp(26px, 3vw, 44px);
+  font-weight: 900;
+  line-height: 2.4;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: pre-wrap;
+  word-spacing: 38px;
+  transform: rotate(-16deg) scale(1.08);
+  transform-origin: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.copy-protection-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at center, rgba(50, 27, 23, 0.96), rgba(20, 20, 20, 0.99)),
+    #141414;
+  color: #ffffff;
+  text-align: center;
+}
+
+.copy-protection-shield strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #f2b233;
+  font-family: var(--font-head);
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.05;
+}
+
+.copy-protection-shield span {
+  display: block;
+  max-width: 520px;
+  color: #f8e8d2;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+@media print {
+  .copy-protection-active .terms-wrapper,
+  .copy-protection-active .about-wrapper {
+    display: none !important;
+  }
+
+  body::before {
+    content: "Printing is restricted for this page.";
+    display: block;
+    padding: 32px;
+    color: #111827;
+    font: 700 18px Arial, sans-serif;
+  }
+}
+
 .terms-masthead {
   min-height: 92px;
 }

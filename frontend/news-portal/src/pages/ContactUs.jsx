@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import SiteFooter from "../components/SiteFooter";
+import useCopyProtection from "../hooks/useCopyProtection";
 import "../styles/category.css";
 import "../styles/terms.css";
 import brandLogo from "../../logo.png";
@@ -44,9 +45,21 @@ const responseSteps = [
 
 export default function ContactUs() {
   const navigate = useNavigate();
+  const { noticeVisible: copyNoticeVisible, shieldVisible } = useCopyProtection();
 
   return (
     <div className="layout-wrapper terms-wrapper about-wrapper">
+      {shieldVisible && (
+        <div className="copy-protection-shield" aria-hidden="true">
+          <div>
+            <strong>Protected Page</strong>
+            <span>Screen capture and background preview are restricted on this page.</span>
+          </div>
+        </div>
+      )}
+      {copyNoticeVisible && (
+        <div className="copy-protection-notice">Copy and screenshot actions are restricted.</div>
+      )}
       <Helmet>
         <title>Contact Us | Garud Samachar</title>
         <meta

@@ -1,7 +1,30 @@
+import { getPublicSiteUrl } from "../utils/siteUrl";
+
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
-const API_BASE_URL = String(RAW_API_BASE_URL).replace(/\/+$/, "");
+const normalizeBaseUrl = (value = "") => String(value || "").replace(/\/+$/, "");
+const isNativeShellRuntime = () => {
+  if (typeof window === "undefined") return false;
+  const protocol = String(window.location?.protocol || "").toLowerCase();
+  const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+  return (
+    protocol === "capacitor:" ||
+    protocol === "ionic:" ||
+    protocol === "file:" ||
+    userAgent.includes("capacitor")
+  );
+};
+const resolveApiBaseUrl = () => {
+  const rawBase = normalizeBaseUrl(RAW_API_BASE_URL);
+  if (rawBase && rawBase !== "/api") return rawBase;
+  if (isNativeShellRuntime()) {
+    const publicSite = normalizeBaseUrl(getPublicSiteUrl());
+    if (publicSite) return `${publicSite}/api`;
+  }
+  return rawBase || "/api";
+};
+const API_BASE_URL = resolveApiBaseUrl();
 const RAW_API_FALLBACK_URL = import.meta.env.VITE_API_FALLBACK_URL || "";
-const API_FALLBACK_URL = String(RAW_API_FALLBACK_URL).replace(/\/+$/, "");
+const API_FALLBACK_URL = normalizeBaseUrl(RAW_API_FALLBACK_URL);
 const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 12000;
 
 const isLocalApiBase = (baseUrl) =>

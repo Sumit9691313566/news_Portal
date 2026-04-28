@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { isValidAdminClaims, verifyAdminToken } from "../utils/jwt.js";
 
 export const protect = (req, res, next) => {
   let token;
@@ -11,10 +11,13 @@ export const protect = (req, res, next) => {
     try {
       token = req.headers.authorization.split(" ")[1];
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = verifyAdminToken(token);
+      if (!isValidAdminClaims(decoded)) {
+        return res.status(401).json({ message: "Not authorized, invalid token claims" });
+      }
 
       // admin flag (future use)
-      req.admin = decoded.email;
+      req.admin = decoded;
 
       next();
     } catch (error) {

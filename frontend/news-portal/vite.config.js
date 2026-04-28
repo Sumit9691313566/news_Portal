@@ -20,6 +20,19 @@ export default defineConfig({
     sourcemap: false,
     minify: 'terser',
     reportCompressedSize: true,
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        passes: 2,
+      },
+      format: {
+        comments: false,
+      },
+      mangle: {
+        toplevel: true,
+      },
+    },
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),

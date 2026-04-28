@@ -441,7 +441,7 @@ export default function MainAdminDashboard() {
             onChange={(event) => setReporterId(event.target.value)}
           />
           <input
-            type="text"
+            type="password"
             placeholder="Password"
             value={reporterPassword}
             onChange={(event) => setReporterPassword(event.target.value)}

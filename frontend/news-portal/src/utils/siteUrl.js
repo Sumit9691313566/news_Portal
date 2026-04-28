@@ -11,12 +11,13 @@ export const getPublicSiteUrl = () => {
     return normalizeSiteUrl(window.location.origin);
   }
 
-  return "http://localhost:5173";
+  return "";
 };
 
 export const buildPublicUrl = (path = "/") => {
   const baseUrl = getPublicSiteUrl();
   const normalizedPath = String(path || "").trim();
+  if (!baseUrl) return normalizedPath || "/";
   if (!normalizedPath || normalizedPath === "/") return `${baseUrl}/`;
   return normalizedPath.startsWith("/")
     ? `${baseUrl}${normalizedPath}`

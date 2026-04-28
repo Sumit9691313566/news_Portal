@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { isValidAdminClaims, verifyAdminToken } from "../utils/jwt.js";
 
 const optionalAdminAuth = (req, res, next) => {
   const authHeader = req.headers.authorization || "";
@@ -8,8 +8,8 @@ const optionalAdminAuth = (req, res, next) => {
 
   try {
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.admin = decoded;
+    const decoded = verifyAdminToken(token);
+    req.admin = isValidAdminClaims(decoded) ? decoded : null;
   } catch {
     req.admin = null;
   }

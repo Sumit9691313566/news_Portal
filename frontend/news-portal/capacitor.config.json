@@ -1,0 +1,14 @@
+{
+  "appId": "com.garudsamachar.app",
+  "appName": "Garud Samachar",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "url": "https://garudsamachar.in",
+    "cleartext": false
+  },
+  "allowNavigation": [
+    "garudsamachar.in",
+    "*.garudsamachar.in"
+  ]
+}

@@ -8,12 +8,14 @@ import {
 } from "../controllers/userNewsController.js";
 import adminAuth from "../middleware/adminAuth.js";
 import requireRole from "../middleware/requireRole.js";
+import { imageVideoFileFilter } from "../middleware/security.js";
 
 const router = express.Router();
 
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
+  fileFilter: imageVideoFileFilter,
   limits: {
     fileSize: 250 * 1024 * 1024,
     files: 1,

@@ -12,9 +12,15 @@ import analyticsRoutes from "./routes/analyticsRoutes.js";
 import userNewsRoutes from "./routes/userNewsRoutes.js";
 import { startRetentionJob } from "./utils/retention.js";
 import { startDailyDigestJobs } from "./utils/digest.js";
+import {
+  blockSuspiciousRequests,
+  createRateLimiter,
+  noStoreForProtectedApi,
+  securityHeaders,
+} from "./middleware/security.js";
 
 console.log("Cloudinary Env Check:", {
-  cloud: process.env.CLOUDINARY_CLOUD_NAME,
+  cloud: process.env.CLOUDINARY_CLOUD_NAME ? "LOADED" : "MISSING",
   key: process.env.CLOUDINARY_API_KEY ? "LOADED" : "MISSING",
 });
 
@@ -34,6 +40,8 @@ if (MONGO_DNS_SERVERS.length > 0) {
 }
 
 const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
   req.setTimeout(120000);
@@ -73,18 +81,41 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(securityHeaders);
+app.use(blockSuspiciousRequests);
+app.use(noStoreForProtectedApi);
+app.use(createRateLimiter({ max: 600, keyPrefix: "api-global" }));
 
-app.use((req, res, next) => {
-  res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
-  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "SAMEORIGIN");
-  res.setHeader("X-XSS-Protection", "1; mode=block");
-  next();
+app.use(express.json({ limit: "1mb", strict: true }));
+app.use(express.urlencoded({ extended: true, limit: "1mb", parameterLimit: 50 }));
+
+const writeLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  keyPrefix: "write",
+  message: "Too many write requests. Please try again later.",
 });
+
+const publicSubmitLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyPrefix: "public-submit",
+  message: "Too many submissions. Please try again later.",
+});
+
+const limitWriteMethods = (limiter) => (req, res, next) => {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+    return limiter(req, res, next);
+  }
+  return next();
+};
+
+const limitPublicSubmissions = (req, res, next) => {
+  if (req.method === "POST" && !req.headers.authorization) {
+    return publicSubmitLimiter(req, res, next);
+  }
+  return next();
+};
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
@@ -104,12 +135,12 @@ app.get("/debug", (req, res) => {
   });
 });
 
-app.use("/api/news", newsRoutes);
+app.use("/api/news", limitWriteMethods(writeLimiter), newsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/epaper", epaperRoutes);
 app.use("/api/push", pushRoutes);
 app.use("/api/analytics", analyticsRoutes);
-app.use("/api/user-news", userNewsRoutes);
+app.use("/api/user-news", limitPublicSubmissions, userNewsRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err);

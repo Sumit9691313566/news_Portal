@@ -13,12 +13,14 @@ import {
 } from "../controllers/newsController.js";
 import adminAuth from "../middleware/adminAuth.js";
 import optionalAdminAuth from "../middleware/optionalAdminAuth.js";
+import { imageVideoFileFilter } from "../middleware/security.js";
 
 const router = express.Router();
 
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
+  fileFilter: imageVideoFileFilter,
   limits: {
     fileSize: 500 * 1024 * 1024,
     fields: 20,
@@ -27,7 +29,7 @@ const upload = multer({
 });
 
 router.get("/", optionalAdminAuth, getAllNews);
-router.post("/reset-views", resetAllViews);
+router.post("/reset-views", adminAuth, resetAllViews);
 router.get("/deleted", adminAuth, getDeletedNews);
 router.delete("/deleted/:id", adminAuth, deleteDeletedNews);
 router.delete("/deleted", adminAuth, deleteDeletedNewsBulk);

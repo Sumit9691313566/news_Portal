@@ -26,7 +26,7 @@ const coverageLinks = [
   { label: "Latest Updates", category: "All" },
   { label: "National & State", category: "National" },
   { label: "Crime & Public Issues", category: "Crime" },
-  { label: "Local News", category: "Article" },
+  { label: "Garud Special", category: "Article" },
   { label: "Special Reports", category: "Article" },
 ];
 

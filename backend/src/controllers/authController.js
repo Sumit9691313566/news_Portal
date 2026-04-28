@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import Admin from "../models/Admin.js";
 import { seedSubAdmins } from "../utils/seedSubAdmins.js";
+import { signAdminToken } from "../utils/jwt.js";
 
 const MAIN_ADMIN = {
   adminId: "mainadmin",
@@ -93,16 +93,12 @@ export const adminLogin = async (req, res) => {
         envAdmin.adminId,
         envAdmin.email
       );
-      const token = jwt.sign(
-        {
-          role: normalizedRole,
-          adminId: envAdmin.adminId,
-          name: envAdmin.name,
-          email: envAdmin.email,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-      );
+      const token = signAdminToken({
+        role: normalizedRole,
+        adminId: envAdmin.adminId,
+        name: envAdmin.name,
+        email: envAdmin.email,
+      });
 
       return res.status(200).json({
         message: "Login successful",
@@ -136,16 +132,12 @@ export const adminLogin = async (req, res) => {
     }
 
     const normalizedRole = normalizeRole(admin.role, admin.adminId, admin.email);
-    const token = jwt.sign(
-      {
-        role: normalizedRole,
-        adminId: admin.adminId,
-        name: admin.name,
-        email: admin.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = signAdminToken({
+      role: normalizedRole,
+      adminId: admin.adminId,
+      name: admin.name,
+      email: admin.email,
+    });
 
     return res.status(200).json({
       message: "Login successful",
