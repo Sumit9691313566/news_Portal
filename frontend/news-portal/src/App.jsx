@@ -17,6 +17,10 @@ import NotificationPanel from "./pages/NotificationPanel";
 import UserNewsSubmit from "./pages/UserNewsSubmit";
 import UserNewsInbox from "./pages/UserNewsInbox";
 import TermsConditions from "./pages/TermsConditions";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Disclaimer from "./pages/Disclaimer";
 
 function App() {
   useEffect(() => {
@@ -35,6 +39,10 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/send-news" element={<UserNewsSubmit />} />
         <Route path="/terms-and-conditions" element={<TermsConditions />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/disclaimer" element={<Disclaimer />} />
 
         {/* AUTH */}
         <Route path="/login" element={<Login />} />

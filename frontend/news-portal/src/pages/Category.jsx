@@ -2,6 +2,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { FaFacebookF, FaLink, FaWhatsapp } from "react-icons/fa";
+import SiteFooter from "../components/SiteFooter";
 import "../styles/category.css";
 import "../styles/userNews.css";
 import brandLogo from "../../logo.png";
@@ -1458,62 +1459,53 @@ export default function Category() {
                     : "अन्य खबरें"}
                 </h3>
 
-                {rightRailSuggestions.map((n) => (
-                  <div
-                    key={n._id || n.id}
-                    className="suggest-item"
-                    onClick={() => openNews(n)}
-                  >
-                    {n.mediaUrl ? (
-                      <img
-                        src={n.mediaUrl}
-                        alt={getPlainTextTitle(n.title)}
-                        className="suggest-thumb"
-                      />
-                    ) : (
-                      <div className="suggest-thumb suggest-thumb-placeholder" />
-                    )}
+                <div className="suggest-scroll" aria-label="Scrolling news suggestions">
+                  <div className="suggest-scroll-track">
+                    {[...rightRailSuggestions, ...rightRailSuggestions].map((n, index) => (
+                      <div
+                        key={`${n._id || n.id}-${index}`}
+                        className="suggest-item"
+                        onClick={() => openNews(n)}
+                      >
+                        {n.mediaUrl ? (
+                          <img
+                            src={n.mediaUrl}
+                            alt={getPlainTextTitle(n.title)}
+                            className="suggest-thumb"
+                          />
+                        ) : (
+                          <div className="suggest-thumb suggest-thumb-placeholder" />
+                        )}
 
-                    <div>
-                      <div className="news-badges">
-                        {n.breaking && (
-                          <span className="badge breaking">
-                            BREAKING
-                          </span>
-                        )}
-                        {n.featured && (
-                          <span className="badge featured">
-                            FEATURED
-                          </span>
-                        )}
+                        <div>
+                          <div className="news-badges">
+                            {n.breaking && (
+                              <span className="badge breaking">
+                                BREAKING
+                              </span>
+                            )}
+                            {n.featured && (
+                              <span className="badge featured">
+                                FEATURED
+                              </span>
+                            )}
+                          </div>
+
+                          <p
+                            className={categoryClass(n.category)}
+                            dangerouslySetInnerHTML={renderStyledTitle(
+                              n.title,
+                              n.titleColor,
+                              n.category
+                            )}
+                          />
+                        </div>
                       </div>
-
-                      <p
-                        className={categoryClass(n.category)}
-                        dangerouslySetInnerHTML={renderStyledTitle(
-                          n.title,
-                          n.titleColor,
-                          n.category
-                        )}
-                      />
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
 
-              <div className="right-rail-footer-links">
-                <button
-                  type="button"
-                  className="right-rail-terms-link"
-                  onClick={() => navigate("/terms-and-conditions")}
-                >
-                  Terms and Conditions
-                </button>
-                <span>About Us</span>
-                <span>Contact Us</span>
-                <span>Privacy Policy</span>
-                <span>Disclaimer</span>
-              </div>
             </aside>
           )}
         </div>
@@ -1544,6 +1536,7 @@ export default function Category() {
       )}
       </div>
 
+      <SiteFooter />
     </div>
   );
 }

@@ -1,74 +1,95 @@
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
+import {
+  FaBalanceScale,
+  FaBan,
+  FaCopyright,
+  FaExternalLinkAlt,
+  FaFileContract,
+  FaGavel,
+  FaNewspaper,
+  FaUserShield,
+} from "react-icons/fa";
+import SiteFooter from "../components/SiteFooter";
 import "../styles/category.css";
 import "../styles/terms.css";
 import brandLogo from "../../logo.png";
 
-const termsSections = [
+const keyTerms = [
   {
-    title: "1. नियमों की स्वीकृति",
-    body: "गरुड़ समाचार की वेबसाइट, मोबाइल वेब, ई-पेपर, वीडियो, नोटिफिकेशन, यूजर न्यूज़ सबमिशन और अन्य डिजिटल सेवाओं का उपयोग करने पर आप इन नियमों एवं शर्तों से सहमत माने जाएंगे। यदि आप इन शर्तों से सहमत नहीं हैं, तो कृपया हमारी सेवाओं का उपयोग न करें।",
+    icon: <FaCopyright />,
+    title: "Intellectual Property",
+    body: "All text, images, videos, graphics, layout, branding, and other content are owned by Garud Samachar or used under license. Unauthorized copying, reproduction, republication, distribution, scraping, or commercial use is prohibited.",
   },
   {
-    title: "2. सेवा और सामग्री",
-    body: "वेबसाइट पर प्रकाशित समाचार, लेख, फोटो, वीडियो, ई-पेपर और अन्य सामग्री केवल सूचना और जनहित के उद्देश्य से उपलब्ध कराई जाती है। गरुड़ समाचार सामग्री को सही और अद्यतन रखने का प्रयास करता है, लेकिन किसी भी समाचार, आंकड़े, लिंक या जानकारी की पूर्ण शुद्धता, निरंतर उपलब्धता या समयबद्धता की गारंटी नहीं देता।",
+    icon: <FaNewspaper />,
+    title: "Permitted Use",
+    body: "Content is provided for personal, informational, and non-commercial reading. Any commercial use, syndication, reuse, or redistribution requires prior written permission from Garud Samachar.",
   },
   {
-    title: "3. उपयोगकर्ता द्वारा भेजी गई खबरें",
-    body: "यदि आप वेबसाइट पर खबर, फोटो, वीडियो, दस्तावेज़, लोकेशन या कोई अन्य जानकारी भेजते हैं, तो आप पुष्टि करते हैं कि वह सामग्री सत्य, वैध, मौलिक या विधिवत अधिकृत है। गरुड़ समाचार और Garud Stacks को ऐसी सामग्री की जांच, संपादन, अस्वीकृति, प्रकाशन, अप्रकाशन या हटाने का अधिकार रहेगा।",
+    icon: <FaUserShield />,
+    title: "User Conduct",
+    body: "Users must not post, submit, share, or engage in unlawful, harmful, abusive, misleading, defamatory, hateful, threatening, spammy, or rights-violating activity on or through the platform.",
   },
   {
-    title: "4. प्रकाशन स्वीकृति और Garud Stacks",
-    body: "यूजर द्वारा भेजी गई सामग्री वेबसाइट पर तभी प्रकाशित की जाएगी जब गरुड़ समाचार की संपादकीय टीम या Garud Stacks द्वारा निर्धारित अप्रूवल प्रक्रिया पूरी हो जाए। अप्रूवल मिलने के बाद भी गरुड़ समाचार किसी भी समय सामग्री में सुधार, बदलाव या हटाने का अधिकार सुरक्षित रखता है।",
+    icon: <FaExternalLinkAlt />,
+    title: "External Links",
+    body: "Our website may link to external websites, videos, social platforms, advertisements, or embedded services. Garud Samachar is not responsible for third-party content, policies, availability, or practices.",
+  },
+];
+
+const detailedTerms = [
+  {
+    title: "1. Acceptance of Terms",
+    body: "By accessing or using the Garud Samachar website, mobile web pages, videos, notifications, e-paper, user-submission features, or any other digital service, you agree to follow these Terms & Conditions.",
   },
   {
-    title: "5. बौद्धिक संपदा अधिकार",
-    body: "गरुड़ समाचार का लोगो, नाम, डिजाइन, लेआउट, लेख, फोटो, वीडियो, ग्राफिक्स, ऑडियो, डेटाबेस और अन्य डिजिटल सामग्री गरुड़ समाचार, Garud Stacks या उनके अधिकृत लाइसेंसधारकों की संपत्ति है। बिना लिखित अनुमति के सामग्री को कॉपी, री-पब्लिश, डाउनलोड, संग्रह, AI/ML ट्रेनिंग, व्यावसायिक उपयोग या वितरण के लिए इस्तेमाल नहीं किया जा सकता।",
+    title: "2. Accuracy & Availability",
+    body: "We strive to publish accurate, verified, and updated information. However, we do not guarantee that every item will be complete, error-free, uninterrupted, or available at all times. News may change as new facts emerge.",
   },
   {
-    title: "6. निषिद्ध उपयोग",
-    body: "आप वेबसाइट का उपयोग फेक न्यूज़, अपमानजनक सामग्री, अश्लीलता, धमकी, नफरत फैलाने, कॉपीराइट उल्लंघन, स्पैम, हैकिंग, वायरस, गलत पहचान, गैरकानूनी गतिविधि या भारत की संप्रभुता, सुरक्षा, सार्वजनिक व्यवस्था और लागू कानूनों के विरुद्ध किसी भी उद्देश्य के लिए नहीं कर सकते।",
+    title: "3. Editorial Rights",
+    body: "Garud Samachar may edit, update, remove, reject, correct, reorganize, or archive content at its discretion for editorial, legal, safety, technical, or operational reasons.",
   },
   {
-    title: "7. खाते, संचार और नोटिफिकेशन",
-    body: "कुछ सेवाओं के लिए मोबाइल नंबर, ईमेल, ओटीपी या अन्य जानकारी के माध्यम से पंजीकरण आवश्यक हो सकता है। आप अपनी जानकारी की गोपनीयता और अपने खाते से होने वाली गतिविधियों के लिए स्वयं जिम्मेदार होंगे। आप सहमत हैं कि गरुड़ समाचार आपको ईमेल, एसएमएस, व्हाट्सऐप, कॉल, पुश नोटिफिकेशन या अन्य डिजिटल माध्यमों से सेवा-संबंधित सूचना भेज सकता है।",
+    title: "4. User Submissions",
+    body: "If you send news tips, images, videos, documents, comments, or other material, you confirm that the information is lawful, accurate to the best of your knowledge, and that you have the right to share it. We may verify, edit, publish, reject, or remove submissions.",
   },
   {
-    title: "8. विज्ञापन और प्रायोजित सामग्री",
-    body: "वेबसाइट पर विज्ञापन, प्रायोजित सामग्री, प्रचार लिंक या थर्ड-पार्टी ऑफर दिखाई दे सकते हैं। ऐसे विज्ञापनों, उत्पादों, सेवाओं, दावों, कीमतों या लेन-देन के लिए संबंधित विज्ञापनदाता या सेवा प्रदाता जिम्मेदार होंगे।",
+    title: "5. Prohibited Activity",
+    body: "You must not misuse the platform, attempt unauthorized access, upload malicious code, impersonate others, spread false information, violate intellectual property rights, harass people, or use the website for illegal activity.",
   },
   {
-    title: "9. थर्ड-पार्टी लिंक और सेवाएं",
-    body: "हमारी सेवाओं में बाहरी वेबसाइटों, सोशल प्लेटफॉर्म, वीडियो प्लेयर, पेमेंट गेटवे, मैप, एनालिटिक्स या अन्य थर्ड-पार्टी सेवाओं के लिंक या एम्बेड शामिल हो सकते हैं। ऐसी सेवाओं की नीतियों, सुरक्षा, सामग्री या उपलब्धता के लिए गरुड़ समाचार जिम्मेदार नहीं होगा।",
+    title: "6. Advertising & Sponsored Material",
+    body: "Advertisements, sponsored communication, or third-party offers may appear on the website. The relevant advertiser or service provider is responsible for its claims, products, pricing, offers, and services.",
   },
   {
-    title: "10. उत्तरदायित्व की सीमा",
-    body: "वेबसाइट या इसकी सामग्री के उपयोग, उपलब्धता में बाधा, तकनीकी त्रुटि, डेटा हानि, किसी समाचार पर भरोसा करने, थर्ड-पार्टी लिंक या विज्ञापन से होने वाले किसी भी प्रत्यक्ष या अप्रत्यक्ष नुकसान के लिए गरुड़ समाचार, Garud Stacks, उनके प्रतिनिधि या सहयोगी लागू कानून की अधिकतम सीमा तक उत्तरदायी नहीं होंगे।",
+    title: "7. Changes to Services",
+    body: "We may modify, suspend, improve, restrict, or discontinue any content, feature, section, design, or service without prior notice, including for technical, editorial, commercial, legal, or security reasons.",
   },
   {
-    title: "11. शिकायत और कॉपीराइट सूचना",
-    body: "यदि आपको किसी सामग्री, कॉपीराइट, गलत सूचना, गोपनीयता या सेवा से संबंधित शिकायत है, तो आप वेबसाइट पर उपलब्ध संपर्क माध्यमों से गरुड़ समाचार टीम को सूचित कर सकते हैं। शिकायत में संबंधित लिंक, सामग्री का विवरण, आपका नाम, संपर्क विवरण और शिकायत का स्पष्ट कारण देना आवश्यक होगा।",
+    title: "8. Governing Law",
+    body: "These Terms & Conditions are governed by the laws of India. Any disputes will fall under the jurisdiction of competent courts in Bhopal, Madhya Pradesh, unless applicable law requires otherwise.",
   },
-  {
-    title: "12. नियमों में बदलाव",
-    body: "गरुड़ समाचार समय-समय पर इन नियमों एवं शर्तों में बदलाव कर सकता है। संशोधित नियम वेबसाइट पर प्रकाशित होते ही प्रभावी माने जाएंगे। सेवाओं का निरंतर उपयोग करना संशोधित नियमों की स्वीकृति माना जाएगा।",
-  },
-  {
-    title: "13. लागू कानून और अधिकार क्षेत्र",
-    body: "इन नियमों पर भारत के कानून लागू होंगे। किसी भी विवाद की स्थिति में संबंधित सक्षम न्यायालयों का अधिकार क्षेत्र लागू होगा, जब तक कि कानून द्वारा अन्यथा आवश्यक न हो।",
-  },
+];
+
+const prohibitedItems = [
+  "Unauthorized copying, republishing, redistribution, or commercial reuse",
+  "Posting or submitting unlawful, abusive, defamatory, or harmful material",
+  "Trying to disrupt, hack, scrape, overload, or misuse website systems",
+  "Using Garud Samachar branding, logo, or content without permission",
 ];
 
 export default function TermsConditions() {
   const navigate = useNavigate();
 
   return (
-    <div className="layout-wrapper terms-wrapper">
+    <div className="layout-wrapper terms-wrapper about-wrapper">
       <Helmet>
-        <title>Terms and Conditions | Garud Samachar</title>
+        <title>Terms & Conditions | Garud Samachar</title>
         <meta
           name="description"
-          content="Read Garud Samachar Terms and Conditions for using the website, submitted news, content rights, advertisements, and liability."
+          content="Read Garud Samachar Terms & Conditions covering intellectual property, permitted use, user conduct, external links, accuracy, changes, governing law, and violations."
         />
         <meta name="robots" content="index, follow" />
       </Helmet>
@@ -81,7 +102,10 @@ export default function TermsConditions() {
             onClick={() => navigate("/")}
           >
             <img className="brand-logo" src={brandLogo} alt="Garud Samachar logo" />
-            <span className="brand-title-hindi">गरुड़ समाचार</span>
+            <span className="legal-brand-copy">
+              <strong>Garud Samachar</strong>
+              <small>Digital News Network</small>
+            </span>
           </button>
 
           <button
@@ -89,32 +113,106 @@ export default function TermsConditions() {
             className="terms-home-btn"
             onClick={() => navigate("/")}
           >
-            होम
+            Home
           </button>
         </div>
       </header>
 
-      <main className="terms-page">
-        <article className="terms-article">
-          <div className="terms-kicker">कानूनी जानकारी</div>
-          <h1>नियम एवं शर्तें</h1>
-          <p className="terms-updated">अंतिम अपडेट: 25 अप्रैल 2026</p>
-          <p className="terms-intro">
-            ये नियम गरुड़ समाचार की वेबसाइट और उससे जुड़ी सभी डिजिटल सेवाओं
-            के उपयोग पर लागू होते हैं। गरुड़ समाचार की तकनीकी और अप्रूवल
-            प्रक्रिया Garud Stacks के सहयोग से संचालित की जा सकती है।
-          </p>
+      <main className="about-page terms-policy-page">
+        <section className="terms-hero-premium" aria-labelledby="terms-title">
+          <div className="terms-hero-content">
+            <div className="terms-kicker">Terms & Conditions</div>
+            <h1 id="terms-title">Rules for using Garud Samachar</h1>
+            <p>
+              By accessing this website, you agree to these Terms & Conditions.
+              They explain how our content may be used, what conduct is not
+              allowed, how editorial rights work, and which laws apply.
+            </p>
+            <div className="terms-hero-meta">
+              <span>Applies to website, videos, e-paper, submissions, and digital services</span>
+              <span>Jurisdiction: Bhopal, Madhya Pradesh, India</span>
+            </div>
+          </div>
 
-          <div className="terms-list">
-            {termsSections.map((section) => (
-              <section key={section.title} className="terms-section">
-                <h2>{section.title}</h2>
+          <div className="terms-legal-card" aria-label="Legal overview">
+            <FaFileContract />
+            <strong>Use responsibly</strong>
+            <span>Personal and informational use is permitted.</span>
+            <span>Unauthorized commercial reuse is prohibited.</span>
+            <span>Violation may result in legal action.</span>
+          </div>
+        </section>
+
+        <section className="terms-key-grid" aria-label="Key terms">
+          {keyTerms.map((item) => (
+            <article key={item.title} className="terms-key-card">
+              <div>{item.icon}</div>
+              <h2>{item.title}</h2>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="about-section terms-rules-section">
+          <div className="about-section-heading">
+            <span>Detailed Terms</span>
+            <h2>Conditions of access and use</h2>
+          </div>
+          <div className="about-info-list terms-legal-list">
+            {detailedTerms.map((section) => (
+              <section className="about-info-row" key={section.title}>
+                <h3>{section.title}</h3>
                 <p>{section.body}</p>
               </section>
             ))}
           </div>
-        </article>
+        </section>
+
+        <section className="about-section about-split">
+          <div>
+            <div className="about-section-heading">
+              <span>Not Allowed</span>
+              <h2>Prohibited use</h2>
+            </div>
+            <ul className="about-check-list">
+              {prohibitedItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="terms-warning-box">
+            <FaBan />
+            <h2>Violation may result in legal action</h2>
+            <p>
+              Misuse of content, unlawful activity, platform abuse, copyright
+              violation, or harmful conduct may lead to content removal, access
+              restriction, complaint, or legal action as permitted by law.
+            </p>
+          </div>
+        </section>
+
+        <section className="about-section terms-bottom-grid">
+          <article>
+            <FaBalanceScale />
+            <h2>Governing Law</h2>
+            <p>
+              These terms are governed by Indian law. Disputes are subject to the
+              jurisdiction of competent courts in Bhopal, Madhya Pradesh, unless
+              applicable law requires otherwise.
+            </p>
+          </article>
+          <article>
+            <FaGavel />
+            <h2>Changes</h2>
+            <p>
+              Garud Samachar may update these terms or modify services without
+              prior notice. The latest version published on this page will apply.
+            </p>
+          </article>
+        </section>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
