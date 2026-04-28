@@ -557,8 +557,6 @@ body {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
 
 .mobile-nav-row::-webkit-scrollbar {
@@ -1017,8 +1015,8 @@ body {
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   -webkit-tap-highlight-color: transparent;
   background: transparent !important;
   transition: none;
@@ -1924,13 +1922,11 @@ body {
   color: #374151;
   font-family: var(--font-body);
   text-align: justify;
-  text-justify: inter-word;
 }
 
 .full-content p {
   margin: 0 0 10px;
   text-align: justify;
-  text-justify: inter-word;
   word-break: normal;
   overflow-wrap: break-word;
 }
@@ -1938,7 +1934,6 @@ body {
 .rich-output p {
   margin: 0 0 10px;
   text-align: justify;
-  text-justify: inter-word;
   word-break: normal;
   overflow-wrap: break-word;
 }
@@ -2120,6 +2115,7 @@ body {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -2167,6 +2163,7 @@ body {
   color: rgba(255, 255, 255, 0.92);
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -2319,6 +2316,7 @@ body {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   overflow: hidden;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
@@ -2522,6 +2520,7 @@ body {
   min-height: 32px;
   padding: 7px 12px;
   border-radius: 999px;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   font-size: 11px;
   font-weight: 800;
@@ -2642,8 +2641,8 @@ body {
   border: none;
   border-radius: 0;
   overflow: visible;
-  backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .epaper-preview-card {
@@ -2772,8 +2771,8 @@ body {
   flex-shrink: 0;
   box-shadow: none;
   border-radius: 0;
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -3412,7 +3411,6 @@ body {
   }
 
   .videos-stat {
-    min-height: auto;
     gap: 10px;
   }
 
@@ -3449,6 +3447,7 @@ body {
   .video-story-summary {
     font-size: 12px;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .search-bar {
@@ -3535,8 +3534,8 @@ body {
     border: none;
     border-radius: 0;
     overflow: visible;
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .epaper-preview-card {
@@ -4149,8 +4148,8 @@ body {
   .rich-output li,
   .rich-output blockquote {
     text-align: justify;
-    text-align-last: left;
     -webkit-text-align-last: left;
+    text-align-last: left;
   }
 
   .rich-output h1,
@@ -4158,8 +4157,8 @@ body {
   .rich-output h3,
   .rich-output strong {
     text-align: left;
-    text-align-last: auto;
     -webkit-text-align-last: auto;
+    text-align-last: auto;
   }
 
   .news-card {
@@ -4298,7 +4297,6 @@ body {
   width: 100%;
   min-width: 0;
   overflow-x: auto;
-  scrollbar-width: none;
 }
 
 .nav-row-inline::-webkit-scrollbar {

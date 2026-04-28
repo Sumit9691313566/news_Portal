@@ -13,7 +13,6 @@
 
 .copy-protection-active img,
 .copy-protection-active video {
-  -webkit-user-drag: none;
   pointer-events: auto;
 }
 
@@ -1492,7 +1491,6 @@
 
   .terms-masthead {
     position: relative;
-    min-height: auto;
   }
 
   .terms-brand-row {
