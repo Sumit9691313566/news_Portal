@@ -1,5 +1,29 @@
 import { getVapidPublicKey, saveSubscription, sendNotificationToAll } from "../utils/push.js";
 
+const PUSH_ALLOWED_HOSTS = new Set(["garudsamachar.in", "www.garudsamachar.in"]);
+
+const getHostname = (value = "") => {
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+};
+
+const isAllowedPushRequest = (req) => {
+  const originHost = getHostname(req.get("origin") || "");
+  const refererHost = getHostname(req.get("referer") || "");
+  return PUSH_ALLOWED_HOSTS.has(originHost) || PUSH_ALLOWED_HOSTS.has(refererHost);
+};
+
+const getPushSourceHost = (req) => {
+  const originHost = getHostname(req.get("origin") || "");
+  const refererHost = getHostname(req.get("referer") || "");
+  if (PUSH_ALLOWED_HOSTS.has(originHost)) return originHost;
+  if (PUSH_ALLOWED_HOSTS.has(refererHost)) return refererHost;
+  return "garudsamachar.in";
+};
+
 const decodeHtmlEntities = (value = "") => {
   let decoded = String(value || "");
   const entityMap = {
@@ -57,11 +81,17 @@ export const vapidKey = async (req, res) => {
 
 export const subscribe = async (req, res) => {
   try {
+    if (!isAllowedPushRequest(req)) {
+      return res.status(403).json({ message: "Notifications are only available on garudsamachar.in" });
+    }
+
     const sub = req.body;
     if (!sub || !sub.endpoint) {
       return res.status(400).json({ message: "Invalid subscription" });
     }
-    const saved = await saveSubscription(sub);
+    const saved = await saveSubscription(sub, {
+      sourceHost: getPushSourceHost(req),
+    });
     res.status(201).json({ success: true, savedId: saved._id });
   } catch (err) {
     console.error("SUBSCRIBE ERROR:", err);

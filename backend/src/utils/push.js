@@ -20,13 +20,15 @@ const buildSubObject = (doc) => ({
 
 export const getVapidPublicKey = () => VAPID_PUBLIC;
 
-export const saveSubscription = async (sub) => {
+export const saveSubscription = async (sub, meta = {}) => {
   if (!sub || !sub.endpoint) throw new Error("Invalid subscription");
   const existing = await PushSubscriber.findOne({ endpoint: sub.endpoint });
   const keys = sub.keys || {};
   if (existing) {
     existing.p256dh_key = keys.p256dh || existing.p256dh_key;
     existing.auth_key = keys.auth || existing.auth_key;
+    existing.source_host = meta.sourceHost || existing.source_host || "garudsamachar.in";
+    existing.permission_status = "granted";
     await existing.save();
     return existing;
   }
@@ -34,6 +36,8 @@ export const saveSubscription = async (sub) => {
     endpoint: sub.endpoint,
     p256dh_key: keys.p256dh || "",
     auth_key: keys.auth || "",
+    source_host: meta.sourceHost || "garudsamachar.in",
+    permission_status: "granted",
   });
   return created;
 };

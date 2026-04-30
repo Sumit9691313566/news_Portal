@@ -21,6 +21,7 @@ import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Disclaimer from "./pages/Disclaimer";
+import PushPermissionPrompt from "./components/PushPermissionPrompt";
 
 function App() {
   useEffect(() => {
@@ -29,6 +30,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <PushPermissionPrompt />
       <Routes>
         {/* HOME */}
         <Route path="/" element={<Category />} />

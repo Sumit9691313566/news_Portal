@@ -2,6 +2,13 @@ import { API_BASE_URL } from "./api";
 
 const PUSH_SUBSCRIBED_KEY = "pushSubscribed";
 const PUSH_PROMPT_SEEN_KEY = "pushPromptSeen";
+const PUSH_PROMPT_DISMISSED_KEY = "pushPromptDismissed";
+const PUSH_ALLOWED_HOSTS = new Set(["garudsamachar.in", "www.garudsamachar.in"]);
+
+export const isPushAllowedHost = () => {
+  if (typeof window === "undefined") return false;
+  return PUSH_ALLOWED_HOSTS.has(String(window.location.hostname || "").toLowerCase());
+};
 
 const urlBase64ToUint8Array = (base64String) => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -15,6 +22,10 @@ const urlBase64ToUint8Array = (base64String) => {
 };
 
 const getServiceWorkerRegistration = async () => {
+  if (!isPushAllowedHost()) {
+    throw new Error("Notifications sirf garudsamachar.in par available hain.");
+  }
+
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     throw new Error("Push notifications are not supported on this device.");
   }
@@ -30,7 +41,10 @@ const saveSubscription = async (subscription) => {
   const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(subscription),
+    body: JSON.stringify({
+      ...subscription.toJSON(),
+      permissionStatus: "granted",
+    }),
   });
 
   if (!response.ok) {
@@ -39,6 +53,8 @@ const saveSubscription = async (subscription) => {
   }
 
   localStorage.setItem(PUSH_SUBSCRIBED_KEY, "1");
+  localStorage.setItem(PUSH_PROMPT_SEEN_KEY, "1");
+  localStorage.removeItem(PUSH_PROMPT_DISMISSED_KEY);
   return response.json().catch(() => ({}));
 };
 
@@ -71,6 +87,10 @@ export const subscribeWithServiceWorker = async () => {
 };
 
 export const registerAndSubscribe = async () => {
+  if (!isPushAllowedHost()) {
+    throw new Error("Notifications sirf garudsamachar.in par available hain.");
+  }
+
   if (!("Notification" in window)) {
     throw new Error("Notifications are not supported on this device.");
   }
@@ -84,8 +104,35 @@ export const registerAndSubscribe = async () => {
   return subscribeWithServiceWorker();
 };
 
+export const dismissPushPrompt = () => {
+  localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, "1");
+};
+
+export const shouldShowPushPrompt = () => {
+  if (typeof window === "undefined") return false;
+  if (!isPushAllowedHost()) return false;
+  if (!("Notification" in window)) return false;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+  if (window.location.protocol !== "https:") return false;
+
+  try {
+    const params = new URL(window.location.href).searchParams;
+    if (params.get("resetPushPrompt") === "1") {
+      localStorage.removeItem(PUSH_PROMPT_SEEN_KEY);
+      localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
+      localStorage.removeItem(PUSH_PROMPT_DISMISSED_KEY);
+    }
+  } catch {}
+
+  if (Notification.permission === "granted") return false;
+  if (Notification.permission === "denied") return false;
+  if (localStorage.getItem(PUSH_SUBSCRIBED_KEY) === "1") return false;
+  return localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY) !== "1";
+};
+
 export const restoreExistingPushSubscription = async () => {
   try {
+    if (!isPushAllowedHost()) return { success: false, skipped: true };
     if (typeof Notification === "undefined") return { success: false, skipped: true };
     if (Notification.permission !== "granted") return { success: false, skipped: true };
 
@@ -103,6 +150,7 @@ export const promptForSubscription = async () => {
       if (params.get("resetPushPrompt") === "1") {
         localStorage.removeItem(PUSH_PROMPT_SEEN_KEY);
         localStorage.removeItem(PUSH_SUBSCRIBED_KEY);
+        localStorage.removeItem(PUSH_PROMPT_DISMISSED_KEY);
       }
     }
   } catch {}

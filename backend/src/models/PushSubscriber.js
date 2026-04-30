@@ -5,6 +5,8 @@ const pushSubscriberSchema = new mongoose.Schema(
     endpoint: { type: String, required: true, unique: true },
     p256dh_key: { type: String, required: true },
     auth_key: { type: String, required: true },
+    source_host: { type: String, default: "garudsamachar.in" },
+    permission_status: { type: String, default: "granted" },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }
 );
