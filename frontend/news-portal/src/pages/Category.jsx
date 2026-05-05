@@ -16,6 +16,7 @@ import {
   stripHtml,
 } from "../utils/richText";
 import { searchNews } from "../utils/searchNews";
+import { openFacebookShare, openWhatsAppShare } from "../utils/share";
 import { getPublicSiteUrl } from "../utils/siteUrl";
 import {
   CATEGORY_LIST,
@@ -420,19 +421,13 @@ export default function Category() {
   };
 
   const shareToWhatsApp = (news) => {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
-      getNewsShareText(news)
-    )}`;
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    openWhatsAppShare(getNewsShareText(news));
   };
 
   const shareToFacebook = (news) => {
     const shareUrl = getNewsShareUrl(news);
     if (!shareUrl) return;
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareUrl
-    )}`;
-    window.open(facebookUrl, "_blank", "noopener,noreferrer");
+    openFacebookShare(shareUrl, getPlainTextTitle(news?.title || ""));
   };
 
   const renderShareActions = (news) => (

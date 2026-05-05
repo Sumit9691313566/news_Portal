@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fallbackVideos, normalizeVideosFromNews } from "../utils/videoFeed";
 import { getPlainTextTitle, stripHtml } from "../utils/richText";
+import { openFacebookShare, openWhatsAppShare } from "../utils/share";
 import { buildPublicUrl } from "../utils/siteUrl";
 import "../styles/videoPlayer.css";
 
@@ -274,10 +275,10 @@ export default function VideoPlayer() {
   const handleFacebookShare = () => {
     setIsMoreMenuOpen(false);
 
-    const target = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareUrl
-    )}`;
-    window.open(target, "_blank", "noopener,noreferrer");
+    openFacebookShare(
+      shareUrl,
+      getPlainTextTitle(activeVideo?.title || "") || "Video"
+    );
   };
 
   const shareToWhatsApp = (video) => {
@@ -287,8 +288,7 @@ export default function VideoPlayer() {
       getPlainTextTitle(video?.title || "") || "Video",
       shareUrl,
     ].filter(Boolean).join(" ");
-    const target = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(target, "_blank", "noopener,noreferrer");
+    openWhatsAppShare(text);
   };
 
   const handleMoreAction = async () => {
