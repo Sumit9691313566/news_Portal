@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fallbackVideos, normalizeVideosFromNews } from "../utils/videoFeed";
+import { getPlainTextTitle, stripHtml } from "../utils/richText";
 import { buildPublicUrl } from "../utils/siteUrl";
 import "../styles/videoPlayer.css";
 
@@ -282,7 +283,10 @@ export default function VideoPlayer() {
   const shareToWhatsApp = (video) => {
     setIsMoreMenuOpen(false);
 
-    const text = [video?.title, shareUrl].filter(Boolean).join(" ");
+    const text = [
+      getPlainTextTitle(video?.title || "") || "Video",
+      shareUrl,
+    ].filter(Boolean).join(" ");
     const target = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(target, "_blank", "noopener,noreferrer");
   };
@@ -293,8 +297,11 @@ export default function VideoPlayer() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: activeVideo?.title || "Video",
-          text: activeVideo?.summary || activeVideo?.title || "Video",
+          title: getPlainTextTitle(activeVideo?.title || "") || "Video",
+          text:
+            stripHtml(activeVideo?.summary || "") ||
+            getPlainTextTitle(activeVideo?.title || "") ||
+            "Video",
           url: shareUrl,
         });
         return;
@@ -320,7 +327,7 @@ export default function VideoPlayer() {
     }
 
     try {
-      const safeTitle = (activeVideo.title || "video")
+      const safeTitle = (getPlainTextTitle(activeVideo.title || "") || "video")
         .trim()
         .replace(/[^a-z0-9]+/gi, "-")
         .replace(/^-+|-+$/g, "")

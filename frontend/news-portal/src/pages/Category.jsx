@@ -314,7 +314,7 @@ export default function Category() {
     id: news._id || news.id,
     _id: news._id || news.id,
     mediaUrl: news.mediaUrl,
-    title: news.title,
+    title: getPlainTextTitle(news.title),
     summary: news.content || "",
     category: getCategoryLabel(news.category),
     createdAt: news.createdAt,
@@ -388,7 +388,7 @@ export default function Category() {
   };
 
   const getNewsShareText = (news) => {
-    const title = String(news?.title || "Latest news");
+    const title = getPlainTextTitle(news?.title || "") || "Latest news";
     const shareUrl = getNewsShareUrl(news);
     return `${title} | गरुड़ समाचार ${shareUrl}`.trim();
   };

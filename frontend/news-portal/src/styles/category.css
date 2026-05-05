@@ -1190,15 +1190,15 @@ body {
 }
 
 .cat-apraadh {
-  color: #8f1111;
+  color: #b91c1c;
 }
 
 .cat-sangharsh {
-  color: #7a3413;
+  color: #c2410c;
 }
 
 .cat-bhrashtachar {
-  color: #0f766e;
+  color: #047857;
 }
 
 .cat-desh-videsh {
@@ -1206,23 +1206,23 @@ body {
 }
 
 .cat-real-hero {
-  color: #6d28d9;
+  color: #7c3aed;
 }
 
 .cat-garud-vishesh {
-  color: #9a3412;
+  color: #d97706;
 }
 
 .cat-satark {
-  color: #b45309;
+  color: #be123c;
 }
 
 .cat-jyotishi {
-  color: #7c2d12;
+  color: #0e7490;
 }
 
 .cat-aatm-vani {
-  color: #14532d;
+  color: #166534;
 }
 
 /* Ensure category colors apply across all title placements */
@@ -1311,7 +1311,7 @@ body {
 .featured-info h1.cat-apraadh,
 .more-news-info h4.cat-apraadh,
 .suggest-item p.cat-apraadh {
-  color: #8f1111;
+  color: #b91c1c;
   font-weight: 900;
 }
 
@@ -1320,7 +1320,7 @@ body {
 .featured-info h1.cat-sangharsh,
 .more-news-info h4.cat-sangharsh,
 .suggest-item p.cat-sangharsh {
-  color: #7a3413;
+  color: #c2410c;
   font-weight: 900;
 }
 
@@ -1329,7 +1329,7 @@ body {
 .featured-info h1.cat-bhrashtachar,
 .more-news-info h4.cat-bhrashtachar,
 .suggest-item p.cat-bhrashtachar {
-  color: #0f766e;
+  color: #047857;
   font-weight: 900;
 }
 
@@ -1347,7 +1347,7 @@ body {
 .featured-info h1.cat-real-hero,
 .more-news-info h4.cat-real-hero,
 .suggest-item p.cat-real-hero {
-  color: #6d28d9;
+  color: #7c3aed;
   font-weight: 900;
 }
 
@@ -1356,7 +1356,7 @@ body {
 .featured-info h1.cat-garud-vishesh,
 .more-news-info h4.cat-garud-vishesh,
 .suggest-item p.cat-garud-vishesh {
-  color: #9a3412;
+  color: #d97706;
   font-weight: 900;
 }
 
@@ -1365,7 +1365,7 @@ body {
 .featured-info h1.cat-satark,
 .more-news-info h4.cat-satark,
 .suggest-item p.cat-satark {
-  color: #b45309;
+  color: #be123c;
   font-weight: 900;
 }
 
@@ -1374,7 +1374,7 @@ body {
 .featured-info h1.cat-jyotishi,
 .more-news-info h4.cat-jyotishi,
 .suggest-item p.cat-jyotishi {
-  color: #7c2d12;
+  color: #0e7490;
   font-weight: 900;
 }
 
@@ -1383,7 +1383,7 @@ body {
 .featured-info h1.cat-aatm-vani,
 .more-news-info h4.cat-aatm-vani,
 .suggest-item p.cat-aatm-vani {
-  color: #14532d;
+  color: #166534;
   font-weight: 900;
 }
 

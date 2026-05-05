@@ -592,7 +592,7 @@ export default function MainAdminDashboard() {
                     buildStyledTitleHtml(
                       selectedNews.title,
                       selectedNews.titleColor,
-                      selectedNews.category
+                      getCategoryTitleColor(selectedNews.category)
                     ) || "News Title Preview",
                 }}
               />

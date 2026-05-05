@@ -1,3 +1,5 @@
+import { getPlainTextTitle, stripHtml } from "./richText";
+
 export const fallbackVideos = [
   {
     id: "fallback-1",
@@ -37,14 +39,15 @@ export const normalizeVideosFromNews = (list = []) => {
       .filter(Boolean)
       .join(" ");
 
-    const summary = (newsItem.content || summaryFromBlocks || "").trim();
+    const title = getPlainTextTitle(newsItem.title || "") || "Video";
+    const summary = stripHtml(newsItem.content || summaryFromBlocks || "").trim();
     const baseId = newsItem._id || newsItem.id;
     const items = [];
 
     if (newsItem.mediaType === "video" && newsItem.mediaUrl) {
       items.push({
         id: `${baseId || "video"}-main`,
-        title: newsItem.title,
+        title,
         summary,
         mediaUrl: newsItem.mediaUrl,
         mediaType: "video",
@@ -58,7 +61,7 @@ export const normalizeVideosFromNews = (list = []) => {
       if (block.type === "video" && block.url) {
         items.push({
           id: `${baseId || "block"}-${index}`,
-          title: newsItem.title,
+          title,
           summary,
           mediaUrl: block.url,
           mediaType: "video",

@@ -255,12 +255,22 @@ const isSafeColor = (value = "") =>
 
 const NEUTRAL_TITLE_COLORS = new Set(["#1f2937", "#111827"]);
 
+const hasInlineTextColor = (html = "") =>
+  /(?:^|;)\s*color\s*:\s*(?!inherit\b|initial\b|unset\b|currentcolor\b)[^;"]+/i.test(
+    String(html || "")
+  );
+
 export const buildStyledTitleHtml = (
   html = "",
   titleColor = "",
   fallbackColor = ""
 ) => {
-  const safeTitleText = getPlainTextTitle(html);
+  const sanitizedTitle = sanitizeTitleHtml(html);
+  if (hasInlineTextColor(sanitizedTitle)) {
+    return sanitizedTitle;
+  }
+
+  const safeTitleText = getPlainTextTitle(sanitizedTitle);
   const fallbackText = escapeHtml(safeTitleText);
   const manualColor = isSafeColor(titleColor) ? String(titleColor).trim() : "";
   const categoryColor = isSafeColor(fallbackColor) ? String(fallbackColor).trim() : "";
