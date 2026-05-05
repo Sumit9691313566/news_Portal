@@ -16,7 +16,7 @@ import {
   stripHtml,
 } from "../utils/richText";
 import { searchNews } from "../utils/searchNews";
-import { openFacebookShare, openWhatsAppShare } from "../utils/share";
+import { copyTextToClipboard, openFacebookShare, openWhatsAppShare } from "../utils/share";
 import { getPublicSiteUrl } from "../utils/siteUrl";
 import {
   CATEGORY_LIST,
@@ -404,16 +404,7 @@ export default function Category() {
     if (!shareUrl) return;
 
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else {
-        const helperInput = document.createElement("input");
-        helperInput.value = shareUrl;
-        document.body.appendChild(helperInput);
-        helperInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(helperInput);
-      }
+      await copyTextToClipboard(shareUrl);
       showShareMessage("News link copied");
     } catch {
       showShareMessage("Link copy nahi ho paya");

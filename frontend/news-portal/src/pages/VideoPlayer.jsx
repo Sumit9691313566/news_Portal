@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fallbackVideos, normalizeVideosFromNews } from "../utils/videoFeed";
 import { getPlainTextTitle, stripHtml } from "../utils/richText";
-import { openFacebookShare, openWhatsAppShare } from "../utils/share";
+import { copyTextToClipboard, openFacebookShare, openWhatsAppShare } from "../utils/share";
 import { buildPublicUrl } from "../utils/siteUrl";
 import "../styles/videoPlayer.css";
 
@@ -254,7 +254,7 @@ export default function VideoPlayer() {
     setIsMoreMenuOpen(false);
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await copyTextToClipboard(shareUrl);
       alert("Link copy ho gaya");
     } catch {
       alert("Link copy nahi ho paya");
@@ -307,7 +307,7 @@ export default function VideoPlayer() {
         return;
       }
 
-      await navigator.clipboard.writeText(shareUrl);
+      await copyTextToClipboard(shareUrl);
       alert("Link copy ho gaya");
     } catch {
       alert("Share cancel ho gaya");
