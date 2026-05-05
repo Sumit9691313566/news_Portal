@@ -1509,7 +1509,7 @@ export default function Category() {
           <button
             type="button"
             className="image-lightbox-close"
-            onClick={closeFullscreenImage}
+            onClick={closeFullscreenImage}  //garud//
           >
             ×
           </button>
