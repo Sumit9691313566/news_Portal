@@ -1,5 +1,4 @@
 const SITE_URL = "https://garudsamachar.in";
-const DEFAULT_IMAGE = `${SITE_URL}/logo.jpeg`;
 
 const decodeHtmlEntities = (value = "") =>
   String(value || "")
@@ -47,15 +46,6 @@ const getApiBaseUrl = (req) => {
   return `${proto}://${host}/api`;
 };
 
-const getNewsImage = (news) => {
-  if (news?.mediaType === "image" && news?.mediaUrl) return news.mediaUrl;
-  if (news?.mediaUrl && !String(news.mediaType || "").includes("video")) return news.mediaUrl;
-  const blockImage = Array.isArray(news?.blocks)
-    ? news.blocks.find((block) => block?.type === "image" && block?.url)
-    : null;
-  return blockImage?.url || DEFAULT_IMAGE;
-};
-
 const findNewsById = async (req, id) => {
   const apiBase = getApiBaseUrl(req);
   const response = await fetch(`${apiBase}/news`, {
@@ -83,9 +73,10 @@ export default async function handler(req, res) {
     }
   }
 
-  const title = stripHtml(news?.title || "") || "Garud Samachar";
-  const description = stripHtml(news?.content || "") || "Garud Samachar";
-  const image = getNewsImage(news);
+  const newsTitle = stripHtml(news?.title || "");
+  const contentText = stripHtml(news?.content || "");
+  const title = newsTitle || "Garud Samachar";
+  const description = contentText || newsTitle || "Garud Samachar";
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
@@ -102,14 +93,9 @@ export default async function handler(req, res) {
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${escapeHtml(articleUrl)}" />
-    <meta property="og:image" content="${escapeHtml(image)}" />
-    <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
-    <meta name="twitter:image" content="${escapeHtml(image)}" />
     <meta http-equiv="refresh" content="0; url=${escapeHtml(articleUrl)}" />
   </head>
   <body>

@@ -384,13 +384,14 @@ export default function Category() {
     if (!newsId || typeof window === "undefined") return "";
 
     const shareUrl = new URL(`/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
+    shareUrl.searchParams.set("v", "5");
     return shareUrl.toString();
   };
 
   const getNewsShareText = (news) => {
     const title = getPlainTextTitle(news?.title || "") || "Latest news";
     const shareUrl = getNewsShareUrl(news);
-    return `${title} | गरुड़ समाचार ${shareUrl}`.trim();
+    return `${title}\n${shareUrl}`.trim();
   };
 
   const showShareMessage = (message) => {
