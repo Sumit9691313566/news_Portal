@@ -383,8 +383,7 @@ export default function Category() {
     const newsId = news?._id || news?.id;
     if (!newsId || typeof window === "undefined") return "";
 
-    const shareUrl = new URL("/", getPublicSiteUrl());
-    shareUrl.searchParams.set("newsId", newsId);
+    const shareUrl = new URL(`/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
     return shareUrl.toString();
   };
 
