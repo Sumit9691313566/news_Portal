@@ -684,14 +684,10 @@ export default function Category() {
       );
     }
 
-      const pageTitle =
-          activeCategory === "All"
-            ? "Hindi News, Hindi Samachar & Breaking News"
-            : `${getCategoryLabel(activeCategory)} News | Hindi Samachar`;
     const description =
       activeCategory === "All"
-        ? `${siteName} (गरुड़ समाचार) par padhiye Hindi News, Hindi Samachar, breaking news, आज की ताजा खबर, crime news, desh videsh aur taaza Hindi khabrein.`
-        : `${siteName} par ${getCategoryLabel(activeCategory)} se judi Hindi News, Hindi Samachar, breaking updates aur taaza khabrein padhiye.`;
+        ? siteName
+        : `${siteName} - ${getCategoryLabel(activeCategory)}`;
     const keywords = `Garud Samachar, गरुड़ समाचार, Hindi News, Hindi Samachar, हिंदी समाचार, हिंदी न्यूज़, हिंदी न्यूज, Latest Hindi News, Breaking News, आज की ताजा खबर, Taza Khabar, ${getCategoryLabel(activeCategory)} News, ${getCategoryLabel(activeCategory)} Hindi News, India News in Hindi`;
     const pageUrl =
       activeCategory === "All"
@@ -710,12 +706,12 @@ export default function Category() {
 
     return (
       <Helmet>
-        <title>{`${siteName} | ${pageTitle}`}</title>
+        <title>{siteName}</title>
         <link rel="canonical" href={pageUrl} />
         <meta name="description" content={description} />
         <meta name="keywords" content={keywords} />
         <meta name="robots" content="index, follow, max-image-preview:large" />
-        <meta property="og:title" content={`${siteName} | ${pageTitle}`} />
+        <meta property="og:title" content={siteName} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={pageUrl} />
         <meta property="og:type" content="website" />
