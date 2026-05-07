@@ -1189,6 +1189,10 @@ body {
   color: #00796b;
 }
 
+.cat-aaj-ki-khabar {
+  color: #0f766e;
+}
+
 .cat-apraadh {
   color: #b91c1c;
 }
@@ -1303,6 +1307,15 @@ body {
 .more-news-info h4.cat-default,
 .suggest-item p.cat-default {
   color: #111827;
+  font-weight: 900;
+}
+
+.news-info h2.cat-aaj-ki-khabar,
+.news-full h1.cat-aaj-ki-khabar,
+.featured-info h1.cat-aaj-ki-khabar,
+.more-news-info h4.cat-aaj-ki-khabar,
+.suggest-item p.cat-aaj-ki-khabar {
+  color: #0f766e;
   font-weight: 900;
 }
 

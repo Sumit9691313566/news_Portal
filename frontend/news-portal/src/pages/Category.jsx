@@ -490,6 +490,7 @@ export default function Category() {
 
   const categoryClass = (category) => {
     const key = normalizeCategoryValue(category || "");
+    if (key === "आज की खबर") return "cat-aaj-ki-khabar";
     if (key === "अपराध") return "cat-apraadh";
     if (key === "संघर्ष से शिखर") return "cat-sangharsh";
     if (key === "भ्रष्टाचार") return "cat-bhrashtachar";

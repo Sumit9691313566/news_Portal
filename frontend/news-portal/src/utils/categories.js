@@ -1,5 +1,6 @@
 export const CATEGORY_LIST = [
   { value: "All", label: "सभी" },
+  { value: "आज की खबर", label: "आज की खबर", highlight: true },
   { value: "अपराध", label: "अपराध", highlight: true },
   { value: "संघर्ष से शिखर", label: "संघर्ष से शिखर", highlight: true },
   { value: "भ्रष्टाचार", label: "भ्रष्टाचार" },
@@ -29,10 +30,14 @@ const LEGACY_CATEGORY_MAP = {
   world: "देश / विदेश",
   Article: "गरुड़ विशेष",
   article: "गरुड़ विशेष",
+  "Aaj ki khabar": "आज की खबर",
+  "Aaj Ki Khabar": "आज की खबर",
+  "aaj ki khabar": "आज की खबर",
 };
 
 const ALL_KNOWN_CATEGORY_MAP = {
   ...LEGACY_CATEGORY_MAP,
+  "आज की खबर": "आज की खबर",
   अपराध: "अपराध",
   "संघर्ष से शिखर": "संघर्ष से शिखर",
   भ्रष्टाचार: "भ्रष्टाचार",
@@ -47,6 +52,7 @@ const ALL_KNOWN_CATEGORY_MAP = {
 };
 
 const CATEGORY_TITLE_COLOR_MAP = {
+  "आज की खबर": "#0f766e",
   अपराध: "#b91c1c",
   "संघर्ष से शिखर": "#c2410c",
   भ्रष्टाचार: "#047857",
@@ -246,17 +252,20 @@ export const inferCategoryFromNews = ({ title = "", content = "" } = {}) => {
 };
 
 export const resolveNewsCategory = ({ title = "", content = "", category = "" } = {}) => {
+  const normalized = normalizeCategoryValue(category);
+  if (normalized && normalized !== "All") return normalized;
+
   const inferred = inferCategoryFromNews({ title, content });
   if (inferred) return inferred;
-
-  const normalized = normalizeCategoryValue(category);
-  if (normalized === "संघर्ष से शिखर") return "गरुड़ विशेष";
-  if (normalized && normalized !== "All") return normalized;
 
   return "गरुड़ विशेष";
 };
 
 export const isHighlightedCategory = (value) => {
   const normalized = normalizeCategoryValue(value);
-  return normalized === "अपराध" || normalized === "गरुड़ विशेष";
+  return (
+    normalized === "आज की खबर" ||
+    normalized === "अपराध" ||
+    normalized === "गरुड़ विशेष"
+  );
 };
