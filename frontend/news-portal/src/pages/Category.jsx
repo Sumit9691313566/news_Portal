@@ -43,22 +43,15 @@ const toIsoDate = (value) => {
   return date.toISOString();
 };
 
-const formatArticleDateTime = (value) => {
+const formatArticleDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  const datePart = date.toLocaleDateString("hi-IN", {
+  return date.toLocaleDateString("hi-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const timePart = date.toLocaleTimeString("hi-IN", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: false,
-  });
-
-  return `${datePart}, ${timePart} बजे`;
 };
 
 const resolvePublicSiteUrl = () => {
@@ -1265,7 +1258,7 @@ export default function Category() {
                         selectedNews.firstPublishedAt || selectedNews.createdAt
                       )}
                     >
-                      {formatArticleDateTime(
+                      {formatArticleDate(
                         selectedNews.firstPublishedAt || selectedNews.createdAt
                       )}
                     </time>
