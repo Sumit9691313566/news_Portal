@@ -32,6 +32,27 @@ const escapeHtml = (value = "") =>
 
 const normalizeUrl = (value = "") => String(value || "").replace(/\/+$/, "");
 
+const absolutizeUrl = (url = "", baseUrl = SITE_URL) => {
+  const cleanUrl = String(url || "").trim();
+  if (!cleanUrl) return "";
+  if (/^https?:\/\//i.test(cleanUrl)) return cleanUrl;
+  if (cleanUrl.startsWith("//")) return `https:${cleanUrl}`;
+  return `${normalizeUrl(baseUrl)}/${cleanUrl.replace(/^\/+/, "")}`;
+};
+
+const getNewsImageUrl = (news) => {
+  if (news?.mediaType === "image" && news?.mediaUrl) {
+    return absolutizeUrl(news.mediaUrl);
+  }
+
+  const imageBlock = Array.isArray(news?.blocks)
+    ? news.blocks.find((block) => block?.type === "image" && block?.url)
+    : null;
+
+  if (imageBlock?.url) return absolutizeUrl(imageBlock.url);
+  return `${SITE_URL}/logo.jpeg`;
+};
+
 const getApiBaseUrl = (req) => {
   const configured =
     process.env.API_BASE_URL ||
@@ -77,6 +98,7 @@ export default async function handler(req, res) {
   const contentText = stripHtml(news?.content || "");
   const title = newsTitle || "Garud Samachar";
   const description = contentText || newsTitle || "Garud Samachar";
+  const imageUrl = getNewsImageUrl(news);
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
@@ -93,9 +115,15 @@ export default async function handler(req, res) {
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${escapeHtml(articleUrl)}" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:alt" content="${escapeHtml(title)}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
     <meta http-equiv="refresh" content="0; url=${escapeHtml(articleUrl)}" />
   </head>
   <body>

@@ -37,6 +37,27 @@ const escapeHtml = (value = "") =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;")
 
+const absolutizeUrl = (url = "", baseUrl = "") => {
+  const cleanUrl = String(url || "").trim()
+  if (!cleanUrl) return ""
+  if (/^https?:\/\//i.test(cleanUrl)) return cleanUrl
+  if (cleanUrl.startsWith("//")) return `https:${cleanUrl}`
+  return `${normalizeUrl(baseUrl)}/${cleanUrl.replace(/^\/+/, "")}`
+}
+
+const getNewsImageUrl = (news, baseUrl) => {
+  if (news?.mediaType === "image" && news?.mediaUrl) {
+    return absolutizeUrl(news.mediaUrl, baseUrl)
+  }
+
+  const imageBlock = Array.isArray(news?.blocks)
+    ? news.blocks.find((block) => block?.type === "image" && block?.url)
+    : null
+
+  if (imageBlock?.url) return absolutizeUrl(imageBlock.url, baseUrl)
+  return `${normalizeUrl(baseUrl)}/logo.jpeg`
+}
+
 const findDevNewsById = async (id) => {
   const response = await fetch(`${getDevApiBaseUrl()}/news`, {
     headers: { accept: "application/json" },
@@ -47,7 +68,7 @@ const findDevNewsById = async (id) => {
   return list.find((item) => String(item?._id || item?.id) === String(id)) || null
 }
 
-const buildSharePreviewHtml = ({ title, description, articleUrl }) => `<!doctype html>
+const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => `<!doctype html>
 <html lang="hi">
   <head>
     <meta charset="utf-8" />
@@ -60,9 +81,15 @@ const buildSharePreviewHtml = ({ title, description, articleUrl }) => `<!doctype
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${escapeHtml(articleUrl)}" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:alt" content="${escapeHtml(title)}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
     <meta http-equiv="refresh" content="0; url=${escapeHtml(articleUrl)}" />
   </head>
   <body>
@@ -95,11 +122,12 @@ const localSharePreviewPlugin = () => ({
 
       const title = stripHtml(news?.title || "") || "Garud Samachar"
       const description = stripHtml(news?.content || "") || title
+      const imageUrl = getNewsImageUrl(news, localOrigin)
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",
       })
-      res.end(buildSharePreviewHtml({ title, description, articleUrl }))
+      res.end(buildSharePreviewHtml({ title, description, articleUrl, imageUrl }))
     })
   },
 })

@@ -384,8 +384,18 @@ export default function Category() {
     if (!newsId || typeof window === "undefined") return "";
 
     const shareUrl = new URL(`/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
-    shareUrl.searchParams.set("v", "5");
+    shareUrl.searchParams.set("v", "6");
     return shareUrl.toString();
+  };
+
+  const getNewsPreviewImage = (news) => {
+    if (news?.mediaType === "image" && news?.mediaUrl) return news.mediaUrl;
+
+    const imageBlock = Array.isArray(news?.blocks)
+      ? news.blocks.find((block) => block?.type === "image" && block?.url)
+      : null;
+
+    return imageBlock?.url || "";
   };
 
   const getNewsShareText = (news) => {
@@ -636,6 +646,7 @@ export default function Category() {
     if (selectedNews) {
       const newsUrl = getNewsShareUrl(selectedNews);
       const description = stripHtml(selectedNews.content || "").substring(0, 160);
+      const previewImage = getNewsPreviewImage(selectedNews) || `${siteUrl}/logo.jpeg`;
       const publishedIso = toIsoDate(
         selectedNews.firstPublishedAt || selectedNews.createdAt
       );
@@ -660,9 +671,7 @@ export default function Category() {
           name: siteName,
           url: `${siteUrl}/`,
         },
-        image: selectedNews.mediaUrl
-          ? [selectedNews.mediaUrl]
-          : [`${siteUrl}/logo.jpeg`],
+        image: [previewImage],
         articleSection: selectedNews.category || "News",
         inLanguage: "hi-IN",
       };
@@ -675,7 +684,13 @@ export default function Category() {
           <meta property="og:title" content={getPlainTextTitle(selectedNews.title)} />
           <meta property="og:description" content={description} />
           <meta property="og:url" content={newsUrl} />
-          <meta property="og:image" content={selectedNews.mediaUrl || `${siteUrl}/logo.jpeg`} />
+          <meta property="og:image" content={previewImage} />
+          <meta property="og:image:secure_url" content={previewImage} />
+          <meta property="og:image:alt" content={getPlainTextTitle(selectedNews.title)} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:image" content={previewImage} />
           <meta property="og:type" content="article" />
           <meta property="article:published_time" content={publishedIso} />
           <meta property="article:modified_time" content={modifiedIso} />

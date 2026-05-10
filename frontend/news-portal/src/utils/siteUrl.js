@@ -4,6 +4,14 @@ export const normalizeSiteUrl = (value = "") =>
   String(value || "").trim().replace(/\/+$/, "");
 
 export const getPublicSiteUrl = () => {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    const currentOrigin = normalizeSiteUrl(window.location.origin);
+    const currentHost = String(window.location.hostname || "").toLowerCase();
+    if (currentHost === "localhost" || currentHost === "127.0.0.1") {
+      return currentOrigin;
+    }
+  }
+
   const configuredUrl = normalizeSiteUrl(RAW_PUBLIC_SITE_URL);
   if (configuredUrl) return configuredUrl;
 
