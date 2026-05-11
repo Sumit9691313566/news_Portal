@@ -58,6 +58,11 @@ const resolvePublicSiteUrl = () => {
   return getPublicSiteUrl();
 };
 
+const getSharedNewsIdFromPath = (pathname = "") => {
+  const match = String(pathname || "").match(/^\/share\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+};
+
 export default function Category() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -265,6 +270,11 @@ export default function Category() {
     const nextView = params.get("view") || "home";
     const nextCategory = params.get("cat") || "All";
     const nextImage = params.get("image") || "";
+    const sharedNewsId = getSharedNewsIdFromPath(location.pathname);
+    if (sharedNewsId) {
+      navigate(`/?newsId=${encodeURIComponent(sharedNewsId)}`, { replace: true });
+      return;
+    }
     if (nextView === "video") {
       navigate("/videos", { replace: true });
       return;
@@ -272,7 +282,7 @@ export default function Category() {
     setView(nextView);
     setActiveCategory(nextCategory);
     setFullscreenImage(nextImage);
-  }, [location.search, navigate]);
+  }, [location.pathname, location.search, navigate]);
 
   const syncUrlState = (nextView, nextCategory, options = {}) => {
     if (nextView === "video") {
@@ -377,7 +387,14 @@ export default function Category() {
     if (!newsId || typeof window === "undefined") return "";
 
     const shareUrl = new URL(`/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
-    shareUrl.searchParams.set("v", "6");
+    const title = getPlainTextTitle(news?.title || "");
+    const description = stripHtml(news?.content || "");
+    const previewImage = getNewsPreviewImage(news);
+
+    shareUrl.searchParams.set("v", "9");
+    if (title) shareUrl.searchParams.set("t", title.slice(0, 140));
+    if (description) shareUrl.searchParams.set("d", description.slice(0, 180));
+    if (previewImage) shareUrl.searchParams.set("img", previewImage);
     return shareUrl.toString();
   };
 
@@ -472,7 +489,10 @@ export default function Category() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const requestedId = location.state?.openNewsId || params.get("newsId");
+    const requestedId =
+      location.state?.openNewsId ||
+      params.get("newsId") ||
+      getSharedNewsIdFromPath(location.pathname);
     if (!requestedId) {
       setSelectedNews(null);
       return;
@@ -489,7 +509,7 @@ export default function Category() {
 
     setSelectedNews(matched);
     scrollToNewsStart();
-  }, [allNews, location.search, location.state]);
+  }, [allNews, location.pathname, location.search, location.state]);
 
   const categoryClass = (category) => {
     const key = normalizeCategoryValue(category || "");

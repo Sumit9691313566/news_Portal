@@ -31,6 +31,24 @@ const escapeHtml = (value = "") =>
     .replace(/'/g, "&#39;");
 
 const normalizeUrl = (value = "") => String(value || "").replace(/\/+$/, "");
+const getQueryValue = (req, key) => {
+  const value = req.query?.[key];
+  return Array.isArray(value) ? value[0] : value;
+};
+
+const getSiteUrl = (req) => {
+  const configured =
+    process.env.PUBLIC_SITE_URL ||
+    process.env.VITE_PUBLIC_SITE_URL ||
+    process.env.FRONTEND_URL ||
+    SITE_URL;
+  const normalized = normalizeUrl(configured);
+  if (normalized) return normalized;
+
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "garudsamachar.in";
+  return `${proto}://${host}`;
+};
 
 const absolutizeUrl = (url = "", baseUrl = SITE_URL) => {
   const cleanUrl = String(url || "").trim();
@@ -40,17 +58,59 @@ const absolutizeUrl = (url = "", baseUrl = SITE_URL) => {
   return `${normalizeUrl(baseUrl)}/${cleanUrl.replace(/^\/+/, "")}`;
 };
 
-const getNewsImageUrl = (news) => {
-  if (news?.mediaType === "image" && news?.mediaUrl) {
-    return absolutizeUrl(news.mediaUrl);
+const truncateText = (value = "", maxLength = 180) => {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 3).trim()}...`;
+};
+
+const isCloudinaryUrl = (url = "") =>
+  /^https?:\/\/res\.cloudinary\.com\//i.test(String(url || ""));
+
+const toCloudinaryOgImage = (url = "") => {
+  const cleanUrl = String(url || "").trim();
+  if (!isCloudinaryUrl(cleanUrl)) return cleanUrl;
+
+  // WhatsApp/Facebook previews are most reliable with a crawlable 1200x630 image.
+  if (cleanUrl.includes("/upload/")) {
+    return cleanUrl.replace(
+      "/upload/",
+      "/upload/f_auto,q_auto,c_fill,w_1200,h_630,g_auto/"
+    );
   }
 
+  return cleanUrl;
+};
+
+const toCloudinaryVideoPoster = (url = "") => {
+  const cleanUrl = String(url || "").trim();
+  if (!isCloudinaryUrl(cleanUrl)) return "";
+
+  const withoutQuery = cleanUrl.split("?")[0];
+  if (!/\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(withoutQuery)) return "";
+
+  return toCloudinaryOgImage(withoutQuery.replace(/\.(mp4|mov|webm|m4v|avi|mkv)$/i, ".jpg"));
+};
+
+const getNewsImageUrl = (news, siteUrl = SITE_URL) => {
   const imageBlock = Array.isArray(news?.blocks)
     ? news.blocks.find((block) => block?.type === "image" && block?.url)
     : null;
 
-  if (imageBlock?.url) return absolutizeUrl(imageBlock.url);
-  return `${SITE_URL}/logo.jpeg`;
+  if (imageBlock?.url) return toCloudinaryOgImage(absolutizeUrl(imageBlock.url, siteUrl));
+
+  if (news?.mediaType === "image" && news?.mediaUrl) {
+    return toCloudinaryOgImage(absolutizeUrl(news.mediaUrl, siteUrl));
+  }
+
+  const videoBlock = Array.isArray(news?.blocks)
+    ? news.blocks.find((block) => block?.type === "video" && block?.url)
+    : null;
+  const videoPoster =
+    toCloudinaryVideoPoster(videoBlock?.url) || toCloudinaryVideoPoster(news?.mediaUrl);
+  if (videoPoster) return absolutizeUrl(videoPoster, siteUrl);
+
+  return `${siteUrl}/logo.jpeg`;
 };
 
 const getApiBaseUrl = (req) => {
@@ -80,10 +140,15 @@ const findNewsById = async (req, id) => {
 };
 
 export default async function handler(req, res) {
-  const id = String(req.query?.id || "").trim();
+  const rawId = getQueryValue(req, "id");
+  const id = String(rawId || "")
+    .split("?")[0]
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .trim();
+  const siteUrl = getSiteUrl(req);
   const articleUrl = id
-    ? `${SITE_URL}/?newsId=${encodeURIComponent(id)}`
-    : `${SITE_URL}/`;
+    ? `${siteUrl}/?newsId=${encodeURIComponent(id)}`
+    : `${siteUrl}/`;
 
   let news = null;
   if (id) {
@@ -94,11 +159,15 @@ export default async function handler(req, res) {
     }
   }
 
-  const newsTitle = stripHtml(news?.title || "");
-  const contentText = stripHtml(news?.content || "");
+  const fallbackTitle = stripHtml(getQueryValue(req, "t") || "");
+  const fallbackDescription = stripHtml(getQueryValue(req, "d") || "");
+  const fallbackImage = getQueryValue(req, "img") || "";
+  const newsTitle = stripHtml(news?.title || "") || fallbackTitle;
+  const contentText = stripHtml(news?.content || "") || fallbackDescription;
   const title = newsTitle || "Garud Samachar";
-  const description = contentText || newsTitle || "Garud Samachar";
-  const imageUrl = getNewsImageUrl(news);
+  const description = truncateText(contentText || newsTitle || "Garud Samachar");
+  const imageUrl = news ? getNewsImageUrl(news, siteUrl) : toCloudinaryOgImage(absolutizeUrl(fallbackImage, siteUrl)) || `${siteUrl}/logo.jpeg`;
+  const imageType = /\.png(?:$|\?)/i.test(imageUrl) ? "image/png" : "image/jpeg";
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
@@ -110,6 +179,9 @@ export default async function handler(req, res) {
     <title>${escapeHtml(title)}</title>
     <link rel="canonical" href="${escapeHtml(articleUrl)}" />
     <meta name="description" content="${escapeHtml(description)}" />
+    <meta itemprop="name" content="${escapeHtml(title)}" />
+    <meta itemprop="description" content="${escapeHtml(description)}" />
+    <meta itemprop="image" content="${escapeHtml(imageUrl)}" />
     <meta property="og:site_name" content="Garud Samachar" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="${escapeHtml(title)}" />
@@ -117,6 +189,7 @@ export default async function handler(req, res) {
     <meta property="og:url" content="${escapeHtml(articleUrl)}" />
     <meta property="og:image" content="${escapeHtml(imageUrl)}" />
     <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:type" content="${escapeHtml(imageType)}" />
     <meta property="og:image:alt" content="${escapeHtml(title)}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -127,7 +200,7 @@ export default async function handler(req, res) {
     <meta http-equiv="refresh" content="0; url=${escapeHtml(articleUrl)}" />
   </head>
   <body>
-    <a href="${escapeHtml(articleUrl)}">Garud Samachar</a>
+    <a href="${escapeHtml(articleUrl)}">Open Garud Samachar news</a>
     <script>window.location.replace(${JSON.stringify(articleUrl)});</script>
   </body>
 </html>`);

@@ -10,6 +10,15 @@ const SIZE_COMMANDS = {
   xxlarge: "7",
 };
 
+const SIZE_PIXELS = {
+  small: 14,
+  normal: 16,
+  medium: 18,
+  large: 22,
+  xlarge: 26,
+  xxlarge: 32,
+};
+
 const SIZE_ORDER = ["small", "normal", "medium", "large", "xlarge", "xxlarge"];
 
 const CSS_COMMANDS = new Set([
@@ -43,6 +52,42 @@ const plainTextToHtml = (text = "") => {
       return `<p>${lineHtml}</p>`;
     })
     .join("");
+};
+
+const getClosestElement = (node) => {
+  if (!node) return null;
+  return node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+};
+
+const getNearestFontSizePx = (root) => {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!root?.contains(range.commonAncestorContainer)) return null;
+
+  let element = getClosestElement(range.startContainer);
+  while (element && element !== root) {
+    const inlineSize = element.style?.fontSize || "";
+    const inlinePx = Number.parseFloat(inlineSize);
+    if (Number.isFinite(inlinePx)) return inlinePx;
+    element = element.parentElement;
+  }
+
+  const computedPx = Number.parseFloat(
+    window.getComputedStyle(getClosestElement(range.startContainer) || root).fontSize
+  );
+  return Number.isFinite(computedPx) ? computedPx : null;
+};
+
+const getSizeKeyFromPixels = (pixels) => {
+  if (!Number.isFinite(pixels)) return "normal";
+
+  return SIZE_ORDER.reduce((bestKey, key) => {
+    const bestDistance = Math.abs(SIZE_PIXELS[bestKey] - pixels);
+    const nextDistance = Math.abs(SIZE_PIXELS[key] - pixels);
+    return nextDistance < bestDistance ? key : bestKey;
+  }, "normal");
 };
 
 export default function RichTextEditor({ value, onChange, placeholder = "" }) {
@@ -128,6 +173,12 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
     setActiveState(next);
 
     try {
+      const nearestSize = getNearestFontSizePx(editorRef.current);
+      if (Number.isFinite(nearestSize)) {
+        setFontSizeKey(getSizeKeyFromPixels(nearestSize));
+        return;
+      }
+
       const rawFontSize = String(document.queryCommandValue("fontSize") || "").trim();
       const matchedSize =
         Object.entries(SIZE_COMMANDS).find(([, value]) => value === rawFontSize)?.[0] ||
@@ -407,11 +458,11 @@ export default function RichTextEditor({ value, onChange, placeholder = "" }) {
             onChange={(e) => applyFontSize(e.target.value)}
             title="Text size"
           >
-            <option value="small">10 px</option>
-            <option value="normal">12 px</option>
-            <option value="medium">14 px</option>
-            <option value="large">18 px</option>
-            <option value="xlarge">24 px</option>
+            <option value="small">14 px</option>
+            <option value="normal">16 px</option>
+            <option value="medium">18 px</option>
+            <option value="large">22 px</option>
+            <option value="xlarge">26 px</option>
             <option value="xxlarge">32 px</option>
           </select>
           <button

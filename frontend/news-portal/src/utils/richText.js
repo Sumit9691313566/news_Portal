@@ -4,12 +4,12 @@ const ALL_TAGS = /<[^>]*>/g;
 const TITLE_BLOCK_TAGS = /<\/?(p|div|h1|h2|h3|h4|h5|h6|blockquote|li|ul|ol)>/gi;
 
 const FONT_SIZE_MAP = {
-  "1": "10px",
-  "2": "12px",
-  "3": "14px",
-  "4": "16px",
-  "5": "18px",
-  "6": "24px",
+  "1": "12px",
+  "2": "14px",
+  "3": "16px",
+  "4": "18px",
+  "5": "22px",
+  "6": "26px",
   "7": "32px",
 };
 

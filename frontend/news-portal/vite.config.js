@@ -37,6 +37,8 @@ const escapeHtml = (value = "") =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;")
 
+const firstQueryValue = (url, key) => url.searchParams.get(key) || ""
+
 const absolutizeUrl = (url = "", baseUrl = "") => {
   const cleanUrl = String(url || "").trim()
   if (!cleanUrl) return ""
@@ -45,16 +47,63 @@ const absolutizeUrl = (url = "", baseUrl = "") => {
   return `${normalizeUrl(baseUrl)}/${cleanUrl.replace(/^\/+/, "")}`
 }
 
-const getNewsImageUrl = (news, baseUrl) => {
-  if (news?.mediaType === "image" && news?.mediaUrl) {
-    return absolutizeUrl(news.mediaUrl, baseUrl)
+const cleanNewsId = (value = "") =>
+  String(value || "")
+    .split("?")[0]
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .trim()
+
+const truncateText = (value = "", maxLength = 180) => {
+  const text = String(value || "").replace(/\s+/g, " ").trim()
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength - 3).trim()}...`
+}
+
+const isCloudinaryUrl = (url = "") =>
+  /^https?:\/\/res\.cloudinary\.com\//i.test(String(url || ""))
+
+const toCloudinaryOgImage = (url = "") => {
+  const cleanUrl = String(url || "").trim()
+  if (!isCloudinaryUrl(cleanUrl)) return cleanUrl
+
+  if (cleanUrl.includes("/upload/")) {
+    return cleanUrl.replace(
+      "/upload/",
+      "/upload/f_auto,q_auto,c_fill,w_1200,h_630,g_auto/"
+    )
   }
 
+  return cleanUrl
+}
+
+const toCloudinaryVideoPoster = (url = "") => {
+  const cleanUrl = String(url || "").trim()
+  if (!isCloudinaryUrl(cleanUrl)) return ""
+
+  const withoutQuery = cleanUrl.split("?")[0]
+  if (!/\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(withoutQuery)) return ""
+
+  return toCloudinaryOgImage(withoutQuery.replace(/\.(mp4|mov|webm|m4v|avi|mkv)$/i, ".jpg"))
+}
+
+const getNewsImageUrl = (news, baseUrl) => {
   const imageBlock = Array.isArray(news?.blocks)
     ? news.blocks.find((block) => block?.type === "image" && block?.url)
     : null
 
-  if (imageBlock?.url) return absolutizeUrl(imageBlock.url, baseUrl)
+  if (imageBlock?.url) return toCloudinaryOgImage(absolutizeUrl(imageBlock.url, baseUrl))
+
+  if (news?.mediaType === "image" && news?.mediaUrl) {
+    return toCloudinaryOgImage(absolutizeUrl(news.mediaUrl, baseUrl))
+  }
+
+  const videoBlock = Array.isArray(news?.blocks)
+    ? news.blocks.find((block) => block?.type === "video" && block?.url)
+    : null
+  const videoPoster =
+    toCloudinaryVideoPoster(videoBlock?.url) || toCloudinaryVideoPoster(news?.mediaUrl)
+  if (videoPoster) return absolutizeUrl(videoPoster, baseUrl)
+
   return `${normalizeUrl(baseUrl)}/logo.jpeg`
 }
 
@@ -68,7 +117,10 @@ const findDevNewsById = async (id) => {
   return list.find((item) => String(item?._id || item?.id) === String(id)) || null
 }
 
-const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => `<!doctype html>
+const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => {
+  const imageType = /\.png(?:$|\?)/i.test(imageUrl) ? "image/png" : "image/jpeg"
+
+  return `<!doctype html>
 <html lang="hi">
   <head>
     <meta charset="utf-8" />
@@ -76,6 +128,9 @@ const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => 
     <title>${escapeHtml(title)}</title>
     <link rel="canonical" href="${escapeHtml(articleUrl)}" />
     <meta name="description" content="${escapeHtml(description)}" />
+    <meta itemprop="name" content="${escapeHtml(title)}" />
+    <meta itemprop="description" content="${escapeHtml(description)}" />
+    <meta itemprop="image" content="${escapeHtml(imageUrl)}" />
     <meta property="og:site_name" content="Garud Samachar" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="${escapeHtml(title)}" />
@@ -83,6 +138,7 @@ const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => 
     <meta property="og:url" content="${escapeHtml(articleUrl)}" />
     <meta property="og:image" content="${escapeHtml(imageUrl)}" />
     <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:type" content="${escapeHtml(imageType)}" />
     <meta property="og:image:alt" content="${escapeHtml(title)}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -97,6 +153,7 @@ const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => 
     <script>window.location.replace(${JSON.stringify(articleUrl)});</script>
   </body>
 </html>`
+}
 
 const localSharePreviewPlugin = () => ({
   name: "local-share-preview",
@@ -109,7 +166,7 @@ const localSharePreviewPlugin = () => ({
         return
       }
 
-      const id = decodeURIComponent(match[1])
+      const id = cleanNewsId(decodeURIComponent(match[1]))
       const localOrigin = `http://${req.headers.host || "localhost:5173"}`
       const articleUrl = `${localOrigin}/?newsId=${encodeURIComponent(id)}`
 
@@ -120,9 +177,14 @@ const localSharePreviewPlugin = () => ({
         server.config.logger.warn(`share preview fetch failed: ${error?.message || error}`)
       }
 
-      const title = stripHtml(news?.title || "") || "Garud Samachar"
-      const description = stripHtml(news?.content || "") || title
-      const imageUrl = getNewsImageUrl(news, localOrigin)
+      const fallbackTitle = stripHtml(firstQueryValue(url, "t"))
+      const fallbackDescription = stripHtml(firstQueryValue(url, "d"))
+      const fallbackImage = firstQueryValue(url, "img")
+      const title = stripHtml(news?.title || "") || fallbackTitle || "Garud Samachar"
+      const description = truncateText(stripHtml(news?.content || "") || fallbackDescription || title)
+      const imageUrl = news
+        ? getNewsImageUrl(news, localOrigin)
+        : toCloudinaryOgImage(absolutizeUrl(fallbackImage, localOrigin)) || `${localOrigin}/logo.jpeg`
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",
