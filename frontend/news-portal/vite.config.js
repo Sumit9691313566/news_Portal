@@ -104,7 +104,7 @@ const getNewsImageUrl = (news, baseUrl) => {
     toCloudinaryVideoPoster(videoBlock?.url) || toCloudinaryVideoPoster(news?.mediaUrl)
   if (videoPoster) return absolutizeUrl(videoPoster, baseUrl)
 
-  return `${normalizeUrl(baseUrl)}/logo.jpeg`
+  return ""
 }
 
 const findDevNewsById = async (id) => {
@@ -119,6 +119,17 @@ const findDevNewsById = async (id) => {
 
 const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => {
   const imageType = /\.png(?:$|\?)/i.test(imageUrl) ? "image/png" : "image/jpeg"
+  const imageTags = imageUrl
+    ? `
+    <meta itemprop="image" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:type" content="${escapeHtml(imageType)}" />
+    <meta property="og:image:alt" content="${escapeHtml(title)}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />`
+    : ""
 
   return `<!doctype html>
 <html lang="hi">
@@ -130,22 +141,15 @@ const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => 
     <meta name="description" content="${escapeHtml(description)}" />
     <meta itemprop="name" content="${escapeHtml(title)}" />
     <meta itemprop="description" content="${escapeHtml(description)}" />
-    <meta itemprop="image" content="${escapeHtml(imageUrl)}" />
     <meta property="og:site_name" content="Garud Samachar" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${escapeHtml(articleUrl)}" />
-    <meta property="og:image" content="${escapeHtml(imageUrl)}" />
-    <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}" />
-    <meta property="og:image:type" content="${escapeHtml(imageType)}" />
-    <meta property="og:image:alt" content="${escapeHtml(title)}" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    ${imageTags}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
-    <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
     <meta http-equiv="refresh" content="0; url=${escapeHtml(articleUrl)}" />
   </head>
   <body>
@@ -184,7 +188,7 @@ const localSharePreviewPlugin = () => ({
       const description = truncateText(stripHtml(news?.content || "") || fallbackDescription || title)
       const imageUrl = news
         ? getNewsImageUrl(news, localOrigin)
-        : toCloudinaryOgImage(absolutizeUrl(fallbackImage, localOrigin)) || `${localOrigin}/logo.jpeg`
+        : toCloudinaryOgImage(absolutizeUrl(fallbackImage, localOrigin))
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",

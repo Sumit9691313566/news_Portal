@@ -386,15 +386,8 @@ export default function Category() {
     const newsId = news?._id || news?.id;
     if (!newsId || typeof window === "undefined") return "";
 
-    const shareUrl = new URL(`/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
-    const title = getPlainTextTitle(news?.title || "");
-    const description = stripHtml(news?.content || "");
-    const previewImage = getNewsPreviewImage(news);
-
-    shareUrl.searchParams.set("v", "9");
-    if (title) shareUrl.searchParams.set("t", title.slice(0, 140));
-    if (description) shareUrl.searchParams.set("d", description.slice(0, 180));
-    if (previewImage) shareUrl.searchParams.set("img", previewImage);
+    const shareUrl = new URL(`/api/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
+    shareUrl.searchParams.set("v", "10");
     return shareUrl.toString();
   };
 

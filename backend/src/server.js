@@ -10,6 +10,7 @@ import epaperRoutes from "./routes/epaperRoutes.js";
 import pushRoutes from "./routes/pushRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import userNewsRoutes from "./routes/userNewsRoutes.js";
+import shareRoutes from "./routes/shareRoutes.js";
 import { startRetentionJob } from "./utils/retention.js";
 import { startDailyDigestJobs } from "./utils/digest.js";
 import {
@@ -136,6 +137,7 @@ app.get("/debug", (req, res) => {
 });
 
 app.use("/api/news", limitWriteMethods(writeLimiter), newsRoutes);
+app.use("/api/share", shareRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/epaper", epaperRoutes);
 app.use("/api/push", pushRoutes);
