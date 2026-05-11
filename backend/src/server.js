@@ -138,6 +138,7 @@ app.get("/debug", (req, res) => {
 
 app.use("/api/news", limitWriteMethods(writeLimiter), newsRoutes);
 app.use("/api/share", shareRoutes);
+app.use("/share", shareRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/epaper", epaperRoutes);
 app.use("/api/push", pushRoutes);
