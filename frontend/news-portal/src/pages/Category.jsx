@@ -402,9 +402,8 @@ export default function Category() {
   };
 
   const getNewsShareText = (news) => {
-    const title = getPlainTextTitle(news?.title || "") || "Latest news";
     const shareUrl = getNewsShareUrl(news);
-    return `${title}\n${shareUrl}`.trim();
+    return shareUrl;
   };
 
   const showShareMessage = (message) => {
