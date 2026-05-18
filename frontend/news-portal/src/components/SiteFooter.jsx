@@ -157,13 +157,18 @@ export default function SiteFooter() {
 
       <div className="site-footer-bottom">
         <p>© 2026 Garud Samachar. Owned and operated by Garud Stacks Private Limited.</p>
-        <div>
+        <div className="site-footer-bottom-right">
+          <span className="site-footer-credit">
+            Designed & developed by <strong>Sumit Lodhi</strong>
+          </span>
+          <div className="site-footer-bottom-links">
           <button type="button" onClick={() => navigate("/terms-and-conditions")}>
             Terms
           </button>
           <button type="button" onClick={() => navigate("/about-us")}>
             About
           </button>
+          </div>
         </div>
       </div>
 
