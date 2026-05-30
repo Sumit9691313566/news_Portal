@@ -154,14 +154,18 @@ export default function Videos() {
               onClick={() => openVideo(video)}
             >
               <div className="media-thumb media-thumb-video">
-                <video
-                  src={video.mediaUrl}
-                  muted
-                  autoPlay
-                  loop
-                  playsInline
-                  preload="metadata"
-                />
+                {video.thumbnailUrl ? (
+                  <img src={video.thumbnailUrl} alt="" />
+                ) : (
+                  <video
+                    src={video.mediaUrl}
+                    muted
+                    autoPlay
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                )}
                 <div className="video-thumb-shade" />
                 <div className="play-badge">▶</div>
                 <div className="video-title-overlay">

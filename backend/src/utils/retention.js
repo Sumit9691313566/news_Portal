@@ -39,6 +39,9 @@ const cleanupNews = async (cutoff) => {
       if (block?.publicId) {
         await destroyCloudinary(block.publicId, block.resourceType);
       }
+      if (block?.thumbnailPublicId) {
+        await destroyCloudinary(block.thumbnailPublicId, "image");
+      }
     }
   }
 

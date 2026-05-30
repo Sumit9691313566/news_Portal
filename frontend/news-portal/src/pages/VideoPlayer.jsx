@@ -391,6 +391,7 @@ export default function VideoPlayer() {
                     videoRefs.current[index] = node;
                   }}
                   src={video.mediaUrl}
+                  poster={video.thumbnailUrl || undefined}
                   controls
                   playsInline
                   preload={isActive ? "auto" : "metadata"}

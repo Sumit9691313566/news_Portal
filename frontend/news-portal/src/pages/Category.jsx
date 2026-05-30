@@ -190,6 +190,11 @@ export default function Category() {
               ? n.mediaUrl
               : null;
 
+            const mediaThumbnailUrl =
+              firstMedia?.type === "video" && firstMedia.thumbnailUrl
+                ? firstMedia.thumbnailUrl
+                : "";
+
             return {
               _id: n._id,
               title: n.title,
@@ -202,6 +207,7 @@ export default function Category() {
               }),
               mediaType,
               mediaUrl,
+              mediaThumbnailUrl,
               blocks,
               createdAt: n.createdAt,
               author: n.author || "Admin",
@@ -318,6 +324,7 @@ export default function Category() {
     id: news._id || news.id,
     _id: news._id || news.id,
     mediaUrl: news.mediaUrl,
+    thumbnailUrl: news.mediaThumbnailUrl || "",
     title: getPlainTextTitle(news.title),
     summary: news.content || "",
     category: getCategoryLabel(news.category),
@@ -392,7 +399,15 @@ export default function Category() {
   };
 
   const getNewsPreviewImage = (news) => {
+    if (news?.mediaType === "video" && news?.mediaThumbnailUrl) {
+      return news.mediaThumbnailUrl;
+    }
     if (news?.mediaType === "image" && news?.mediaUrl) return news.mediaUrl;
+
+    const videoBlockWithThumbnail = Array.isArray(news?.blocks)
+      ? news.blocks.find((block) => block?.type === "video" && block?.thumbnailUrl)
+      : null;
+    if (videoBlockWithThumbnail?.thumbnailUrl) return videoBlockWithThumbnail.thumbnailUrl;
 
     const imageBlock = Array.isArray(news?.blocks)
       ? news.blocks.find((block) => block?.type === "image" && block?.url)
@@ -400,6 +415,9 @@ export default function Category() {
 
     return imageBlock?.url || "";
   };
+
+  const getVideoPoster = (news, block = null) =>
+    block?.thumbnailUrl || news?.mediaThumbnailUrl || "";
 
   const getNewsShareText = (news) => {
     const shareUrl = getNewsShareUrl(news);
@@ -572,6 +590,7 @@ export default function Category() {
           videos: mobileVideoFeed,
           selectedVideoId: firstVideo.id || firstVideo._id,
           url: firstVideo.mediaUrl,
+          thumbnailUrl: firstVideo.thumbnailUrl || "",
           title: firstVideo.title,
           summary: firstVideo.summary || "",
           category: getCategoryLabel(firstVideo.category),
@@ -975,6 +994,7 @@ export default function Category() {
                                   {news.mediaType === "video" && (
                                     <video
                                       src={news.mediaUrl}
+                                      poster={getVideoPoster(news) || undefined}
                                       className="news-thumb"
                                       muted
                                       onClick={(event) => {
@@ -1042,6 +1062,7 @@ export default function Category() {
                         navigate(`/videos/${news._id || news.id}`, {
                           state: {
                             url: news.mediaUrl,
+                            thumbnailUrl: getVideoPoster(news),
                             title: getPlainTextTitle(news.title),
                             summary: news.content || "",
                             category: getCategoryLabel(news.category),
@@ -1055,6 +1076,7 @@ export default function Category() {
                         <div className="media-thumb media-thumb-video">
                           <video
                             src={news.mediaUrl}
+                            poster={getVideoPoster(news) || undefined}
                             muted
                             autoPlay
                             loop
@@ -1141,6 +1163,7 @@ export default function Category() {
                             {news.mediaType === "video" && (
                               <video
                                 src={news.mediaUrl}
+                                poster={getVideoPoster(news) || undefined}
                                 className="news-thumb"
                                 muted
                               />
@@ -1213,6 +1236,7 @@ export default function Category() {
                             {news.mediaType === "video" && (
                               <video
                                 src={news.mediaUrl}
+                                poster={getVideoPoster(news) || undefined}
                                 className="news-thumb"
                                 muted
                               />
@@ -1301,6 +1325,7 @@ export default function Category() {
                         navigate(`/videos/${selectedNews._id || selectedNews.id}`, {
                           state: {
                             url: selectedNews.mediaUrl,
+                            thumbnailUrl: getVideoPoster(selectedNews),
                             title: getPlainTextTitle(selectedNews.title),
                             summary: selectedNews.content || "",
                             category: getCategoryLabel(selectedNews.category),
@@ -1312,6 +1337,7 @@ export default function Category() {
                     >
                       <video
                         src={selectedNews.mediaUrl}
+                        poster={getVideoPoster(selectedNews) || undefined}
                         muted
                         autoPlay
                         loop
@@ -1350,6 +1376,7 @@ export default function Category() {
                               navigate(`/videos/${selectedNews._id || selectedNews.id}`, {
                                 state: {
                                   url: b.url,
+                                  thumbnailUrl: getVideoPoster(selectedNews, b),
                                   title: getPlainTextTitle(selectedNews.title),
                                   summary: selectedNews.content || "",
                                   category: getCategoryLabel(selectedNews.category),
@@ -1361,6 +1388,7 @@ export default function Category() {
                           >
                             <video
                               src={b.url}
+                              poster={getVideoPoster(selectedNews, b) || undefined}
                               muted
                               autoPlay
                               loop
@@ -1402,6 +1430,7 @@ export default function Category() {
                             {news.mediaType === "video" && (
                               <video
                                 src={news.mediaUrl}
+                                poster={getVideoPoster(news) || undefined}
                                 muted
                               />
                             )}

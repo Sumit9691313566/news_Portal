@@ -140,7 +140,10 @@ export default function ReporterDashboard() {
             type: b.type,
             text: b.text || "",
             url: b.url || "",
+            thumbnailUrl: b.thumbnailUrl || "",
+            thumbnailPublicId: b.thumbnailPublicId || "",
             file: null,
+            thumbnailFile: null,
           }))
         );
       }
@@ -197,16 +200,28 @@ export default function ReporterDashboard() {
         return { type: "text", text: sanitizeRichTextHtml(b.text || "") };
       }
       const fileKey = `block_file_${index}`;
+      const thumbnailFileKey = `block_thumbnail_${index}`;
       if (b.file) {
         formData.append(fileKey, b.file);
       }
-      return { type: b.type, url: b.url || "", fileKey: b.file ? fileKey : "" };
+      if (b.type === "video" && b.thumbnailFile) {
+        formData.append(thumbnailFileKey, b.thumbnailFile);
+      }
+      return {
+        type: b.type,
+        url: b.url || "",
+        fileKey: b.file ? fileKey : "",
+        thumbnailUrl: b.type === "video" ? b.thumbnailUrl || "" : "",
+        thumbnailPublicId: b.type === "video" ? b.thumbnailPublicId || "" : "",
+        thumbnailFileKey:
+          b.type === "video" && b.thumbnailFile ? thumbnailFileKey : "",
+      };
     });
 
     formData.append("blocks", JSON.stringify(blocksPayload));
 
     try {
-      const timeout = blocks.some((b) => b.type === "video") ? 60000 : 30000;
+      const timeout = blocks.some((b) => b.type === "video") ? 300000 : 30000;
       const res = await fetchWithTimeout(editId ? `news/${editId}` : "news", {
         method: editId ? "PUT" : "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -240,7 +255,10 @@ export default function ReporterDashboard() {
             type: b.type,
             text: b.text || "",
             url: b.url || "",
+            thumbnailUrl: b.thumbnailUrl || "",
+            thumbnailPublicId: b.thumbnailPublicId || "",
             file: null,
+            thumbnailFile: null,
           }))
         : [{ id: Date.now(), type: "text", text: n.content || "" }]
     );
@@ -261,7 +279,16 @@ export default function ReporterDashboard() {
   const addBlock = (type) => {
     setBlocks((prev) => [
       ...prev,
-      { id: Date.now() + Math.random(), type, text: "", url: "", file: null },
+      {
+        id: Date.now() + Math.random(),
+        type,
+        text: "",
+        url: "",
+        file: null,
+        thumbnailUrl: "",
+        thumbnailPublicId: "",
+        thumbnailFile: null,
+      },
     ]);
     setShowAddMenu(false);
   };
@@ -280,6 +307,31 @@ export default function ReporterDashboard() {
     );
   };
 
+  const updateVideoThumbnail = (id, file) => {
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === id
+          ? {
+              ...b,
+              thumbnailFile: file || null,
+              thumbnailUrl: file ? URL.createObjectURL(file) : "",
+              thumbnailPublicId: "",
+            }
+          : b
+      )
+    );
+  };
+
+  const clearVideoThumbnail = (id) => {
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === id
+          ? { ...b, thumbnailFile: null, thumbnailUrl: "", thumbnailPublicId: "" }
+          : b
+      )
+    );
+  };
+
   const updateBlockUrl = (id, url) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, url, file: null } : b)));
   };
@@ -294,6 +346,9 @@ export default function ReporterDashboard() {
         text: "",
         url: URL.createObjectURL(file),
         file,
+        thumbnailUrl: "",
+        thumbnailPublicId: "",
+        thumbnailFile: null,
       },
     ]);
   };
@@ -303,7 +358,16 @@ export default function ReporterDashboard() {
     if (!type) return false;
     setBlocks((prev) => [
       ...prev,
-      { id: Date.now() + Math.random(), type, text: "", url, file: null },
+      {
+        id: Date.now() + Math.random(),
+        type,
+        text: "",
+        url,
+        file: null,
+        thumbnailUrl: "",
+        thumbnailPublicId: "",
+        thumbnailFile: null,
+      },
     ]);
     return true;
   };
@@ -376,7 +440,17 @@ export default function ReporterDashboard() {
       if (!targetBlock) return prev;
 
       const clearedBlocks = prev.map((b) =>
-        b.id === id ? { ...b, text: "", url: "", file: null } : b
+        b.id === id
+          ? {
+              ...b,
+              text: "",
+              url: "",
+              file: null,
+              thumbnailUrl: "",
+              thumbnailPublicId: "",
+              thumbnailFile: null,
+            }
+          : b
       );
 
       if (!isBlockEmpty(targetBlock)) {
@@ -388,7 +462,18 @@ export default function ReporterDashboard() {
       }
 
       return prev.map((b) =>
-        b.id === id ? { ...b, type: "text", text: "", url: "", file: null } : b
+        b.id === id
+          ? {
+              ...b,
+              type: "text",
+              text: "",
+              url: "",
+              file: null,
+              thumbnailUrl: "",
+              thumbnailPublicId: "",
+              thumbnailFile: null,
+            }
+          : b
       );
     });
   };
@@ -398,7 +483,12 @@ export default function ReporterDashboard() {
       const idx = prev.findIndex((b) => b.id === id);
       if (idx < 0) return prev;
       const source = prev[idx];
-      const copy = { ...source, id: Date.now() + Math.random(), file: null };
+      const copy = {
+        ...source,
+        id: Date.now() + Math.random(),
+        file: null,
+        thumbnailFile: null,
+      };
       const next = [...prev];
       next.splice(idx + 1, 0, copy);
       return next;
@@ -450,6 +540,8 @@ export default function ReporterDashboard() {
         text: b.text || "",
         url: b.url || "",
         fileUrl: b.file ? URL.createObjectURL(b.file) : "",
+        thumbnailUrl: b.thumbnailUrl || "",
+        thumbnailFileUrl: b.thumbnailFile ? URL.createObjectURL(b.thumbnailFile) : "",
       })),
     [blocks]
   );
@@ -669,7 +761,41 @@ export default function ReporterDashboard() {
                         onChange={(e) => updateBlockUrl(block.id, e.target.value)}
                       />
                       {block.url && block.type === "image" && <img src={block.url} alt="preview" />}
-                      {block.url && block.type === "video" && <video src={block.url} controls />}
+                      {block.url && block.type === "video" && (
+                        <>
+                          <div className="video-thumbnail-row">
+                            <label className="field-label">Video thumbnail (optional)</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) =>
+                                updateVideoThumbnail(block.id, e.target.files[0])
+                              }
+                            />
+                            {block.thumbnailUrl && (
+                              <button
+                                type="button"
+                                className="btn small"
+                                onClick={() => clearVideoThumbnail(block.id)}
+                              >
+                                Remove thumbnail
+                              </button>
+                            )}
+                          </div>
+                          {block.thumbnailUrl && (
+                            <img
+                              className="video-thumbnail-preview"
+                              src={block.thumbnailUrl}
+                              alt="video thumbnail preview"
+                            />
+                          )}
+                          <video
+                            src={block.url}
+                            poster={block.thumbnailUrl || undefined}
+                            controls
+                          />
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -762,7 +888,13 @@ export default function ReporterDashboard() {
                         />
                       )}
                       {b.type === "image" && (b.fileUrl || b.url) && <img src={b.fileUrl || b.url} alt="" />}
-                      {b.type === "video" && (b.fileUrl || b.url) && <video src={b.fileUrl || b.url} controls />}
+                      {b.type === "video" && (b.fileUrl || b.url) && (
+                        <video
+                          src={b.fileUrl || b.url}
+                          poster={b.thumbnailFileUrl || b.thumbnailUrl || undefined}
+                          controls
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

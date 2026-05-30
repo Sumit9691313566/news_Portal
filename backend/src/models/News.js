@@ -37,6 +37,8 @@ const newsSchema = new mongoose.Schema(
         url: { type: String, default: "" },
         publicId: { type: String, default: "" },
         resourceType: { type: String, enum: ["image", "video"], default: "image" },
+        thumbnailUrl: { type: String, default: "" },
+        thumbnailPublicId: { type: String, default: "" },
       },
     ],
   },

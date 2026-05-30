@@ -80,6 +80,17 @@ const toCloudinaryVideoPoster = (url = "") => {
 };
 
 const getNewsImageUrl = (news, siteUrl) => {
+  const videoBlockWithThumbnail = Array.isArray(news?.blocks)
+    ? news.blocks.find(
+        (block) => block?.type === "video" && block?.thumbnailUrl
+      )
+    : null;
+  if (videoBlockWithThumbnail?.thumbnailUrl) {
+    return toCloudinaryOgImage(
+      absolutizeUrl(videoBlockWithThumbnail.thumbnailUrl, siteUrl)
+    );
+  }
+
   const imageBlock = Array.isArray(news?.blocks)
     ? news.blocks.find((block) => block?.type === "image" && block?.url)
     : null;

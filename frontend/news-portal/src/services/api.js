@@ -25,7 +25,8 @@ const resolveApiBaseUrl = () => {
 const API_BASE_URL = resolveApiBaseUrl();
 const RAW_API_FALLBACK_URL = import.meta.env.VITE_API_FALLBACK_URL || "";
 const API_FALLBACK_URL = normalizeBaseUrl(RAW_API_FALLBACK_URL);
-const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 30000;
+const configuredTimeoutMs = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 30000;
+const DEFAULT_TIMEOUT_MS = Math.max(configuredTimeoutMs, 30000);
 
 const isLocalApiBase = (baseUrl) =>
   baseUrl === "/api" ||

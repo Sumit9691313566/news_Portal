@@ -72,6 +72,9 @@ const parseBlocks = (rawBlocks) => {
       text: b.text || "",
       url: b.url || "",
       fileKey: b.fileKey || "",
+      thumbnailUrl: b.thumbnailUrl || "",
+      thumbnailFileKey: b.thumbnailFileKey || "",
+      thumbnailPublicId: b.thumbnailPublicId || "",
     }));
   } catch {
     return [];
@@ -201,6 +204,52 @@ const uploadToCloudinary = (file, resourceType) =>
     streamifier.createReadStream(file.buffer).pipe(stream);
   });
 
+const buildVideoThumbnailUrl = (publicId, fallbackUrl = "") => {
+  if (!publicId) return fallbackUrl || "";
+  return cloudinary.url(publicId, {
+    secure: true,
+    resource_type: "image",
+    transformation: [
+      {
+        width: 1080,
+        height: 1920,
+        crop: "fill",
+        gravity: "auto",
+        quality: "auto",
+        fetch_format: "auto",
+      },
+    ],
+  });
+};
+
+const uploadVideoThumbnail = async (block, filesByField) => {
+  if (block.type !== "video") {
+    return { thumbnailUrl: "", thumbnailPublicId: "" };
+  }
+
+  if (block.thumbnailFileKey) {
+    const thumbnailFile = filesByField.get(block.thumbnailFileKey);
+    if (thumbnailFile) {
+      const thumbnailUpload = await uploadToCloudinary(thumbnailFile, "image");
+      return {
+        thumbnailUrl: buildVideoThumbnailUrl(
+          thumbnailUpload.public_id,
+          thumbnailUpload.secure_url
+        ),
+        thumbnailPublicId: thumbnailUpload.public_id || "",
+      };
+    }
+  }
+
+  return {
+    thumbnailUrl: buildVideoThumbnailUrl(
+      block.thumbnailPublicId,
+      block.thumbnailUrl
+    ),
+    thumbnailPublicId: block.thumbnailPublicId || "",
+  };
+};
+
 /* ================= CREATE NEWS ================= */
 export const createNews = async (req, res) => {
   try {
@@ -230,6 +279,7 @@ export const createNews = async (req, res) => {
           if (block.type === "image" || block.type === "video") {
             const file = block.fileKey ? filesByField.get(block.fileKey) : null;
             if (file) {
+              const thumbnail = await uploadVideoThumbnail(block, filesByField);
               const uploadResult = await uploadToCloudinary(
                 file,
                 block.type === "video" ? "video" : "image"
@@ -240,15 +290,18 @@ export const createNews = async (req, res) => {
                 url: uploadResult.secure_url,
                 publicId: uploadResult.public_id || "",
                 resourceType: block.type === "video" ? "video" : "image",
+                ...thumbnail,
               };
             }
           }
+          const thumbnail = await uploadVideoThumbnail(block, filesByField);
           return {
             type: block.type,
             text: block.text || "",
             url: block.url || "",
             publicId: "",
             resourceType: block.type === "video" ? "video" : "image",
+            ...thumbnail,
           };
         })
       );
@@ -376,6 +429,7 @@ export const updateNews = async (req, res) => {
           if (block.type === "image" || block.type === "video") {
             const file = block.fileKey ? filesByField.get(block.fileKey) : null;
             if (file) {
+              const thumbnail = await uploadVideoThumbnail(block, filesByField);
               const uploadResult = await uploadToCloudinary(
                 file,
                 block.type === "video" ? "video" : "image"
@@ -386,15 +440,18 @@ export const updateNews = async (req, res) => {
                 url: uploadResult.secure_url,
                 publicId: uploadResult.public_id || "",
                 resourceType: block.type === "video" ? "video" : "image",
+                ...thumbnail,
               };
             }
           }
+          const thumbnail = await uploadVideoThumbnail(block, filesByField);
           return {
             type: block.type,
             text: block.text || "",
             url: block.url || "",
             publicId: "",
             resourceType: block.type === "video" ? "video" : "image",
+            ...thumbnail,
           };
         })
       );
@@ -530,6 +587,11 @@ export const deleteNews = async (req, res) => {
       if (block?.publicId) {
         await cloudinary.uploader.destroy(block.publicId, {
           resource_type: block.resourceType || "image",
+        });
+      }
+      if (block?.thumbnailPublicId) {
+        await cloudinary.uploader.destroy(block.thumbnailPublicId, {
+          resource_type: "image",
         });
       }
     }
