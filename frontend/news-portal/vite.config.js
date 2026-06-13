@@ -117,7 +117,7 @@ const findDevNewsById = async (id) => {
   return list.find((item) => String(item?._id || item?.id) === String(id)) || null
 }
 
-const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => {
+const buildSharePreviewHtml = ({ title, description, shareUrl, articleUrl, imageUrl }) => {
   const imageType = /\.png(?:$|\?)/i.test(imageUrl) ? "image/png" : "image/jpeg"
   const imageTags = imageUrl
     ? `
@@ -137,7 +137,7 @@ const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)}</title>
-    <link rel="canonical" href="${escapeHtml(articleUrl)}" />
+    <link rel="canonical" href="${escapeHtml(shareUrl)}" />
     <meta name="description" content="${escapeHtml(description)}" />
     <meta itemprop="name" content="${escapeHtml(title)}" />
     <meta itemprop="description" content="${escapeHtml(description)}" />
@@ -145,7 +145,7 @@ const buildSharePreviewHtml = ({ title, description, articleUrl, imageUrl }) => 
     <meta property="og:type" content="article" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:url" content="${escapeHtml(articleUrl)}" />
+    <meta property="og:url" content="${escapeHtml(shareUrl)}" />
     ${imageTags}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
@@ -173,6 +173,7 @@ const localSharePreviewPlugin = () => ({
       const id = cleanNewsId(decodeURIComponent(match[1]))
       const localOrigin = `http://${req.headers.host || "localhost:5173"}`
       const articleUrl = `${localOrigin}/?newsId=${encodeURIComponent(id)}`
+      const shareUrl = `${localOrigin}/share/${encodeURIComponent(id)}`
 
       let news = null
       try {
@@ -193,7 +194,7 @@ const localSharePreviewPlugin = () => ({
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",
       })
-      res.end(buildSharePreviewHtml({ title, description, articleUrl, imageUrl }))
+      res.end(buildSharePreviewHtml({ title, description, shareUrl, articleUrl, imageUrl }))
     })
   },
 })

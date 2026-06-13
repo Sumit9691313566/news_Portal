@@ -393,7 +393,7 @@ export default function Category() {
     const newsId = news?._id || news?.id;
     if (!newsId || typeof window === "undefined") return "";
 
-    const shareUrl = new URL(`/api/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
+    const shareUrl = new URL(`/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
     shareUrl.searchParams.set("v", "10");
     return shareUrl.toString();
   };

@@ -156,10 +156,16 @@ export default function MainAdminDashboard() {
     setEditBlocks(
       Array.isArray(news.blocks)
         ? news.blocks.map((block, index) => ({
-            id: `${news._id}-${index}`,
+          id: `${news._id}-${index}`,
             type: block.type,
             text: block.text || "",
             url: block.url || "",
+            publicId: block.publicId || "",
+            resourceType: block.resourceType || (block.type === "video" ? "video" : "image"),
+            thumbnailUrl: block.thumbnailUrl || "",
+            thumbnailPublicId: block.thumbnailPublicId || "",
+            file: null,
+            thumbnailFile: null,
           }))
         : []
     );
@@ -207,38 +213,55 @@ export default function MainAdminDashboard() {
       return;
     }
 
-    const payload = {
-      title: sanitizeTitleHtml(editTitle),
-      titleColor: editTitleColor,
-      location: editLocation,
-      category: editCategory,
-      featured: editFeatured,
-      breaking: editBreaking,
-      status: selectedNews.status || "draft",
-    };
+    const formData = new FormData();
+    formData.append("title", sanitizeTitleHtml(editTitle));
+    formData.append("titleColor", editTitleColor);
+    formData.append("location", editLocation);
+    formData.append("category", editCategory);
+    formData.append("featured", editFeatured);
+    formData.append("breaking", editBreaking);
+    formData.append("status", selectedNews.status || "draft");
 
     if (editBlocks.length > 0) {
-      const normalizedBlocks = editBlocks.map((block) =>
-        block.type === "text"
-          ? { type: "text", text: sanitizeRichTextHtml(block.text || "") }
-          : { type: block.type, url: block.url || "" }
-      );
-      payload.blocks = normalizedBlocks;
-      payload.content = deriveContentFromBlocks(normalizedBlocks) || "Media content";
+      const normalizedBlocks = editBlocks.map((block, index) => {
+        if (block.type === "text") {
+          return { type: "text", text: sanitizeRichTextHtml(block.text || "") };
+        }
+
+        const fileKey = `block_file_${index}`;
+        const thumbnailFileKey = `block_thumbnail_${index}`;
+        if (block.file) {
+          formData.append(fileKey, block.file);
+        }
+        if (block.type === "video" && block.thumbnailFile) {
+          formData.append(thumbnailFileKey, block.thumbnailFile);
+        }
+
+        return {
+          type: block.type,
+          url: block.url || "",
+          publicId: block.publicId || "",
+          resourceType: block.resourceType || (block.type === "video" ? "video" : "image"),
+          fileKey: block.file ? fileKey : "",
+          thumbnailUrl: block.type === "video" ? block.thumbnailUrl || "" : "",
+          thumbnailPublicId: block.type === "video" ? block.thumbnailPublicId || "" : "",
+          thumbnailFileKey:
+            block.type === "video" && block.thumbnailFile ? thumbnailFileKey : "",
+        };
+      });
+      formData.append("blocks", JSON.stringify(normalizedBlocks));
+      formData.append("content", deriveContentFromBlocks(normalizedBlocks) || "Media content");
     } else {
-      payload.content = sanitizeRichTextHtml(editContent || "");
+      formData.append("content", sanitizeRichTextHtml(editContent || ""));
     }
 
     try {
       setSaving(true);
       const res = await fetchWithTimeout(`news/${selectedNews._id}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }, editBlocks.some((block) => block.type === "video" && block.file) ? 300000 : 30000);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -671,11 +694,111 @@ export default function MainAdminDashboard() {
                           />
                         )}
 
-                        {block.type === "image" && block.url && (
-                          <img src={block.url} alt="" style={{ width: "100%", borderRadius: 8 }} />
-                        )}
-                        {block.type === "video" && block.url && (
-                          <video src={block.url} controls style={{ width: "100%", borderRadius: 8 }} />
+                        {(block.type === "image" || block.type === "video") && (
+                          <div className="block-media">
+                            <input
+                              type="file"
+                              accept={block.type === "image" ? "image/*" : "video/*"}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0] || null;
+                                setEditBlocks((prev) =>
+                                  prev.map((item) =>
+                                    item.id === block.id
+                                      ? {
+                                          ...item,
+                                          file,
+                                          url: file ? URL.createObjectURL(file) : item.url,
+                                          publicId: file ? "" : item.publicId,
+                                        }
+                                      : item
+                                  )
+                                );
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Image/video URL"
+                              value={block.url || ""}
+                              onChange={(event) =>
+                                setEditBlocks((prev) =>
+                                  prev.map((item) =>
+                                    item.id === block.id
+                                      ? {
+                                          ...item,
+                                          url: event.target.value,
+                                          file: null,
+                                        }
+                                      : item
+                                  )
+                                )
+                              }
+                            />
+                            {block.type === "video" && (
+                              <div className="video-thumbnail-row">
+                                <label className="field-label">Video thumbnail (optional)</label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) => {
+                                    const file = event.target.files?.[0] || null;
+                                    setEditBlocks((prev) =>
+                                      prev.map((item) =>
+                                        item.id === block.id
+                                          ? {
+                                              ...item,
+                                              thumbnailFile: file,
+                                              thumbnailUrl: file
+                                                ? URL.createObjectURL(file)
+                                                : item.thumbnailUrl,
+                                              thumbnailPublicId: file ? "" : item.thumbnailPublicId,
+                                            }
+                                          : item
+                                      )
+                                    );
+                                  }}
+                                />
+                                {block.thumbnailUrl && (
+                                  <button
+                                    type="button"
+                                    className="btn small"
+                                    onClick={() =>
+                                      setEditBlocks((prev) =>
+                                        prev.map((item) =>
+                                          item.id === block.id
+                                            ? {
+                                                ...item,
+                                                thumbnailFile: null,
+                                                thumbnailUrl: "",
+                                                thumbnailPublicId: "",
+                                              }
+                                            : item
+                                        )
+                                      )
+                                    }
+                                  >
+                                    Remove thumbnail
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            {block.type === "image" && block.url && (
+                              <img src={block.url} alt="" />
+                            )}
+                            {block.type === "video" && block.thumbnailUrl && (
+                              <img
+                                className="video-thumbnail-preview"
+                                src={block.thumbnailUrl}
+                                alt="video thumbnail preview"
+                              />
+                            )}
+                            {block.type === "video" && block.url && (
+                              <video
+                                src={block.url}
+                                poster={block.thumbnailUrl || undefined}
+                                controls
+                              />
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}

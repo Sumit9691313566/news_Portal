@@ -71,6 +71,8 @@ const parseBlocks = (rawBlocks) => {
       type: b.type,
       text: b.text || "",
       url: b.url || "",
+      publicId: b.publicId || "",
+      resourceType: b.resourceType || (b.type === "video" ? "video" : "image"),
       fileKey: b.fileKey || "",
       thumbnailUrl: b.thumbnailUrl || "",
       thumbnailFileKey: b.thumbnailFileKey || "",
@@ -299,8 +301,8 @@ export const createNews = async (req, res) => {
             type: block.type,
             text: block.text || "",
             url: block.url || "",
-            publicId: "",
-            resourceType: block.type === "video" ? "video" : "image",
+            publicId: block.publicId || "",
+            resourceType: block.resourceType || (block.type === "video" ? "video" : "image"),
             ...thumbnail,
           };
         })
@@ -449,8 +451,8 @@ export const updateNews = async (req, res) => {
             type: block.type,
             text: block.text || "",
             url: block.url || "",
-            publicId: "",
-            resourceType: block.type === "video" ? "video" : "image",
+            publicId: block.publicId || "",
+            resourceType: block.resourceType || (block.type === "video" ? "video" : "image"),
             ...thumbnail,
           };
         })

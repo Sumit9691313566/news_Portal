@@ -110,7 +110,7 @@ const getNewsImageUrl = (news, siteUrl) => {
   return "";
 };
 
-const renderShareHtml = ({ title, description, articleUrl, imageUrl }) => {
+const renderShareHtml = ({ title, description, shareUrl, articleUrl, imageUrl }) => {
   const imageType = /\.png(?:$|\?)/i.test(imageUrl) ? "image/png" : "image/jpeg";
   const imageTags = imageUrl
     ? `
@@ -129,7 +129,7 @@ const renderShareHtml = ({ title, description, articleUrl, imageUrl }) => {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)}</title>
-    <link rel="canonical" href="${escapeHtml(articleUrl)}" />
+    <link rel="canonical" href="${escapeHtml(shareUrl)}" />
     <meta name="description" content="${escapeHtml(description)}" />
     <meta itemprop="name" content="${escapeHtml(title)}" />
     <meta itemprop="description" content="${escapeHtml(description)}" />
@@ -137,7 +137,7 @@ const renderShareHtml = ({ title, description, articleUrl, imageUrl }) => {
     <meta property="og:type" content="article" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:url" content="${escapeHtml(articleUrl)}" />
+    <meta property="og:url" content="${escapeHtml(shareUrl)}" />
     ${imageTags}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
@@ -157,6 +157,7 @@ export const shareNewsPreview = async (req, res) => {
     .trim();
   const siteUrl = getSiteUrl();
   const articleUrl = id ? `${siteUrl}/?newsId=${encodeURIComponent(id)}` : `${siteUrl}/`;
+  const shareUrl = id ? `${siteUrl}/share/${encodeURIComponent(id)}` : `${siteUrl}/`;
 
   let news = null;
   if (id) {
@@ -169,5 +170,5 @@ export const shareNewsPreview = async (req, res) => {
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
-  res.status(200).send(renderShareHtml({ title, description, articleUrl, imageUrl }));
+  res.status(200).send(renderShareHtml({ title, description, shareUrl, articleUrl, imageUrl }));
 };
