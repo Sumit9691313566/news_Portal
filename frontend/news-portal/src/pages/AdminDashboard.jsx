@@ -234,21 +234,12 @@ export default function AdminDashboard() {
       return;
     }
 
-    const formData = new FormData();
     const derivedContent =
       deriveContentFromBlocks(blocks) || "Media content";
 
-    formData.append("title", sanitizeTitleHtml(title));
-    formData.append("titleColor", titleColor);
-    formData.append("content", derivedContent);
-    formData.append("location", location);
-    formData.append("category", category);
     const safeStatus = "draft";
-    formData.append("status", safeStatus);
-    formData.append("featured", featured);
-    formData.append("breaking", breaking);
 
-    const blocksPayload = await Promise.all(blocks.map(async (b, index) => {
+    const blocksPayload = await Promise.all(blocks.map(async (b) => {
       if (b.type === "text") {
         return { type: "text", text: sanitizeRichTextHtml(b.text || "") };
       }
@@ -279,15 +270,28 @@ export default function AdminDashboard() {
       };
     }));
 
-    formData.append("blocks", JSON.stringify(blocksPayload));
+    const payload = {
+      title: sanitizeTitleHtml(title),
+      titleColor,
+      content: derivedContent,
+      location,
+      category,
+      status: safeStatus,
+      featured,
+      breaking,
+      blocks: blocksPayload,
+    };
 
     try {
       // Large videos can take longer to reach Cloudinary on slower networks.
       const timeout = blocks.some((b) => b.type === "video") ? 600000 : 30000;
       const res = await fetchWithTimeout(editId ? `news/${editId}` : "news", {
         method: editId ? "PUT" : "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       }, timeout);
 
       if (!res.ok) {

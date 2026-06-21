@@ -188,14 +188,6 @@ export default function ReporterDashboard() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", sanitizeTitleHtml(title));
-    formData.append("titleColor", titleColor);
-    formData.append("content", deriveContentFromBlocks(blocks) || "Media content");
-    formData.append("location", location);
-    formData.append("category", category);
-    formData.append("status", "pending");
-
     const blocksPayload = await Promise.all(blocks.map(async (b) => {
       if (b.type === "text") {
         return { type: "text", text: sanitizeRichTextHtml(b.text || "") };
@@ -227,14 +219,25 @@ export default function ReporterDashboard() {
       };
     }));
 
-    formData.append("blocks", JSON.stringify(blocksPayload));
+    const payload = {
+      title: sanitizeTitleHtml(title),
+      titleColor,
+      content: deriveContentFromBlocks(blocks) || "Media content",
+      location,
+      category,
+      status: "pending",
+      blocks: blocksPayload,
+    };
 
     try {
       const timeout = blocks.some((b) => b.type === "video") ? 600000 : 30000;
       const res = await fetchWithTimeout(editId ? `news/${editId}` : "news", {
         method: editId ? "PUT" : "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       }, timeout);
 
       if (!res.ok) {

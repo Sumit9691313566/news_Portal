@@ -214,14 +214,15 @@ export default function MainAdminDashboard() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", sanitizeTitleHtml(editTitle));
-    formData.append("titleColor", editTitleColor);
-    formData.append("location", editLocation);
-    formData.append("category", editCategory);
-    formData.append("featured", editFeatured);
-    formData.append("breaking", editBreaking);
-    formData.append("status", selectedNews.status || "draft");
+    const payload = {
+      title: sanitizeTitleHtml(editTitle),
+      titleColor: editTitleColor,
+      location: editLocation,
+      category: editCategory,
+      featured: editFeatured,
+      breaking: editBreaking,
+      status: selectedNews.status || "draft",
+    };
 
     if (editBlocks.length > 0) {
       const normalizedBlocks = await Promise.all(editBlocks.map(async (block) => {
@@ -259,18 +260,21 @@ export default function MainAdminDashboard() {
           thumbnailFileKey: "",
         };
       }));
-      formData.append("blocks", JSON.stringify(normalizedBlocks));
-      formData.append("content", deriveContentFromBlocks(normalizedBlocks) || "Media content");
+      payload.blocks = normalizedBlocks;
+      payload.content = deriveContentFromBlocks(normalizedBlocks) || "Media content";
     } else {
-      formData.append("content", sanitizeRichTextHtml(editContent || ""));
+      payload.content = sanitizeRichTextHtml(editContent || "");
     }
 
     try {
       setSaving(true);
       const res = await fetchWithTimeout(`news/${selectedNews._id}`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       }, editBlocks.some((block) => block.type === "video" && block.file) ? 600000 : 30000);
 
       if (!res.ok) {
