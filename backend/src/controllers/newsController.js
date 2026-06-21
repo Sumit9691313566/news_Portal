@@ -182,6 +182,23 @@ const sendPublishedNewsNotification = async (news) => {
   }
 };
 
+export const getUploadSignature = (req, res) => {
+  const timestamp = Math.round(Date.now() / 1000);
+  const folder = "news_portal";
+  const signature = cloudinary.utils.api_sign_request(
+    { timestamp, folder },
+    process.env.CLOUDINARY_API_SECRET
+  );
+
+  res.json({
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    timestamp,
+    folder,
+    signature,
+  });
+};
+
 const markFirstPublishedIfNeeded = (news, wasPublishedBefore = false) => {
   if (!news || news.status !== "published") return false;
   if (news.firstPublishedAt) return false;

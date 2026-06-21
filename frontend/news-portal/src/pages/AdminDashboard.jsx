@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 import { fetchWithTimeout } from "../services/api";
+import { uploadMediaDirectToCloudinary } from "../utils/cloudinaryUpload";
 import RichTextEditor from "../components/RichTextEditor";
 import {
   buildStyledTitleHtml,
@@ -247,28 +248,36 @@ export default function AdminDashboard() {
     formData.append("featured", featured);
     formData.append("breaking", breaking);
 
-    const blocksPayload = blocks.map((b, index) => {
+    const blocksPayload = await Promise.all(blocks.map(async (b, index) => {
       if (b.type === "text") {
         return { type: "text", text: sanitizeRichTextHtml(b.text || "") };
       }
-      const fileKey = `block_file_${index}`;
-      const thumbnailFileKey = `block_thumbnail_${index}`;
-      if (b.file) {
-        formData.append(fileKey, b.file);
-      }
-      if (b.type === "video" && b.thumbnailFile) {
-        formData.append(thumbnailFileKey, b.thumbnailFile);
-      }
+      const uploadedMedia = b.file
+        ? await uploadMediaDirectToCloudinary(b.file, b.type, token)
+        : null;
+      const uploadedThumbnail =
+        b.type === "video" && b.thumbnailFile
+          ? await uploadMediaDirectToCloudinary(b.thumbnailFile, "image", token, {
+              portraitImage: true,
+            })
+          : null;
       return {
         type: b.type,
-        url: b.url || "",
-        fileKey: b.file ? fileKey : "",
-        thumbnailUrl: b.type === "video" ? b.thumbnailUrl || "" : "",
-        thumbnailPublicId: b.type === "video" ? b.thumbnailPublicId || "" : "",
-        thumbnailFileKey:
-          b.type === "video" && b.thumbnailFile ? thumbnailFileKey : "",
+        url: uploadedMedia?.url || b.url || "",
+        publicId: uploadedMedia?.publicId || b.publicId || "",
+        resourceType: uploadedMedia?.resourceType || b.resourceType || b.type,
+        fileKey: "",
+        thumbnailUrl:
+          b.type === "video"
+            ? uploadedThumbnail?.url || b.thumbnailUrl || ""
+            : "",
+        thumbnailPublicId:
+          b.type === "video"
+            ? uploadedThumbnail?.publicId || b.thumbnailPublicId || ""
+            : "",
+        thumbnailFileKey: "",
       };
-    });
+    }));
 
     formData.append("blocks", JSON.stringify(blocksPayload));
 

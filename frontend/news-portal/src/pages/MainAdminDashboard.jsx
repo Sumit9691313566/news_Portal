@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithTimeout } from "../services/api";
 import { fetchVisitorSummary } from "../services/analytics";
+import { uploadMediaDirectToCloudinary } from "../utils/cloudinaryUpload";
 import RichTextEditor from "../components/RichTextEditor";
 import {
   buildStyledTitleHtml,
@@ -223,32 +224,41 @@ export default function MainAdminDashboard() {
     formData.append("status", selectedNews.status || "draft");
 
     if (editBlocks.length > 0) {
-      const normalizedBlocks = editBlocks.map((block, index) => {
+      const normalizedBlocks = await Promise.all(editBlocks.map(async (block) => {
         if (block.type === "text") {
           return { type: "text", text: sanitizeRichTextHtml(block.text || "") };
         }
 
-        const fileKey = `block_file_${index}`;
-        const thumbnailFileKey = `block_thumbnail_${index}`;
-        if (block.file) {
-          formData.append(fileKey, block.file);
-        }
-        if (block.type === "video" && block.thumbnailFile) {
-          formData.append(thumbnailFileKey, block.thumbnailFile);
-        }
+        const uploadedMedia = block.file
+          ? await uploadMediaDirectToCloudinary(block.file, block.type, token)
+          : null;
+        const uploadedThumbnail =
+          block.type === "video" && block.thumbnailFile
+            ? await uploadMediaDirectToCloudinary(block.thumbnailFile, "image", token, {
+                portraitImage: true,
+              })
+            : null;
 
         return {
           type: block.type,
-          url: block.url || "",
-          publicId: block.publicId || "",
-          resourceType: block.resourceType || (block.type === "video" ? "video" : "image"),
-          fileKey: block.file ? fileKey : "",
-          thumbnailUrl: block.type === "video" ? block.thumbnailUrl || "" : "",
-          thumbnailPublicId: block.type === "video" ? block.thumbnailPublicId || "" : "",
-          thumbnailFileKey:
-            block.type === "video" && block.thumbnailFile ? thumbnailFileKey : "",
+          url: uploadedMedia?.url || block.url || "",
+          publicId: uploadedMedia?.publicId || block.publicId || "",
+          resourceType:
+            uploadedMedia?.resourceType ||
+            block.resourceType ||
+            (block.type === "video" ? "video" : "image"),
+          fileKey: "",
+          thumbnailPublicId:
+            block.type === "video"
+              ? uploadedThumbnail?.publicId || block.thumbnailPublicId || ""
+              : "",
+          thumbnailUrl:
+            block.type === "video"
+              ? uploadedThumbnail?.url || block.thumbnailUrl || ""
+              : "",
+          thumbnailFileKey: "",
         };
-      });
+      }));
       formData.append("blocks", JSON.stringify(normalizedBlocks));
       formData.append("content", deriveContentFromBlocks(normalizedBlocks) || "Media content");
     } else {
