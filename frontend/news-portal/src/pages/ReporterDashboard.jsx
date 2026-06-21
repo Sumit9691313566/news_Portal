@@ -221,7 +221,7 @@ export default function ReporterDashboard() {
     formData.append("blocks", JSON.stringify(blocksPayload));
 
     try {
-      const timeout = blocks.some((b) => b.type === "video") ? 300000 : 30000;
+      const timeout = blocks.some((b) => b.type === "video") ? 600000 : 30000;
       const res = await fetchWithTimeout(editId ? `news/${editId}` : "news", {
         method: editId ? "PUT" : "POST",
         headers: { Authorization: `Bearer ${token}` },

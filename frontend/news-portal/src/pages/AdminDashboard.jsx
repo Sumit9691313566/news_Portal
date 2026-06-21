@@ -274,7 +274,7 @@ export default function AdminDashboard() {
 
     try {
       // Large videos can take longer to reach Cloudinary on slower networks.
-      const timeout = blocks.some((b) => b.type === "video") ? 300000 : 30000;
+      const timeout = blocks.some((b) => b.type === "video") ? 600000 : 30000;
       const res = await fetchWithTimeout(editId ? `news/${editId}` : "news", {
         method: editId ? "PUT" : "POST",
         headers: { Authorization: `Bearer ${token}` },

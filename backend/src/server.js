@@ -45,8 +45,8 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
-  req.setTimeout(300000);
-  res.setTimeout(300000);
+  req.setTimeout(600000);
+  res.setTimeout(600000);
   next();
 });
 
@@ -150,13 +150,13 @@ app.use((err, req, res, next) => {
 
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(413).json({
-      message: "File too large. Maximum size is 500MB.",
+      message: "File too large. Maximum size is 1GB.",
     });
   }
 
   if (err.type === "entity.too.large" || err.status === 413) {
     return res.status(413).json({
-      message: "Upload too large. Please upload a file up to 500MB.",
+      message: "Upload too large. Please upload a file up to 1GB.",
     });
   }
 

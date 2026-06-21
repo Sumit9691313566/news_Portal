@@ -16,13 +16,14 @@ import optionalAdminAuth from "../middleware/optionalAdminAuth.js";
 import { imageVideoFileFilter } from "../middleware/security.js";
 
 const router = express.Router();
+const MAX_NEWS_UPLOAD_BYTES = 1024 * 1024 * 1024;
 
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   fileFilter: imageVideoFileFilter,
   limits: {
-    fileSize: 500 * 1024 * 1024,
+    fileSize: MAX_NEWS_UPLOAD_BYTES,
     fields: 20,
     files: 20,
   },

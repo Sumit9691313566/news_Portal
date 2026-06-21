@@ -261,7 +261,7 @@ export default function MainAdminDashboard() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
-      }, editBlocks.some((block) => block.type === "video" && block.file) ? 300000 : 30000);
+      }, editBlocks.some((block) => block.type === "video" && block.file) ? 600000 : 30000);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
