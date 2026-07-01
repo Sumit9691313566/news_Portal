@@ -314,7 +314,9 @@ export default function VideoPlayer() {
     }
   };
 
-  const toggleMoreMenu = () => {
+  const toggleMoreMenu = (event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
     setIsMoreMenuOpen((current) => !current);
   };
 
@@ -375,6 +377,7 @@ export default function VideoPlayer() {
       <div className="video-feed-shell" ref={feedRef}>
         {renderedVideos.map((video, index) => {
           const isActive = index === activeRenderIndex;
+          const showMoreMenu = isActive && isMoreMenuOpen;
 
           return (
             <article
@@ -398,7 +401,7 @@ export default function VideoPlayer() {
                   onEnded={showNextVideo}
                 />
 
-                {isMoreMenuOpen ? (
+                {showMoreMenu ? (
                   <button
                     type="button"
                     className="video-more-backdrop"
@@ -454,13 +457,13 @@ export default function VideoPlayer() {
                     type="button"
                     className="video-action-btn"
                     onClick={toggleMoreMenu}
-                    aria-expanded={isMoreMenuOpen}
+                    aria-expanded={showMoreMenu}
                     aria-haspopup="true"
                   >
                     <span className="video-action-icon">⋯</span>
                     <span>More</span>
                   </button>
-                  {isMoreMenuOpen ? (
+                  {showMoreMenu ? (
                     <div className="video-more-sheet" role="menu">
                       <button
                         type="button"
