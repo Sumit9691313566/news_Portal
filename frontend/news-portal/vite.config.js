@@ -164,7 +164,7 @@ const localSharePreviewPlugin = () => ({
   configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
       const url = new URL(req.url || "/", "http://localhost")
-      const match = url.pathname.match(/^\/share\/([^/]+)$/)
+      const match = url.pathname.match(/^\/(?:api\/)?share\/([^/]+)$/)
       if (!match) {
         next()
         return
@@ -173,7 +173,7 @@ const localSharePreviewPlugin = () => ({
       const id = cleanNewsId(decodeURIComponent(match[1]))
       const localOrigin = `http://${req.headers.host || "localhost:5173"}`
       const articleUrl = `${localOrigin}/?newsId=${encodeURIComponent(id)}`
-      const shareUrl = `${localOrigin}/share/${encodeURIComponent(id)}`
+      const shareUrl = `${localOrigin}${url.pathname}`
 
       let news = null
       try {

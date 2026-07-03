@@ -234,6 +234,11 @@ export default function VideoPlayer() {
 
   const shareUrl = useMemo(() => {
     if (!activeVideo) return buildPublicUrl(`/videos/${id || ""}`);
+    if (activeVideo.newsId) {
+      return buildPublicUrl(
+        `/api/share/${encodeURIComponent(activeVideo.newsId)}?v=11`
+      );
+    }
     const currentId = activeVideo.id || activeVideo._id || id;
     return buildPublicUrl(`/videos/${currentId}`);
   }, [activeVideo, id]);

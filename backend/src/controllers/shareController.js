@@ -157,7 +157,13 @@ export const shareNewsPreview = async (req, res) => {
     .trim();
   const siteUrl = getSiteUrl();
   const articleUrl = id ? `${siteUrl}/?newsId=${encodeURIComponent(id)}` : `${siteUrl}/`;
-  const shareUrl = id ? `${siteUrl}/share/${encodeURIComponent(id)}` : `${siteUrl}/`;
+  const requestPath = String(req.originalUrl || req.url || "").split("?")[0] || "";
+  const shareUrl =
+    id && requestPath
+      ? `${siteUrl}${requestPath}`
+      : id
+      ? `${siteUrl}/api/share/${encodeURIComponent(id)}`
+      : `${siteUrl}/`;
 
   let news = null;
   if (id) {
