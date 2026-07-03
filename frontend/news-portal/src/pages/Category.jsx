@@ -394,7 +394,7 @@ export default function Category() {
     if (!newsId || typeof window === "undefined") return "";
 
     const shareUrl = new URL(`/api/share/${encodeURIComponent(newsId)}`, getPublicSiteUrl());
-    shareUrl.searchParams.set("v", "11");
+    shareUrl.searchParams.set("v", "12");
     return shareUrl.toString();
   };
 
@@ -421,7 +421,8 @@ export default function Category() {
 
   const getNewsShareText = (news) => {
     const shareUrl = getNewsShareUrl(news);
-    return shareUrl;
+    const title = getPlainTextTitle(news?.title || "");
+    return [title, shareUrl].filter(Boolean).join("\n");
   };
 
   const showShareMessage = (message) => {

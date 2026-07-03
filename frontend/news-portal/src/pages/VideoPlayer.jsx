@@ -236,7 +236,7 @@ export default function VideoPlayer() {
     if (!activeVideo) return buildPublicUrl(`/videos/${id || ""}`);
     if (activeVideo.newsId) {
       return buildPublicUrl(
-        `/api/share/${encodeURIComponent(activeVideo.newsId)}?v=11`
+        `/api/share/${encodeURIComponent(activeVideo.newsId)}?v=12`
       );
     }
     const currentId = activeVideo.id || activeVideo._id || id;

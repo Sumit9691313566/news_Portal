@@ -46,6 +46,18 @@ const truncateText = (value = "", maxLength = 180) => {
   return `${text.slice(0, maxLength - 3).trim()}...`;
 };
 
+const getNewsDescription = (news) => {
+  const blockText = Array.isArray(news?.blocks)
+    ? news.blocks
+        .filter((block) => block?.type === "text" && block?.text)
+        .map((block) => stripHtml(block.text))
+        .filter(Boolean)
+        .join(" ")
+    : "";
+
+  return stripHtml(news?.content || blockText || news?.title || "");
+};
+
 const absolutizeUrl = (url = "", baseUrl = SITE_URL) => {
   const cleanUrl = String(url || "").trim();
   if (!cleanUrl) return "";
@@ -80,6 +92,10 @@ const toCloudinaryVideoPoster = (url = "") => {
 };
 
 const getNewsImageUrl = (news, siteUrl) => {
+  if (news?.mediaType === "video" && news?.mediaThumbnailUrl) {
+    return toCloudinaryOgImage(absolutizeUrl(news.mediaThumbnailUrl, siteUrl));
+  }
+
   const videoBlockWithThumbnail = Array.isArray(news?.blocks)
     ? news.blocks.find(
         (block) => block?.type === "video" && block?.thumbnailUrl
@@ -157,7 +173,7 @@ export const shareNewsPreview = async (req, res) => {
     .trim();
   const siteUrl = getSiteUrl();
   const articleUrl = id ? `${siteUrl}/?newsId=${encodeURIComponent(id)}` : `${siteUrl}/`;
-  const requestPath = String(req.originalUrl || req.url || "").split("?")[0] || "";
+  const requestPath = String(req.originalUrl || req.url || "") || "";
   const shareUrl =
     id && requestPath
       ? `${siteUrl}${requestPath}`
@@ -171,7 +187,7 @@ export const shareNewsPreview = async (req, res) => {
   }
 
   const title = stripHtml(news?.title || "") || "Garud Samachar";
-  const description = truncateText(stripHtml(news?.content || "") || title);
+  const description = truncateText(getNewsDescription(news) || title);
   const imageUrl = news ? getNewsImageUrl(news, siteUrl) : "";
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
