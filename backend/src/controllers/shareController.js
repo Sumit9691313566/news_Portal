@@ -1,6 +1,7 @@
 import News from "../models/News.js";
 
 const SITE_URL = "https://garudsamachar.in";
+const SHARE_PREVIEW_VERSION = "12";
 
 const normalizeUrl = (value = "") => String(value || "").trim().replace(/\/+$/, "");
 
@@ -168,10 +169,19 @@ const renderShareHtml = ({ title, description, shareUrl, articleUrl, imageUrl })
 };
 
 export const shareNewsPreview = async (req, res) => {
-  const id = String(req.params.id || "")
+  const id = String(req.params.id || req.query.id || "")
     .replace(/[^a-zA-Z0-9_-]/g, "")
     .trim();
   const siteUrl = getSiteUrl();
+  const requestedVersion = String(req.query.v || "").trim();
+
+  if (requestedVersion && requestedVersion !== SHARE_PREVIEW_VERSION) {
+    const cleanPath = String(req.originalUrl || req.url || "").split("?")[0];
+    const redirectUrl = new URL(`${siteUrl}${cleanPath || `/api/share/${id}`}`);
+    redirectUrl.searchParams.set("v", SHARE_PREVIEW_VERSION);
+    return res.redirect(302, redirectUrl.toString());
+  }
+
   const articleUrl = id ? `${siteUrl}/?newsId=${encodeURIComponent(id)}` : `${siteUrl}/`;
   const requestPath = String(req.originalUrl || req.url || "") || "";
   const shareUrl =

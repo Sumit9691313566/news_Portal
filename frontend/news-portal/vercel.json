@@ -21,7 +21,7 @@
     }
   ],
   "routes": [
-    { "src": "/share/([^/]+)", "dest": "/api/share?id=$1" },
+    { "src": "/share/([^/]+)", "dest": "/api/share/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
